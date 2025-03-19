@@ -85,7 +85,7 @@ model.fit(X, y)
     <tr>
         <th>Function/Method Name</th>
         <th>Brief Description</th>
-        <th>Code Syntax</th>
+        <th width="60%">Code Syntax</th>
     </tr>
     <!-- train_test_split -->
     <tr>
