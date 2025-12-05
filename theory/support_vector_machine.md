@@ -19,10 +19,17 @@ SVM is a supervised algorithm that classifies cases by finding a separator.
 * Pros
   * Accurate in high-dimensional spaces
   * Memory efficient
+  * Robust to overfitting
+  * Excels on linear separable data
+  * Works with weakly separable data
+  * Versatile: used for both classification and regression tasks
+
 * Cons
   * Prone to over-fitting (if the number of features if much greater than the number of samples)
   * No probability estimation
-  * Small datasets
+  * Slow for training on large data sets
+  * Sensitive to noise and overlapping classes
+  * Sensitive to kernel and regularization parameters
 
 ## SVM applications
 
