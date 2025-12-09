@@ -102,6 +102,87 @@ def train():
         plt.imsave(f"gan_images_tensorflow/epoch_{epoch+1}.png", gen_img[0, :, :, 0] * 127.5 + 127.5, cmap='gray')
 
     print("TensorFlow GAN Training Complete.")
+    
+    # 5. QA Validation and Results Evaluation
+    print("\n=== QA Validation ===")
+    
+    # Generate final samples for evaluation
+    num_samples = 100
+    noise_test = tf.random.normal([num_samples, 100])
+    generated_samples = generator(noise_test, training=False).numpy()
+    
+    # Test discriminator on generated samples
+    d_fake_scores = tf.nn.sigmoid(discriminator(generated_samples, training=False)).numpy().flatten()
+    
+    # Test discriminator on real samples
+    real_samples = next(iter(train_dataset))[:num_samples]
+    d_real_scores = tf.nn.sigmoid(discriminator(real_samples, training=False)).numpy().flatten()
+    
+    print(f"\nDiscriminator Performance:")
+    print(f"Mean score on real images: {d_real_scores.mean():.4f} (should be close to 1)")
+    print(f"Mean score on fake images: {d_fake_scores.mean():.4f} (should be close to 0.5 for good GAN)")
+    print(f"\nFinal Losses:")
+    print(f"Discriminator loss: {d_loss:.4f}")
+    print(f"Generator loss: {g_loss:.4f}")
+    
+    print("\n--- Sanity Checks ---")
+    
+    # Check 1: Generated images are in valid range [-1, 1]
+    gen_min = generated_samples.min()
+    gen_max = generated_samples.max()
+    print(f"\nGenerated image range: [{gen_min:.3f}, {gen_max:.3f}]")
+    if gen_min >= -1.5 and gen_max <= 1.5:
+        print("✓ Generated images are in reasonable range")
+    else:
+        print("⚠ WARNING: Generated images have unusual value range")
+    
+    # Check 2: Discriminator scores are in valid range [0, 1]
+    if np.all((d_fake_scores >= 0) & (d_fake_scores <= 1)) and np.all((d_real_scores >= 0) & (d_real_scores <= 1)):
+        print("✓ All discriminator scores in valid range [0, 1]")
+    else:
+        print("✗ WARNING: Some discriminator scores outside [0, 1]!")
+    
+    # Check 3: GAN is learning
+    if d_real_scores.mean() > 0.6:
+        print(f"✓ Discriminator recognizes real images well: {d_real_scores.mean():.4f}")
+    else:
+        print(f"⚠ Discriminator struggling with real images: {d_real_scores.mean():.4f}")
+    
+    # Check 4: Generator is fooling discriminator reasonably
+    if 0.2 < d_fake_scores.mean() < 0.8:
+        print(f"✓ Generator creating believable fakes: {d_fake_scores.mean():.4f}")
+    elif d_fake_scores.mean() < 0.2:
+        print(f"⚠ Generator struggling: {d_fake_scores.mean():.4f}")
+    else:
+        print(f"⚠ Possible mode collapse: {d_fake_scores.mean():.4f}")
+    
+    # Check 5: No NaN or Inf in generated images
+    if np.all(np.isfinite(generated_samples)):
+        print("✓ All generated values are finite")
+    else:
+        print("✗ WARNING: Some generated values are NaN or Inf!")
+    
+    # Check 6: Generated images have reasonable variance
+    gen_std = generated_samples.std()
+    if gen_std > 0.1:
+        print(f"✓ Generated images have good variance: {gen_std:.4f}")
+    else:
+        print(f"⚠ WARNING: Low variance: {gen_std:.4f} (possible mode collapse)")
+    
+    print("\n=== Overall Validation Result ===")
+    validation_passed = (
+        np.all(np.isfinite(generated_samples)) and
+        np.all((d_fake_scores >= 0) & (d_fake_scores <= 1)) and
+        d_real_scores.mean() > 0.5 and
+        gen_std > 0.1
+    )
+    
+    if validation_passed:
+        print("✓ Model validation PASSED")
+    else:
+        print("✗ Model validation FAILED")
+    
+    print("\nGenerated images saved to: gan_images_tensorflow/")
 
 if __name__ == "__main__":
     train()

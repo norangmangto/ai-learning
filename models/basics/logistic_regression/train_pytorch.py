@@ -4,7 +4,7 @@ import torch.optim as optim
 import numpy as np
 from sklearn.datasets import make_classification
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix, roc_auc_score
 
 class LogisticRegressionModel(nn.Module):
     def __init__(self, input_dim):
@@ -53,7 +53,87 @@ def train():
 
     acc = accuracy_score(y_test, predictions)
     print(f"PyTorch Logistic Regression Accuracy: {acc:.4f}")
-    print("Done.")
+    
+    # 5. QA Validation and Results Evaluation
+    print("\n=== QA Validation ===")
+    
+    # Calculate comprehensive metrics
+    precision = precision_score(y_test, predictions, average='binary')
+    recall = recall_score(y_test, predictions, average='binary')
+    f1 = f1_score(y_test, predictions, average='binary')
+    
+    # Get probabilities for AUC
+    probs_np = predicted_probs.numpy().flatten()
+    auc_score = roc_auc_score(y_test, probs_np)
+    
+    print(f"Accuracy: {acc:.4f}")
+    print(f"Precision: {precision:.4f}")
+    print(f"Recall: {recall:.4f}")
+    print(f"F1 Score: {f1:.4f}")
+    print(f"ROC AUC Score: {auc_score:.4f}")
+    
+    # Confusion Matrix
+    cm = confusion_matrix(y_test, predictions)
+    print(f"\nConfusion Matrix:\n{cm}")
+    
+    # Sanity checks
+    print("\n--- Sanity Checks ---")
+    
+    # Check 1: All probabilities are in [0, 1]
+    if np.all((probs_np >= 0) & (probs_np <= 1)):
+        print("✓ All predicted probabilities are in valid range [0, 1]")
+    else:
+        print("✗ WARNING: Some probabilities are outside [0, 1]!")
+    
+    # Check 2: Predictions are binary
+    if set(predictions) <= {0, 1}:
+        print("✓ All predictions are binary (0 or 1)")
+    else:
+        print("✗ WARNING: Predictions contain non-binary values!")
+    
+    # Check 3: Model accuracy is better than random
+    if acc > 0.6:
+        print(f"✓ Good accuracy: {acc:.4f} (> 0.6)")
+    elif acc > 0.5:
+        print(f"⚠ Moderate accuracy: {acc:.4f} (better than random)")
+    else:
+        print(f"✗ WARNING: Poor accuracy: {acc:.4f} (not much better than random)")
+    
+    # Check 4: AUC score validation
+    if auc_score > 0.8:
+        print(f"✓ Excellent AUC score: {auc_score:.4f}")
+    elif auc_score > 0.7:
+        print(f"✓ Good AUC score: {auc_score:.4f}")
+    elif auc_score > 0.5:
+        print(f"⚠ Moderate AUC score: {auc_score:.4f}")
+    else:
+        print(f"✗ WARNING: Poor AUC score: {auc_score:.4f}")
+    
+    # Check 5: Class balance in predictions
+    pred_class_0 = np.sum(predictions == 0)
+    pred_class_1 = np.sum(predictions == 1)
+    print(f"\nPrediction distribution: Class 0: {pred_class_0}, Class 1: {pred_class_1}")
+    
+    if pred_class_0 == 0 or pred_class_1 == 0:
+        print("✗ WARNING: Model predicts only one class!")
+    else:
+        print("✓ Model predicts both classes")
+    
+    # Overall validation result
+    print("\n=== Overall Validation Result ===")
+    validation_passed = (
+        np.all((probs_np >= 0) & (probs_np <= 1)) and
+        set(predictions) <= {0, 1} and
+        acc > 0.5 and
+        pred_class_0 > 0 and pred_class_1 > 0
+    )
+    
+    if validation_passed:
+        print("✓ Model validation PASSED - Model is performing as expected")
+    else:
+        print("✗ Model validation FAILED - Please review model performance")
+    
+    print("\nDone.")
 
 if __name__ == "__main__":
     train()

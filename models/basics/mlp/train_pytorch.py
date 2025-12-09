@@ -4,7 +4,7 @@ import torch.optim as optim
 import numpy as np
 from sklearn.datasets import load_digits
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix, classification_report
 from sklearn.preprocessing import StandardScaler
 
 class MLP(nn.Module):
@@ -66,7 +66,79 @@ def train():
 
     acc = accuracy_score(y_test, predictions.numpy())
     print(f"PyTorch MLP Accuracy: {acc:.4f}")
-    print("Done.")
+    
+    # 5. QA Validation and Results Evaluation
+    print("\n=== QA Validation ===")
+    
+    y_pred = predictions.numpy()
+    
+    # Calculate comprehensive metrics
+    precision = precision_score(y_test, y_pred, average='macro')
+    recall = recall_score(y_test, y_pred, average='macro')
+    f1 = f1_score(y_test, y_pred, average='macro')
+    
+    print(f"Accuracy: {acc:.4f}")
+    print(f"Precision (macro): {precision:.4f}")
+    print(f"Recall (macro): {recall:.4f}")
+    print(f"F1 Score (macro): {f1:.4f}")
+    
+    # Classification report
+    print("\nClassification Report:")
+    print(classification_report(y_test, y_pred, target_names=[f"Digit {i}" for i in range(10)]))
+    
+    # Confusion Matrix
+    cm = confusion_matrix(y_test, y_pred)
+    print(f"\nConfusion Matrix:\n{cm}")
+    
+    # Sanity checks
+    print("\n--- Sanity Checks ---")
+    
+    # Check 1: Predictions are in valid class range
+    if np.all((y_pred >= 0) & (y_pred < 10)):
+        print("✓ All predictions are in valid class range [0-9]")
+    else:
+        print("✗ WARNING: Some predictions are outside valid class range!")
+    
+    # Check 2: Model accuracy is reasonable for digits dataset
+    if acc > 0.9:
+        print(f"✓ Excellent accuracy: {acc:.4f} (> 0.9)")
+    elif acc > 0.7:
+        print(f"✓ Good accuracy: {acc:.4f} (> 0.7)")
+    elif acc > 0.5:
+        print(f"⚠ Moderate accuracy: {acc:.4f} (room for improvement)")
+    else:
+        print(f"✗ WARNING: Poor accuracy: {acc:.4f}")
+    
+    # Check 3: All classes are predicted
+    unique_preds = np.unique(y_pred)
+    if len(unique_preds) == 10:
+        print("✓ Model predicts all 10 digit classes")
+    else:
+        print(f"⚠ WARNING: Model only predicts {len(unique_preds)} out of 10 classes: {unique_preds}")
+    
+    # Check 4: Per-class accuracy
+    print("\nPer-class accuracy:")
+    for i in range(10):
+        mask = y_test == i
+        if mask.sum() > 0:
+            class_acc = (y_pred[mask] == y_test[mask]).sum() / mask.sum()
+            status = "✓" if class_acc > 0.7 else "⚠"
+            print(f"  {status} Digit {i}: {class_acc:.4f}")
+    
+    # Overall validation result
+    print("\n=== Overall Validation Result ===")
+    validation_passed = (
+        np.all((y_pred >= 0) & (y_pred < 10)) and
+        acc > 0.5 and
+        len(unique_preds) >= 8  # At least most classes predicted
+    )
+    
+    if validation_passed:
+        print("✓ Model validation PASSED - Model is performing as expected")
+    else:
+        print("✗ Model validation FAILED - Please review model performance")
+    
+    print("\nDone.")
 
 if __name__ == "__main__":
     train()

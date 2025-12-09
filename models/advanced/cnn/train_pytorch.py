@@ -4,6 +4,8 @@ import torch.optim as optim
 import torch.nn.functional as F
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
+import numpy as np
+from sklearn.metrics import classification_report, confusion_matrix
 
 class SimpleCNN(nn.Module):
     def __init__(self):
@@ -78,18 +80,93 @@ def train():
     model.eval()
     test_loss = 0
     correct = 0
+    all_preds = []
+    all_targets = []
     with torch.no_grad():
         for data, target in test_loader:
             output = model(data)
             test_loss += criterion(output, target).item()
             pred = output.argmax(dim=1, keepdim=True)
             correct += pred.eq(target.view_as(pred)).sum().item()
+            all_preds.extend(pred.cpu().numpy().flatten())
+            all_targets.extend(target.cpu().numpy())
 
     test_loss /= len(test_loader.dataset)
     acc = 100. * correct / len(test_loader.dataset)
 
     print(f'\nPyTorch CNN Accuracy: {acc:.2f}%')
-    print("Done.")
+    
+    # 5. QA Validation and Results Evaluation
+    print("\n=== QA Validation ===")
+    
+    all_preds = np.array(all_preds)
+    all_targets = np.array(all_targets)
+    
+    # Classification report
+    print("\nClassification Report:")
+    print(classification_report(all_targets, all_preds, target_names=[str(i) for i in range(10)]))
+    
+    # Confusion Matrix (simplified view)
+    cm = confusion_matrix(all_targets, all_preds)
+    print(f"\nConfusion Matrix shape: {cm.shape}")
+    print("Diagonal (correct predictions per class):")
+    print(np.diag(cm))
+    
+    # Sanity checks
+    print("\n--- Sanity Checks ---")
+    
+    # Check 1: Predictions are in valid range
+    if np.all((all_preds >= 0) & (all_preds < 10)):
+        print("✓ All predictions are in valid class range [0-9]")
+    else:
+        print("✗ WARNING: Some predictions are outside valid range!")
+    
+    # Check 2: Model accuracy for MNIST (CNN should perform well)
+    if acc > 95:
+        print(f"✓ Excellent accuracy: {acc:.2f}% (> 95%)")
+    elif acc > 90:
+        print(f"✓ Good accuracy: {acc:.2f}% (> 90%)")
+    elif acc > 80:
+        print(f"⚠ Moderate accuracy: {acc:.2f}% (CNNs usually achieve >95% on MNIST)")
+    else:
+        print(f"✗ WARNING: Poor accuracy: {acc:.2f}% (check model architecture)")
+    
+    # Check 3: All classes are predicted
+    unique_preds = np.unique(all_preds)
+    if len(unique_preds) == 10:
+        print("✓ Model predicts all 10 digit classes")
+    else:
+        print(f"⚠ WARNING: Model only predicts {len(unique_preds)} out of 10 classes")
+    
+    # Check 4: Per-class accuracy
+    print("\nPer-class accuracy:")
+    for i in range(10):
+        mask = all_targets == i
+        if mask.sum() > 0:
+            class_acc = (all_preds[mask] == all_targets[mask]).sum() / mask.sum() * 100
+            status = "✓" if class_acc > 90 else "⚠"
+            print(f"  {status} Digit {i}: {class_acc:.2f}%")
+    
+    # Check 5: Test loss validation
+    if test_loss < 0.1:
+        print(f"\n✓ Low test loss: {test_loss:.6f}")
+    else:
+        print(f"\n⚠ Test loss: {test_loss:.6f} (might benefit from more training)")
+    
+    # Overall validation result
+    print("\n=== Overall Validation Result ===")
+    validation_passed = (
+        np.all((all_preds >= 0) & (all_preds < 10)) and
+        acc > 80 and
+        len(unique_preds) >= 8
+    )
+    
+    if validation_passed:
+        print("✓ Model validation PASSED - CNN is performing as expected")
+    else:
+        print("✗ Model validation FAILED - Please review model performance")
+    
+    print("\nDone.")
 
 if __name__ == "__main__":
     train()

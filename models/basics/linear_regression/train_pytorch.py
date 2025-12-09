@@ -4,7 +4,7 @@ import torch.optim as optim
 import numpy as np
 from sklearn.datasets import make_regression
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
 
 def train():
     print("Training Linear Regression with PyTorch...")
@@ -44,7 +44,74 @@ def train():
         mse = criterion(predictions, y_test_tensor).item()
 
     print(f"PyTorch Linear Regression MSE: {mse:.4f}")
-    print("Done.")
+    
+    # 5. QA Validation and Results Evaluation
+    print("\n=== QA Validation ===")
+    
+    # Convert predictions to numpy for detailed metrics
+    y_pred_np = predictions.numpy().flatten()
+    y_test_np = y_test
+    
+    # Calculate comprehensive metrics
+    mae = mean_absolute_error(y_test_np, y_pred_np)
+    r2 = r2_score(y_test_np, y_pred_np)
+    rmse = np.sqrt(mse)
+    
+    print(f"Mean Absolute Error (MAE): {mae:.4f}")
+    print(f"Root Mean Squared Error (RMSE): {rmse:.4f}")
+    print(f"R² Score: {r2:.4f}")
+    
+    # Sanity checks
+    print("\n--- Sanity Checks ---")
+    
+    # Check 1: Predictions are finite
+    if np.all(np.isfinite(y_pred_np)):
+        print("✓ All predictions are finite (no NaN or Inf)")
+    else:
+        print("✗ WARNING: Some predictions are NaN or Inf!")
+    
+    # Check 2: R² score is reasonable (should be > 0 for meaningful model)
+    if r2 > 0.5:
+        print(f"✓ Good R² score: {r2:.4f} (> 0.5)")
+    elif r2 > 0:
+        print(f"⚠ Moderate R² score: {r2:.4f} (model explains some variance)")
+    else:
+        print(f"✗ WARNING: Poor R² score: {r2:.4f} (model performs worse than mean baseline)")
+    
+    # Check 3: Prediction distribution
+    pred_mean = np.mean(y_pred_np)
+    pred_std = np.std(y_pred_np)
+    test_mean = np.mean(y_test_np)
+    test_std = np.std(y_test_np)
+    
+    print(f"\nPrediction stats - Mean: {pred_mean:.2f}, Std: {pred_std:.2f}")
+    print(f"Test data stats - Mean: {test_mean:.2f}, Std: {test_std:.2f}")
+    
+    # Check 4: Residuals analysis
+    residuals = y_test_np - y_pred_np
+    residual_mean = np.mean(residuals)
+    residual_std = np.std(residuals)
+    
+    print(f"\nResiduals - Mean: {residual_mean:.4f}, Std: {residual_std:.4f}")
+    if abs(residual_mean) < 0.1 * test_std:
+        print("✓ Residuals are well-centered around zero")
+    else:
+        print("⚠ Residuals may have systematic bias")
+    
+    # Overall validation result
+    print("\n=== Overall Validation Result ===")
+    validation_passed = (
+        np.all(np.isfinite(y_pred_np)) and
+        r2 > 0 and
+        mse < np.var(y_test_np) * 2  # MSE should be reasonable compared to variance
+    )
+    
+    if validation_passed:
+        print("✓ Model validation PASSED - Model is performing as expected")
+    else:
+        print("✗ Model validation FAILED - Please review model performance")
+    
+    print("\nDone.")
 
 if __name__ == "__main__":
     train()
