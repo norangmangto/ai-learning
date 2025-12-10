@@ -3,3 +3,24 @@
 .DS_Store
 
 uv.lock
+
+# Data directory - datasets auto-download via PyTorch
+data/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# Model checkpoints (if you save models)
+*.pth
+*.pt
+*.ckpt
+
+# Jupyter Notebook
+*.ipynb_checkpoints
