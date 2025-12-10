@@ -1,153 +1,159 @@
-# Quick Reference - All Model Implementations
+# Quick Reference - Model Navigation Guide
 
-## File Structure Overview
+## 📂 Current Repository Structure
 
 ```
 models/
-├── basics/                          # Classical ML with multiple frameworks
-│   ├── linear_regression/
-│   │   ├── train_pytorch.py        # PyTorch custom loop
-│   │   ├── train_sklearn.py        # Scikit-Learn native
-│   │   ├── train_jax.py            # JAX with functional approach
-│   │   └── train_tensorflow_v2.py  # TensorFlow/Keras
-│   ├── logistic_regression/
-│   │   ├── train_pytorch.py
-│   │   ├── train_pytorch_v2.py     # Enhanced with normalization
-│   │   ├── train_sklearn.py
-│   │   ├── train_jax.py
-│   │   └── train_tensorflow_v2.py
-│   ├── mlp/
-│   │   ├── train_pytorch.py
-│   │   ├── train_pytorch_v2.py     # BatchNorm + Dropout
-│   │   └── train_sklearn.py
-│   ├── random_forest/
-│   │   ├── train_sklearn.py
-│   │   └── train_pytorch.py        # Neural ensemble approximation
-│   ├── svm/
-│   │   ├── train_sklearn.py
-│   │   └── train_pytorch.py        # RBF kernel approximation
-│   └── xgboost/
-│       ├── train.py                # XGBoost native
-│       └── train_pytorch.py        # Sequential boosting approx
+├── 1_supervised_learning/           # Classification, Regression, Ensembles
+│   ├── classification/
+│   ├── regression/
+│   └── ensemble_methods/
 │
-├── advanced/                        # Deep Learning with alternatives
-│   ├── cnn/
-│   │   ├── train_pytorch.py        # ResNet
-│   │   └── train_tensorflow.py     # MobileNet
-│   ├── rnn/
-│   │   ├── train_pytorch.py        # LSTM original
-│   │   └── train_pytorch_v2.py     # LSTM v2 (text classification)
-│   ├── transformer/
-│   │   ├── train_pytorch.py        # BERT
-│   │   └── train_tensorflow.py     # GPT-2
-│   ├── gan/
-│   │   ├── train_pytorch.py        # DCGAN
-│   │   └── train_tensorflow.py     # Conditional GAN
-│   ├── autoencoder/
-│   │   ├── train_pytorch.py        # VAE
-│   │   └── train_tensorflow.py     # Denoising AE
-│   ├── dnn/
-│   │   ├── train_pytorch.py
-│   │   └── train_tensorflow.py
-│   ├── image_classification/
-│   │   ├── train_pytorch.py        # ResNet-50
-│   │   └── train_pytorch_v2.py     # EfficientNet
-│   ├── object_detection/
-│   │   ├── train_pytorch.py        # Faster R-CNN
-│   │   └── train_pytorch_v2.py     # YOLOv5
-│   ├── sentiment_analysis/
-│   │   ├── train_pytorch.py        # BERT-based
-│   │   ├── train_tensorflow.py     # DistilBERT
-│   │   └── train_sklearn.py        # TF-IDF + LogReg
+├── 2_nlp_models/                    # NLP implementations (12+ files)
+│   ├── embeddings/
+│   │   ├── word_embeddings/        # Word2Vec, GloVe, FastText
+│   │   ├── sentence_embeddings/    # Sentence-BERT, SimCSE
+│   │   └── document_embeddings/
 │   ├── text_classification/
-│   │   ├── train_pytorch.py        # BERT
-│   │   ├── train_tensorflow.py     # RoBERTa
-│   │   └── train_sklearn.py        # FastText
-│   ├── generative/                 # Stable Diffusion, DALL-E
-│   │   ├── text_to_image/
-│   │   └── image_to_image/
-│   └── video_*                     # Video classification/detection
+│   ├── text_summarization/
+│   │   ├── abstractive/
+│   │   └── extractive/
+│   ├── sentiment_analysis/
+│   ├── retrieval_systems/
+│   │   ├── semantic_search/
+│   │   ├── vector_search/
+│   │   └── hybrid_search/
+│   └── language_models/
+│       ├── gpt_variants/
+│       ├── llama_variants/
+│       └── encoder_models/
 │
-├── text_summarization/
-│   ├── bart/
-│   │   ├── train_pytorch.py        # BART, T5, PEGASUS
-│   │   └── train_tensorflow.py     # TF variants
-│   └── extractive/
-│       ├── train_pytorch.py        # SciBERT + TF-IDF
-│       └── train_tensorflow.py     # DistilBERT + TF-IDF
+├── 3_computer_vision/               # Vision models (8+ files)
+│   ├── classification/
+│   │   ├── single_label/         # ResNet, EfficientNet, ViT
+│   │   └── multi_label/          # Multi-label classification
+│   ├── object_detection/           # YOLO, Faster R-CNN
+│   ├── semantic_segmentation/      # U-Net, FCN, DeepLabV3
+│   ├── instance_segmentation/
+│   ├── image_to_image/
+│   └── video_analysis/
 │
-└── langchain/
-    ├── train_embeddings.py         # Hugging Face embeddings
-    ├── train_embeddings_v2.py      # Sentence-Transformers
-    ├── train_llm.py                # OpenAI/Hugging Face LLM
-    ├── train_llm_v2.py             # Local models (Ollama, quantized)
-    ├── train_retriever.py          # Vector similarity search
-    └── README.md
-```
-
-## Quick Command Reference
-
-### Run Specific Models:
-
-**Basics - Compare all approaches:**
-```bash
-# Linear Regression
-cd /Users/norangmangto/works/ai-learning
-python models/basics/linear_regression/train_pytorch.py
-python models/basics/linear_regression/train_sklearn.py
-python models/basics/linear_regression/train_jax.py
-
-# Logistic Regression
-python models/basics/logistic_regression/train_pytorch.py
-python models/basics/logistic_regression/train_pytorch_v2.py
-python models/basics/logistic_regression/train_sklearn.py
-```
-
-**Advanced - Text Models:**
-```bash
-# Text Summarization (Abstractive)
-python models/text_summarization/bart/train_pytorch.py
-
-# Text Summarization (Extractive)
-python models/text_summarization/extractive/train_pytorch.py
-
-# Sentiment Analysis
-python models/advanced/sentiment_analysis/train_pytorch.py
-python models/advanced/sentiment_analysis/train_sklearn.py
-
-# Text Classification
-python models/advanced/text_classification/train_pytorch.py
-python models/advanced/text_classification/train_sklearn.py
-```
-
-**Advanced - Vision Models:**
-```bash
-# Image Classification
-python models/advanced/image_classification/train_pytorch.py
-python models/advanced/image_classification/train_pytorch_v2.py
-
-# Object Detection
-python models/advanced/object_detection/train_pytorch.py
-python models/advanced/object_detection/train_pytorch_v2.py
-
-# RNN Text Classification
-python models/advanced/rnn/train_pytorch_v2.py
-```
-
-**LangChain Models:**
-```bash
-# Embeddings
-python models/langchain/train_embeddings.py
-python models/langchain/train_embeddings_v2.py
-
-# LLM
-python models/langchain/train_llm.py
-python models/langchain/train_llm_v2.py
+├── 4_sequence_models/               # RNNs and Transformers (10+ files)
+│   ├── rnn/
+│   │   ├── lstm/                   # LSTM architecture
+│   │   ├── gru/                    # GRU architecture
+│   │   └── bidirectional/          # Bidirectional RNNs
+│   ├── attention_mechanisms/       # 4 attention types
+│   └── transformer/
+│       ├── encoder_only/           # BERT-style
+│       ├── decoder_only/           # GPT-style
+│       ├── encoder_decoder/        # Seq2Seq
+│       └── vision_transformer/     # ViT
+│
+├── 5_generative_models/             # GANs and Diffusion
+│   ├── gan/                        # Generative Adversarial Networks
+│   ├── diffusion_models/
+│   │   └── text_to_image/
+│   ├── autoencoder/
+│   ├── flow_models/
+│   └── text_generation/
+│
+├── 6_unsupervised_learning/         # Clustering & Dimensionality (10+ files)
+│   ├── clustering/
+│   │   ├── kmeans/                 # K-Means clustering
+│   │   ├── hierarchical/           # Agglomerative clustering
+│   │   ├── gmm/                    # Gaussian Mixture Models
+│   │   └── dbscan/                 # Density-based clustering
+│   ├── dimensionality_reduction/
+│   │   ├── pca/                    # Principal Component Analysis
+│   │   ├── tsne/                   # t-SNE visualization
+│   │   └── umap/                   # UMAP projection
+│   └── anomaly_detection/
+│
+└── 7_multimodal_learning/           # Vision + Language (3+ files)
+    ├── text_image_matching/        # CLIP-style models
+    ├── vision_language/            # VQA, image captioning
+    └── audio_visual/
+        └── speech_to_text/
+            └── whisper/            # Speech recognition
 ```
 
 ---
 
-## Models Comparison Table
+## 🚀 Quick Commands
+
+### Supervised Learning
+```bash
+# Classification
+python models/1_supervised_learning/classification/train_pytorch.py
+python models/1_supervised_learning/classification/train_sklearn.py
+
+# Ensemble methods
+python models/1_supervised_learning/ensemble_methods/train_sklearn.py
+python models/1_supervised_learning/ensemble_methods/train_pytorch.py
+```
+
+### NLP Models
+```bash
+# Text classification
+python models/2_nlp_models/text_classification/train_pytorch.py
+
+# Text summarization
+python models/2_nlp_models/text_summarization/abstractive/train_pytorch.py
+python models/2_nlp_models/text_summarization/extractive/train_pytorch.py
+
+# Sentiment analysis
+python models/2_nlp_models/sentiment_analysis/train_pytorch.py
+
+# Semantic search (example notebooks or scripts)
+# See README in models/2_nlp_models/retrieval_systems/semantic_search/
+```
+
+### Computer Vision
+```bash
+# Image classification
+python models/3_computer_vision/classification/single_label/train_pytorch.py
+
+# Object detection (check available implementations)
+# See README in models/3_computer_vision/object_detection/
+
+# Semantic segmentation
+# See README in models/3_computer_vision/semantic_segmentation/
+```
+
+### Sequence Models
+```bash
+# RNN examples
+python models/4_sequence_models/rnn/train_pytorch.py
+
+# Transformer examples (check subdirectories)
+# Each transformer variant has dedicated README with examples
+```
+
+### Unsupervised Learning
+```bash
+# K-Means clustering
+python models/6_unsupervised_learning/clustering/kmeans/train_sklearn.py
+
+# DBSCAN
+python models/6_unsupervised_learning/clustering/dbscan/train_sklearn.py
+
+# PCA
+python models/6_unsupervised_learning/dimensionality_reduction/pca/train_sklearn.py
+```
+
+### Generative Models
+```bash
+# GAN training
+python models/5_generative_models/gan/dcgan/train_pytorch.py
+
+# Autoencoder
+python models/5_generative_models/autoencoder/standard_ae/train_pytorch.py
+```
+
+---
+
+## 📖 Documentation Quick Links
 
 ### Basics Models
 
