@@ -5,7 +5,6 @@ from transformers import (
     TFPegasusForConditionalGeneration, PegasusTokenizer
 )
 from datasets import load_dataset
-import numpy as np
 from rouge_score import rouge_scorer
 
 def create_tf_dataset(data, tokenizer, batch_size=2, max_input_length=1024, max_target_length=128, task_prefix=""):
@@ -106,7 +105,7 @@ def train_bart():
     print(f"Model: {model_name}")
 
     train_tf_dataset = create_tf_dataset(train_dataset, tokenizer)
-    val_tf_dataset = create_tf_dataset(val_dataset, tokenizer)
+    create_tf_dataset(val_dataset, tokenizer)
 
     optimizer = tf.keras.optimizers.Adam(learning_rate=2e-5)
 
@@ -204,10 +203,9 @@ def train_t5():
     print("Note: T5 uses 'summarize:' prefix for task specification")
 
     train_tf_dataset = create_tf_dataset(train_dataset, tokenizer, max_input_length=512, task_prefix="summarize: ")
-    val_tf_dataset = create_tf_dataset(val_dataset, tokenizer, max_input_length=512, task_prefix="summarize: ")
+    create_tf_dataset(val_dataset, tokenizer, max_input_length=512, task_prefix="summarize: ")
 
     optimizer = tf.keras.optimizers.Adam(learning_rate=3e-4)
-
     print("\nTraining T5...")
     epochs = 2
 
@@ -303,7 +301,7 @@ def train_pegasus():
     print(f"Model: {model_name}")
 
     train_tf_dataset = create_tf_dataset(train_dataset, tokenizer)
-    val_tf_dataset = create_tf_dataset(val_dataset, tokenizer)
+    create_tf_dataset(val_dataset, tokenizer)
 
     optimizer = tf.keras.optimizers.Adam(learning_rate=2e-5)
 

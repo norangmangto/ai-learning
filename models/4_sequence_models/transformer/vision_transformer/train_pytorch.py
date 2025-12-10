@@ -438,11 +438,9 @@ def main():
     # Create dataloaders
     train_dataset = ImageDataset(train_images, train_labels)
     val_dataset = ImageDataset(val_images, val_labels)
-    test_dataset = ImageDataset(test_images, test_labels)
 
     train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
-    test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
 
     # Create model
     print("\n2. Creating Vision Transformer...")

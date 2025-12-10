@@ -12,17 +12,14 @@ Models: SBERT, SimCSE-style contrastive learning
 """
 
 import torch
-import torch.nn as nn
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader
 from sentence_transformers import (
     SentenceTransformer,
     InputExample,
     losses,
-    evaluation,
     models
 )
 from datasets import load_dataset
-import numpy as np
 from pathlib import Path
 import time
 from sklearn.metrics.pairwise import cosine_similarity
@@ -264,8 +261,8 @@ def visualize_similarity_matrix(similarities, sentences):
     # Add text annotations
     for i in range(len(sentences)):
         for j in range(len(sentences)):
-            text = plt.text(j, i, f'{similarities[i, j]:.2f}',
-                          ha="center", va="center", color="black", fontsize=8)
+            plt.text(j, i, f'{similarities[i, j]:.2f}',
+                    ha="center", va="center", color="black", fontsize=8)
 
     plt.title('Sentence Similarity Matrix', fontsize=14, fontweight='bold')
     plt.xlabel('Sentence Index')

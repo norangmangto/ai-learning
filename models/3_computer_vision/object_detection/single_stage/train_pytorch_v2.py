@@ -5,7 +5,6 @@ Alternative to standard detection approaches
 
 import torch
 import numpy as np
-from sklearn.metrics import accuracy_score
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -26,10 +25,6 @@ def train():
 
     try:
         # Try to load COCO dataset images
-        import torchvision.datasets as datasets
-        from torchvision import transforms
-
-        transform = transforms.ToTensor()
 
         # Create dummy test set (typically would load real data)
         print("Using synthetic test data...")

@@ -4,7 +4,6 @@ GPU-accelerated K-Means using PyTorch
 """
 
 import torch
-import torch.nn as nn
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.datasets import make_blobs
@@ -119,11 +118,8 @@ class KMeansPyTorch:
             # Update centroids
             new_centroids = self.update_centroids(X, labels)
 
-            # Check convergence
-            centroid_shift = torch.norm(new_centroids - self.centroids)
-            self.centroids = new_centroids
-
-            # Compute inertia
+             # Check convergence
+            self.centroids = new_centroids            # Compute inertia
             inertia = self.compute_inertia(X, labels, self.centroids)
 
             self.n_iter_ = iteration + 1

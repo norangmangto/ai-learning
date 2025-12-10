@@ -1,8 +1,7 @@
 import torch
-from transformers import AutoTokenizer, AutoModelForSequenceClassification, pipeline
+from transformers import AutoModelForSequenceClassification, pipeline
 from datasets import load_dataset, Dataset
 from sklearn.metrics import accuracy_score, f1_score, classification_report
-import numpy as np
 
 def train():
     print("Training Sentiment Analysis with PyTorch (DistilBERT)...")
@@ -11,7 +10,6 @@ def train():
     print("Loading dataset...")
     try:
         # Use IMDB dataset for sentiment analysis
-        dataset = load_dataset("imdb", split="train[:500]")
         test_dataset = load_dataset("imdb", split="test[:100]")
     except Exception as e:
         print(f"Failed to download dataset: {e}")
@@ -28,9 +26,8 @@ def train():
                 "Incredible cinematography and storytelling. Five stars!",
                 "One of the worst movies I've ever watched. Awful."
             ],
-            'label': [1, 1, 0, 0, 1, 0, 1, 0]
+             'label': [1, 1, 0, 0, 1, 0, 1, 0]
         }
-        dataset = Dataset.from_dict(sample_data)
         test_dataset = Dataset.from_dict({
             'text': sample_data['text'],
             'label': sample_data['label']
@@ -44,9 +41,7 @@ def train():
 
     # Option 2: Load model for fine-tuning
     model_name = "distilbert-base-uncased-finetuned-sst-2-english"
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
     model = AutoModelForSequenceClassification.from_pretrained(model_name)
-
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
     model.eval()

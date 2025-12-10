@@ -12,7 +12,6 @@ Model: sentence-transformers (all-MiniLM-L6-v2)
 """
 
 import torch
-import numpy as np
 from sentence_transformers import SentenceTransformer, util
 from datasets import load_dataset
 import time

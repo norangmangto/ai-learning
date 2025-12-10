@@ -491,11 +491,9 @@ def main():
     # Create dataloaders
     train_dataset = Seq2SeqDataset(train_src, train_tgt)
     val_dataset = Seq2SeqDataset(val_src, val_tgt)
-    test_dataset = Seq2SeqDataset(test_src, test_tgt)
 
     train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
-    test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
 
     # Create model
     print("\n2. Creating Transformer...")

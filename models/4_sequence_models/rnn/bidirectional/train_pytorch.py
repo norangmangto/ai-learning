@@ -22,8 +22,6 @@ import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 import time
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report
-import seaborn as sns
 
 
 class BidirectionalLSTM(nn.Module):
@@ -433,8 +431,8 @@ def main():
     val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
 
     model = BidirectionalLSTM(input_size, 128, 2, num_classes, dropout=0.3, pooling='attention')
-    history = train_model(model, train_loader, val_loader, epochs=50, lr=0.001,
-                         model_name='bilstm_attention')
+    train_model(model, train_loader, val_loader, epochs=50, lr=0.001,
+               model_name='bilstm_attention')
 
     # Visualize attention
     print("\n4. Visualizing attention weights...")

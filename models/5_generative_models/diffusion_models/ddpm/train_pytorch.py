@@ -20,7 +20,6 @@ from torch.utils.data import DataLoader
 import torchvision
 import torchvision.transforms as T
 from torchvision.utils import save_image, make_grid
-import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
 import time

@@ -17,7 +17,6 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 import torchvision.transforms as transforms
-import torchvision.models as models
 from PIL import Image
 import numpy as np
 from pathlib import Path

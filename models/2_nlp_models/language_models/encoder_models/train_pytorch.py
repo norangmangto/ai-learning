@@ -13,7 +13,6 @@ Tasks: MLM pre-training, text classification, NER, sentence similarity
 """
 
 import torch
-import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, Dataset
 from transformers import (
@@ -24,9 +23,7 @@ from transformers import (
     get_linear_schedule_with_warmup
 )
 from datasets import load_dataset
-import numpy as np
 from pathlib import Path
-import time
 from tqdm import tqdm
 
 # Configuration

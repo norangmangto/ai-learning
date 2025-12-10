@@ -122,8 +122,8 @@ def train_isolation_forest(X, contamination=0.1, n_estimators=100):
     # Get anomaly scores (lower = more anomalous)
     scores = model.score_samples(X)
 
-    # Decision function (negative values = anomalies)
-    decision_scores = model.decision_function(X)
+     # Decision function (negative values = anomalies)
+    model.decision_function(X)
 
     print(f"\nModel trained!")
     print(f"  Predicted normal: {sum(y_pred == 1)}")

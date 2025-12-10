@@ -25,7 +25,7 @@ def train():
     model.compile(optimizer='sgd', loss='mse', metrics=['mae'])
 
     # 4. Train Model
-    history = model.fit(X_train, y_train, epochs=100, batch_size=32, verbose=0)
+    model.fit(X_train, y_train, epochs=100, batch_size=32, verbose=0)
 
     # 5. Evaluate
     predictions = model.predict(X_test, verbose=0).flatten()

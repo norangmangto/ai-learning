@@ -17,7 +17,7 @@ This implementation includes:
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.svm import OneClassSVM
-from sklearn.datasets import make_classification, make_blobs
+from sklearn.datasets import make_classification
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import (classification_report, confusion_matrix,
                              roc_curve, auc, f1_score)
@@ -155,7 +155,7 @@ def compare_kernels(X, y_true, nu=0.1):
         model = OneClassSVM(nu=nu, kernel=kernel, gamma='auto')
         model.fit(X)
         y_pred = model.predict(X)
-        scores = model.decision_function(X)
+        model.decision_function(X)
 
         # Calculate metrics
         f1 = f1_score(y_true, y_pred, pos_label=1)

@@ -8,7 +8,7 @@ from PIL import Image
 from tqdm.auto import tqdm
 
 # Diffusers & Transformers
-from diffusers import FluxPipeline, FlowMatchEulerDiscreteScheduler, FluxTransformer2DModel
+from diffusers import FluxPipeline
 from peft import LoraConfig, get_peft_model
 
 def parse_args():

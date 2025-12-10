@@ -1,8 +1,6 @@
 import tensorflow as tf
 from transformers import BertTokenizer, TFBertForSequenceClassification
 from datasets import load_dataset, Dataset
-from sklearn.metrics import accuracy_score, f1_score
-import numpy as np
 
 def train():
     print("Training Text Theme Classification with TensorFlow (BERT)...")
@@ -47,10 +45,10 @@ def train():
 
     # 3. Tokenize Data
     def tokenize_function(examples):
-        return tokenizer(examples["text"], padding="max_length", truncation=True, max_length=128)
+         return tokenizer(examples["text"], padding="max_length", truncation=True, max_length=128)
 
-    tokenized_train = dataset.map(tokenize_function, batched=True)
-    tokenized_test = test_dataset.map(tokenize_function, batched=True)
+    dataset.map(tokenize_function, batched=True)
+    test_dataset.map(tokenize_function, batched=True)
 
     # Convert to TensorFlow format
     train_texts = [dataset[i]['text'] for i in range(len(dataset))]

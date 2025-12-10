@@ -20,10 +20,7 @@ from gensim.models import Word2Vec
 from gensim.models.callbacks import CallbackAny2Vec
 import time
 from sklearn.manifold import TSNE
-from sklearn.decomposition import PCA
-import seaborn as sns
 import re
-from collections import Counter
 
 
 class TrainingCallback(CallbackAny2Vec):
@@ -155,7 +152,7 @@ def evaluate_word_similarity(model, word_pairs):
         try:
             similarity = model.wv.similarity(word1, word2)
             print(f"{word1:15} <-> {word2:15} : {similarity:.4f}")
-        except KeyError as e:
+        except KeyError:
             print(f"{word1:15} <-> {word2:15} : Not in vocabulary")
 
 
@@ -317,10 +314,8 @@ def hyperparameter_comparison(corpus):
     # Add text annotations
     for i in range(len(vector_sizes)):
         for j in range(len(windows)):
-            text = axes[0].text(j, i, f'{data[i, j]:.1f}',
-                               ha="center", va="center", color="black", fontsize=10)
-
-    # Vocabulary size
+            axes[0].text(j, i, f'{data[i, j]:.1f}',
+                        ha="center", va="center", color="black", fontsize=10)    # Vocabulary size
     data = np.array([[r['vocab'] for r in results if r['vec_size'] == vs]
                      for vs in vector_sizes])
     im2 = axes[1].imshow(data, cmap='Blues', aspect='auto')
@@ -335,8 +330,8 @@ def hyperparameter_comparison(corpus):
 
     for i in range(len(vector_sizes)):
         for j in range(len(windows)):
-            text = axes[1].text(j, i, f'{data[i, j]}',
-                               ha="center", va="center", color="black", fontsize=10)
+            axes[1].text(j, i, f'{data[i, j]}',
+                        ha="center", va="center", color="black", fontsize=10)
 
     plt.tight_layout()
     plt.savefig('word2vec_hyperparameter_comparison.png', dpi=300, bbox_inches='tight')

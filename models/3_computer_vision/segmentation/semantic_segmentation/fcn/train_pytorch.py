@@ -21,7 +21,6 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 import torchvision.models as models
-import torch.nn.functional as F
 import time
 
 
@@ -450,7 +449,7 @@ def main():
     val_loader = DataLoader(val_dataset, batch_size=4, shuffle=False)
 
     model = FCN8s(num_classes=1, pretrained=False)
-    history = train_fcn(model, train_loader, val_loader, epochs=20, lr=0.0001)
+    train_fcn(model, train_loader, val_loader, epochs=20, lr=0.0001)
 
     # Visualize
     print("\n4. Visualizing predictions...")

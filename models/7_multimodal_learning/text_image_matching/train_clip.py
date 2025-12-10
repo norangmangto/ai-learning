@@ -498,11 +498,9 @@ def main():
     # Create dataloaders
     train_dataset = MultimodalDataset(train_images, train_texts, train_labels)
     val_dataset = MultimodalDataset(val_images, val_texts, val_labels)
-    test_dataset = MultimodalDataset(test_images, test_texts, test_labels)
 
     train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
-    test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
 
     # Create model
     print("\n2. Creating CLIP model...")

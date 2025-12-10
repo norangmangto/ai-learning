@@ -448,7 +448,7 @@ def main():
     test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
 
     model = BiLSTMClassifier(input_size, 128, 2, num_classes, dropout=0.3)
-    history = train_lstm(model, train_loader, val_loader, epochs=50, lr=0.001)
+    train_lstm(model, train_loader, val_loader, epochs=50, lr=0.001)
 
     # Evaluate
     print("\n4. Evaluating on test set...")

@@ -19,9 +19,8 @@ import matplotlib.pyplot as plt
 from sklearn.mixture import GaussianMixture
 from sklearn.datasets import make_blobs, make_moons
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import silhouette_score, davies_bouldin_score, adjusted_rand_score
+from sklearn.metrics import silhouette_score
 from matplotlib.patches import Ellipse
-import seaborn as sns
 
 
 def generate_sample_data(n_samples=500, dataset_type='blobs'):

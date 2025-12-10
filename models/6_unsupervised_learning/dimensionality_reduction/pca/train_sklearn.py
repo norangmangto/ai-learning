@@ -22,7 +22,6 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
-import seaborn as sns
 
 
 def load_sample_data(dataset='digits'):
@@ -190,7 +189,6 @@ def visualize_3d(X_reduced, y, title='PCA Projection (3D)'):
         y: Labels
         title: Plot title
     """
-    from mpl_toolkits.mplot3d import Axes3D
 
     fig = plt.figure(figsize=(12, 9))
     ax = fig.add_subplot(111, projection='3d')
@@ -290,8 +288,8 @@ def compare_pca_variants(X, n_components=2):
 
     for X_reduced, title, ax in methods:
         # Use dummy labels for visualization
-        scatter = ax.scatter(X_reduced[:, 0], X_reduced[:, 1],
-                           alpha=0.6, edgecolors='black', linewidth=0.5, s=30)
+        ax.scatter(X_reduced[:, 0], X_reduced[:, 1],
+                  alpha=0.6, edgecolors='black', linewidth=0.5, s=30)
         ax.set_xlabel('Component 1', fontsize=11)
         ax.set_ylabel('Component 2', fontsize=11)
         ax.set_title(title, fontsize=12)
@@ -390,9 +388,9 @@ def main():
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
 
-    # 2. Analyze explained variance
+     # 2. Analyze explained variance
     print("\n2. Analyzing explained variance...")
-    optimal_n = analyze_explained_variance(X_scaled, max_components=30)
+    analyze_explained_variance(X_scaled, max_components=30)
 
     # 3. Analyze reconstruction error
     print("\n3. Analyzing reconstruction error...")

@@ -130,8 +130,6 @@ class FCN(nn.Module):
         print(f"Parameters: {sum(p.numel() for p in self.parameters())/1e6:.1f}M")
 
     def forward(self, x):
-        input_size = x.shape[2:]
-
         # Encoder
         pool3 = self.pool3(x)  # 1/8
         pool4 = self.pool4(pool3)  # 1/16

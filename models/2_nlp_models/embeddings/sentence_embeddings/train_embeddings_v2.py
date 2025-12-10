@@ -25,7 +25,7 @@ def train():
                                        remove=('headers', 'footers', 'quotes'))
         documents = newsgroups.data[:100]  # Use first 100 documents
 
-    except Exception as e:
+    except Exception:
         print(f"Warning: Could not load 20 newsgroups. Using synthetic data...")
         documents = create_synthetic_documents()
 

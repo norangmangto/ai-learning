@@ -11,9 +11,7 @@ Dataset: Text8 corpus (Wikipedia dump)
 Models: Word2Vec (CBOW & Skip-gram), GloVe
 """
 
-import gensim
 from gensim.models import Word2Vec, KeyedVectors
-from gensim.test.utils import datapath
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA

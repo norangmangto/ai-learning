@@ -23,8 +23,6 @@ import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 import time
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report, confusion_matrix
-import seaborn as sns
 
 
 class GRUClassifier(nn.Module):
@@ -447,7 +445,7 @@ def main():
     val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
 
     model = BiGRUClassifier(input_size, 128, 2, num_classes, dropout=0.3)
-    history = train_model(model, train_loader, val_loader, epochs=50, lr=0.001)
+    train_model(model, train_loader, val_loader, epochs=50, lr=0.001)
 
     # Visualize internals
     print("\n4. Visualizing GRU internals...")

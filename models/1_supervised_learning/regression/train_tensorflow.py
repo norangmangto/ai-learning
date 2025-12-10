@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 from sklearn.datasets import make_regression
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
+from sklearn.metrics import r2_score, mean_absolute_error
 import os
 
 # Suppress TF logs

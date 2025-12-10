@@ -1,9 +1,8 @@
-import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 import numpy as np
 import os
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+from sklearn.metrics import classification_report, confusion_matrix
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 

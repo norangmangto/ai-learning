@@ -18,12 +18,9 @@ This implementation includes:
 import numpy as np
 import matplotlib.pyplot as plt
 from collections import defaultdict, Counter
-from scipy.sparse import lil_matrix
 import pickle
 import time
 from sklearn.manifold import TSNE
-import seaborn as sns
-import re
 
 
 class GloVe:

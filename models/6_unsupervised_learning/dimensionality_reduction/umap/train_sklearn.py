@@ -16,7 +16,6 @@ This implementation includes:
 Installation required: pip install umap-learn
 """
 
-import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.datasets import load_digits, make_classification
 from sklearn.preprocessing import StandardScaler
@@ -75,8 +74,7 @@ def compare_n_neighbors(X, y, n_neighbors_list=[5, 15, 30, 50, 100]):
         print("UMAP not available. Skipping this analysis.")
         return
 
-    # Use subset for faster visualization
-    n_plots = len(n_neighbors_list)
+     # Use subset for faster visualization
     fig, axes = plt.subplots(2, 3, figsize=(18, 12))
     axes = axes.ravel()
 
@@ -100,10 +98,10 @@ def compare_n_neighbors(X, y, n_neighbors_list=[5, 15, 30, 50, 100]):
         # Calculate silhouette score
         sil_score = silhouette_score(X_umap, y)
 
-        # Visualize
-        scatter = axes[idx].scatter(X_umap[:, 0], X_umap[:, 1],
-                                   c=y, cmap='tab10', alpha=0.7,
-                                   edgecolors='black', linewidth=0.3, s=20)
+         # Visualize
+        axes[idx].scatter(X_umap[:, 0], X_umap[:, 1],
+                         c=y, cmap='tab10', alpha=0.7,
+                         edgecolors='black', linewidth=0.3, s=20)
         axes[idx].set_title(f'n_neighbors = {n_neighbors}\n'
                           f'Silhouette: {sil_score:.3f}, Time: {elapsed_time:.1f}s',
                           fontsize=11)
@@ -166,10 +164,10 @@ def compare_min_dist(X, y, min_dist_list=[0.0, 0.1, 0.25, 0.5, 0.8]):
         # Calculate silhouette score
         sil_score = silhouette_score(X_umap, y)
 
-        # Visualize
-        scatter = axes[idx].scatter(X_umap[:, 0], X_umap[:, 1],
-                                   c=y, cmap='tab10', alpha=0.7,
-                                   edgecolors='black', linewidth=0.3, s=20)
+         # Visualize
+        axes[idx].scatter(X_umap[:, 0], X_umap[:, 1],
+                         c=y, cmap='tab10', alpha=0.7,
+                         edgecolors='black', linewidth=0.3, s=20)
         axes[idx].set_title(f'min_dist = {min_dist}\n'
                           f'Silhouette: {sil_score:.3f}, Time: {elapsed_time:.1f}s',
                           fontsize=11)
@@ -265,9 +263,9 @@ def compare_with_pca_tsne(X, y):
     pca_time = time.time() - start_time
     pca_sil = silhouette_score(X_pca, y)
 
-    scatter1 = axes[0].scatter(X_pca[:, 0], X_pca[:, 1],
-                              c=y, cmap='tab10', alpha=0.7,
-                              edgecolors='black', linewidth=0.3, s=20)
+    axes[0].scatter(X_pca[:, 0], X_pca[:, 1],
+                   c=y, cmap='tab10', alpha=0.7,
+                   edgecolors='black', linewidth=0.3, s=20)
     axes[0].set_title(f'PCA\nSilhouette: {pca_sil:.3f}, '
                      f'Variance: {pca.explained_variance_ratio_.sum():.2%}\n'
                      f'Time: {pca_time:.2f}s',
@@ -284,9 +282,9 @@ def compare_with_pca_tsne(X, y):
     tsne_time = time.time() - start_time
     tsne_sil = silhouette_score(X_tsne, y)
 
-    scatter2 = axes[1].scatter(X_tsne[:, 0], X_tsne[:, 1],
-                              c=y, cmap='tab10', alpha=0.7,
-                              edgecolors='black', linewidth=0.3, s=20)
+    axes[1].scatter(X_tsne[:, 0], X_tsne[:, 1],
+                   c=y, cmap='tab10', alpha=0.7,
+                   edgecolors='black', linewidth=0.3, s=20)
     axes[1].set_title(f't-SNE\nSilhouette: {tsne_sil:.3f}\n'
                      f'Time: {tsne_time:.2f}s',
                      fontsize=11)
@@ -301,9 +299,9 @@ def compare_with_pca_tsne(X, y):
     umap_time = time.time() - start_time
     umap_sil = silhouette_score(X_umap, y)
 
-    scatter3 = axes[2].scatter(X_umap[:, 0], X_umap[:, 1],
-                              c=y, cmap='tab10', alpha=0.7,
-                              edgecolors='black', linewidth=0.3, s=20)
+    axes[2].scatter(X_umap[:, 0], X_umap[:, 1],
+                   c=y, cmap='tab10', alpha=0.7,
+                   edgecolors='black', linewidth=0.3, s=20)
     axes[2].set_title(f'UMAP\nSilhouette: {umap_sil:.3f}\n'
                      f'Time: {umap_time:.2f}s',
                      fontsize=11)
@@ -355,9 +353,9 @@ def supervised_umap_comparison(X, y):
     unsup_time = time.time() - start_time
     unsup_sil = silhouette_score(X_unsup, y)
 
-    scatter1 = axes[0].scatter(X_unsup[:, 0], X_unsup[:, 1],
-                              c=y, cmap='tab10', alpha=0.7,
-                              edgecolors='black', linewidth=0.3, s=20)
+    axes[0].scatter(X_unsup[:, 0], X_unsup[:, 1],
+                   c=y, cmap='tab10', alpha=0.7,
+                   edgecolors='black', linewidth=0.3, s=20)
     axes[0].set_title(f'Unsupervised UMAP\n'
                      f'Silhouette: {unsup_sil:.3f}, Time: {unsup_time:.2f}s',
                      fontsize=12)
@@ -373,9 +371,9 @@ def supervised_umap_comparison(X, y):
     sup_time = time.time() - start_time
     sup_sil = silhouette_score(X_sup, y)
 
-    scatter2 = axes[1].scatter(X_sup[:, 0], X_sup[:, 1],
-                              c=y, cmap='tab10', alpha=0.7,
-                              edgecolors='black', linewidth=0.3, s=20)
+    axes[1].scatter(X_sup[:, 0], X_sup[:, 1],
+                   c=y, cmap='tab10', alpha=0.7,
+                   edgecolors='black', linewidth=0.3, s=20)
     axes[1].set_title(f'Supervised UMAP\n'
                      f'Silhouette: {sup_sil:.3f}, Time: {sup_time:.2f}s',
                      fontsize=12)

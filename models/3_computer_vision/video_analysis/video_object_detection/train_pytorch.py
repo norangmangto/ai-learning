@@ -1,5 +1,4 @@
 import torch
-import torchvision
 from torchvision.models.detection import fasterrcnn_resnet50_fpn
 from torchvision.transforms import functional as F
 import cv2

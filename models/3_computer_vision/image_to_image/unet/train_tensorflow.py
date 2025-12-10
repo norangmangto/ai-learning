@@ -1,6 +1,5 @@
 import tensorflow as tf
 from tensorflow.keras import layers, models
-import matplotlib.pyplot as plt
 import os
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
@@ -54,7 +53,5 @@ def train():
 
     model.fit(train_gray, train_images, epochs=2, batch_size=32, verbose=1)
 
-    # Visualize
-    test_rgb = train_images[0]
-    test_gray = train_gray[0]
+     # Visualize
     # ...rest of code...

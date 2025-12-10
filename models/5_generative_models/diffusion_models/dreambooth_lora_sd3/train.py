@@ -8,7 +8,7 @@ from PIL import Image
 from tqdm.auto import tqdm
 
 # Diffusers & Transformers
-from diffusers import StableDiffusion3Pipeline, FlowMatchEulerDiscreteScheduler, SD3Transformer2DModel
+from diffusers import StableDiffusion3Pipeline
 from peft import LoraConfig, get_peft_model
 
 def parse_args():
@@ -70,7 +70,6 @@ def train(args):
 
     transformer = pipe.transformer
     vae = pipe.vae
-    scheduler = pipe.scheduler
 
     # 2. Setup LoRA on Transformer
     print("Injecting LoRA adapters into Transformer...")

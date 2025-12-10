@@ -1,5 +1,4 @@
 import tensorflow as tf
-from tensorflow.keras.applications import ResNet50
 import tensorflow_hub as hub
 import numpy as np
 import cv2

@@ -17,7 +17,6 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
-import torchvision
 import torchvision.transforms as T
 from torchvision.datasets import VOCSegmentation
 import numpy as np

@@ -2,7 +2,6 @@ import tensorflow as tf
 from sklearn.datasets import make_classification
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, f1_score
-import numpy as np
 
 def train():
     print("Training Logistic Regression with TensorFlow...")
@@ -35,7 +34,7 @@ def train():
     model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 
     # 4. Train Model
-    history = model.fit(X_train, y_train, epochs=100, batch_size=32, verbose=0)
+    model.fit(X_train, y_train, epochs=100, batch_size=32, verbose=0)
 
     # 5. Evaluate
     predictions = (model.predict(X_test, verbose=0) > 0.5).astype(int).flatten()

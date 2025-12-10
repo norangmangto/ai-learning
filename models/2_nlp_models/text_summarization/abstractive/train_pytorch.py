@@ -64,12 +64,10 @@ def compute_metrics(eval_pred):
     labels = np.where(labels != -100, labels, tokenizer.pad_token_id)
 
     decoded_preds = tokenizer.batch_decode(predictions, skip_special_tokens=True)
-    decoded_labels = tokenizer.batch_decode(labels, skip_special_tokens=True)
 
     # Compute ROUGE scores
     rouge = evaluate.load('rouge')
-    result = rouge.compute(
-        predictions=decoded_preds,
+    result = rouge.compute(predictions=decoded_preds)
     return {
         'rouge1': result['rouge1'],
         'rouge2': result['rouge2'],
@@ -84,6 +82,12 @@ def create_synthetic_dataset():
         more extreme. Scientists warn that without immediate action to reduce greenhouse gas emissions,
         the consequences could be catastrophic for future generations. Governments worldwide are being
         urged to implement stronger environmental policies and transition to renewable energy sources.""",
+    ]
+    return sample_articles
+
+
+def train():
+    """Main training function"""
     print("=" * 70)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -482,42 +486,6 @@ def train():
     print("✓ All models can generate fluent, coherent summaries")
     print("✓ All models evaluate with ROUGE scores")
     print("✓ Models saved for inference and deployment")
-
-if __name__ == "__main__":
-    train()
-        print(f"\nGenerated Summary:")
-        print(f"{generated_summary}")
-
-        print(f"\nReference Summary:")
-        print(f"{reference}")
-
-        # Calculate ROUGE for this sample
-        scorer = rouge_scorer.RougeScorer(['rouge1', 'rouge2', 'rougeL'], use_stemmer=True)
-        scores = scorer.score(reference, generated_summary)
-
-        print(f"\nROUGE Scores:")
-        print(f"  ROUGE-1: {scores['rouge1'].fmeasure:.4f}")
-        print(f"  ROUGE-2: {scores['rouge2'].fmeasure:.4f}")
-        print(f"  ROUGE-L: {scores['rougeL'].fmeasure:.4f}")
-
-    # 10. Save model
-    print("\n" + "=" * 70)
-    print("Saving fine-tuned model...")
-    model.save_pretrained("./saved_models/bart_summarization")
-    tokenizer.save_pretrained("./saved_models/bart_summarization")
-    print("Model saved to: ./saved_models/bart_summarization")
-
-    # 11. QA Validation
-    print("\n" + "=" * 70)
-    print("=== QA Validation ===")
-    print("✓ Model trained successfully")
-    print(f"✓ Training samples: {len(train_dataset)}")
-    print(f"✓ Validation ROUGE-L: {eval_results.get('eval_rougeL', 0):.4f}")
-    print("✓ Can generate coherent summaries from long articles")
-    print("✓ Model saved and ready for inference")
-    print("✓ Suitable for news summarization, document summarization, etc.")
-
-    return model, tokenizer
 
 if __name__ == "__main__":
     train()

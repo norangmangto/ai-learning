@@ -3,8 +3,7 @@ Extractive Summarization using TensorFlow with DistilBERT
 Alternative to abstractive summarization
 """
 
-import tensorflow as tf
-from transformers import AutoTokenizer, TFAutoModel
+from transformers import TFAutoModel
 from sklearn.feature_extraction.text import TfidfVectorizer
 from datasets import load_dataset
 import numpy as np
@@ -15,20 +14,16 @@ def train():
 
     try:
         # 1. Load Data
-        dataset = load_dataset("cnn_dailymail", "3.0.0", split="train[:100]")
-        val_dataset = load_dataset("cnn_dailymail", "3.0.0", split="validation[:50]")
         test_dataset = load_dataset("cnn_dailymail", "3.0.0", split="test[:20]")
     except:
         print("Warning: Could not load CNN/DailyMail dataset. Using synthetic data...")
-        dataset = create_synthetic_dataset(100)
-        val_dataset = create_synthetic_dataset(50)
+        create_synthetic_dataset(100)
+        create_synthetic_dataset(50)
         test_dataset = create_synthetic_dataset(20)
 
     # 2. Load Model and Tokenizer
     model_name = "distilbert-base-uncased"
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
     model = TFAutoModel.from_pretrained(model_name)
-
     print(f"Loaded {model_name}")
 
     # 3. Extractive Summarization Function

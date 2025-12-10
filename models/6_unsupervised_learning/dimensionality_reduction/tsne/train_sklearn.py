@@ -20,7 +20,6 @@ from sklearn.decomposition import PCA
 from sklearn.datasets import load_digits, fetch_openml
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import silhouette_score
-import seaborn as sns
 import time
 
 
@@ -89,10 +88,10 @@ def compare_perplexity(X, y, perplexity_values=[5, 30, 50, 100]):
         # Calculate silhouette score
         sil_score = silhouette_score(X_tsne, y)
 
-        # Visualize
-        scatter = axes[idx].scatter(X_tsne[:, 0], X_tsne[:, 1],
-                                   c=y, cmap='tab10', alpha=0.7,
-                                   edgecolors='black', linewidth=0.3, s=20)
+         # Visualize
+        axes[idx].scatter(X_tsne[:, 0], X_tsne[:, 1],
+                         c=y, cmap='tab10', alpha=0.7,
+                         edgecolors='black', linewidth=0.3, s=20)
         axes[idx].set_title(f'Perplexity = {perplexity}\n'
                           f'Silhouette: {sil_score:.3f}, Time: {elapsed_time:.1f}s',
                           fontsize=12)
@@ -140,10 +139,10 @@ def compare_initialization_methods(X, y, perplexity=30):
         # Calculate silhouette score
         sil_score = silhouette_score(X_tsne, y)
 
-        # Visualize
-        scatter = axes[idx].scatter(X_tsne[:, 0], X_tsne[:, 1],
-                                   c=y, cmap='tab10', alpha=0.7,
-                                   edgecolors='black', linewidth=0.3, s=20)
+         # Visualize
+        axes[idx].scatter(X_tsne[:, 0], X_tsne[:, 1],
+                         c=y, cmap='tab10', alpha=0.7,
+                         edgecolors='black', linewidth=0.3, s=20)
         axes[idx].set_title(f'Initialization: {init_method.upper()}\n'
                           f'Silhouette: {sil_score:.3f}, Time: {elapsed_time:.1f}s',
                           fontsize=12)
@@ -219,7 +218,6 @@ def compare_with_pca(X, y, perplexity=30):
     print("  Computing PCA...")
     pca = PCA(n_components=2, random_state=42)
     X_pca = pca.fit_transform(X)
-    pca_time = time.time()
 
     # t-SNE
     print("  Computing t-SNE...")

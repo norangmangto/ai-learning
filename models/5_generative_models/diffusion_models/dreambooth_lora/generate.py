@@ -1,6 +1,5 @@
 import torch
 from diffusers import StableDiffusionPipeline
-from peft import PeftModel, LoraConfig
 import argparse
 import os
 

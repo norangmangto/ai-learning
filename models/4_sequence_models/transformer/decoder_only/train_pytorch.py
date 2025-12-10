@@ -439,11 +439,9 @@ def main():
     # Create dataloaders
     train_dataset = LanguageModelingDataset(train_seq)
     val_dataset = LanguageModelingDataset(val_seq)
-    test_dataset = LanguageModelingDataset(test_seq)
 
     train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
-    test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
 
     # Create model
     print("\n2. Creating GPT Decoder...")

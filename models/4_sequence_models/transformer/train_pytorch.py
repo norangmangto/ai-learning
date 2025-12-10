@@ -51,7 +51,6 @@ def train():
     NUM_LAYERS = 2
     NUM_CLASSES = 2
     MAX_LEN = 20
-    BATCH_SIZE = 32
 
     # Dummy Data: Random sequences of integers
     X_train = torch.randint(0, VOCAB_SIZE, (100, MAX_LEN))
@@ -73,46 +72,46 @@ def train():
             print(f"Epoch {epoch+1}/{epochs}, Loss: {loss.item():.4f}")
 
     print("PyTorch Transformer Training Complete.")
-    
+
     # 5. QA Validation and Results Evaluation
     print("\n=== QA Validation ===")
-    
+
     # Generate test data
     X_test = torch.randint(0, VOCAB_SIZE, (50, MAX_LEN))
     y_test = torch.randint(0, NUM_CLASSES, (50,))
-    
+
     # Evaluate on test data
     model.eval()
     with torch.no_grad():
         test_output = model(X_test)
         test_loss = criterion(test_output, y_test).item()
         _, predictions = torch.max(test_output, 1)
-    
+
     y_pred = predictions.numpy()
     y_true = y_test.numpy()
-    
+
     # Calculate metrics
     accuracy = accuracy_score(y_true, y_pred)
     print(f"\nTest Accuracy: {accuracy:.4f}")
     print(f"Test Loss: {test_loss:.4f}")
-    
+
     # Classification report
     print("\nClassification Report:")
     print(classification_report(y_true, y_pred, target_names=[f"Class {i}" for i in range(NUM_CLASSES)]))
-    
+
     # Confusion Matrix
     cm = confusion_matrix(y_true, y_pred)
     print(f"\nConfusion Matrix:\n{cm}")
-    
+
     # Sanity checks
     print("\n--- Sanity Checks ---")
-    
+
     # Check 1: Predictions are in valid range
     if np.all((y_pred >= 0) & (y_pred < NUM_CLASSES)):
         print(f"✓ All predictions are in valid class range [0-{NUM_CLASSES-1}]")
     else:
         print("✗ WARNING: Some predictions are outside valid range!")
-    
+
     # Check 2: Training loss convergence
     if loss.item() < 0.5:
         print(f"✓ Training converged well - Final loss: {loss.item():.4f}")
@@ -120,20 +119,20 @@ def train():
         print(f"⚠ Moderate convergence - Final loss: {loss.item():.4f}")
     else:
         print(f"✗ WARNING: Poor convergence - Final loss: {loss.item():.4f}")
-    
+
     # Check 3: Test vs train loss comparison
     if test_loss < loss.item() * 2:
         print(f"✓ No significant overfitting detected")
     else:
         print(f"⚠ Possible overfitting: Test loss ({test_loss:.4f}) >> Train loss ({loss.item():.4f})")
-    
+
     # Check 4: Both classes are predicted
     unique_preds = np.unique(y_pred)
     if len(unique_preds) == NUM_CLASSES:
         print(f"✓ Model predicts all {NUM_CLASSES} classes")
     else:
         print(f"⚠ WARNING: Model only predicts {len(unique_preds)} out of {NUM_CLASSES} classes")
-    
+
     # Check 5: Model is better than random
     random_baseline = 1.0 / NUM_CLASSES
     if accuracy > random_baseline * 1.5:
@@ -142,7 +141,7 @@ def train():
         print(f"⚠ Model slightly better than random ({accuracy:.4f} vs {random_baseline:.4f})")
     else:
         print(f"✗ WARNING: Model not better than random guessing")
-    
+
     # Overall validation result
     print("\n=== Overall Validation Result ===")
     validation_passed = (
@@ -150,12 +149,12 @@ def train():
         accuracy > random_baseline and
         loss.item() < 2.0
     )
-    
+
     if validation_passed:
         print("✓ Model validation PASSED - Transformer is performing as expected")
     else:
         print("✗ Model validation FAILED - Please review model performance")
-    
+
     print("\nNote: This is a dummy dataset. For real applications, use proper datasets and longer training.")
 
 if __name__ == "__main__":

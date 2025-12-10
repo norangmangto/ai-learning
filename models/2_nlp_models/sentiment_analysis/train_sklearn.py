@@ -8,7 +8,6 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from datasets import load_dataset
 from sklearn.metrics import accuracy_score, f1_score, confusion_matrix
-import pickle
 
 def train():
     print("Training Sentiment Analysis with TF-IDF + Logistic Regression...")
@@ -90,9 +89,6 @@ def train():
 
 def create_synthetic_dataset(size):
     """Create synthetic sentiment dataset"""
-    positive_words = ["excellent", "amazing", "wonderful", "fantastic", "great", "good", "love", "best"]
-    negative_words = ["terrible", "awful", "horrible", "bad", "worst", "hate", "boring", "waste"]
-
     positive_samples = [
         "This is absolutely amazing and wonderful! Simply the best!",
         "Excellent movie, I really loved it. Fantastic acting!",

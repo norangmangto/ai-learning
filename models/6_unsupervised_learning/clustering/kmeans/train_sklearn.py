@@ -9,7 +9,6 @@ from sklearn.cluster import KMeans
 from sklearn.datasets import make_blobs, load_iris
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import silhouette_score, davies_bouldin_score, calinski_harabasz_score
-import seaborn as sns
 
 def generate_sample_data(n_samples=1000, n_features=2, n_clusters=4):
     """Generate synthetic clustering data"""
@@ -269,13 +268,13 @@ def main():
                           title=f"K-Means Clustering (K={optimal_k})")
 
     # 7. Compare initialization methods
-    init_results = advanced_initialization_comparison(X_scaled, n_clusters=optimal_k)
+    advanced_initialization_comparison(X_scaled, n_clusters=optimal_k)
 
     # 8. Predict on new samples
     print("🔮 Predicting new samples...")
     X_new = np.array([[0, 0], [2, 2], [-2, -2]])
     X_new_scaled = scaler.transform(X_new)
-    new_labels = predict_new_samples(kmeans, X_new_scaled)
+    predict_new_samples(kmeans, X_new_scaled)
 
     # 9. Get cluster centers in original space
     print("📍 Cluster Centers (original space):")

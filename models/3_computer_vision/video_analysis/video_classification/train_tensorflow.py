@@ -116,7 +116,7 @@ def train():
     X_train_frames = np.random.randn(100, 224, 224, 3).astype(np.float32)
     y_train_frames = tf.keras.utils.to_categorical(np.random.randint(0, num_classes, 100), num_classes)
 
-    history_frame = model_frame.fit(
+    model_frame.fit(
         X_train_frames, y_train_frames,
         batch_size=16,
         epochs=2,
@@ -129,7 +129,7 @@ def train():
     X_train_sequences = np.random.randn(50, 16, 224, 224, 3).astype(np.float32)  # 50 videos, 16 frames each
     y_train_sequences = tf.keras.utils.to_categorical(np.random.randint(0, num_classes, 50), num_classes)
 
-    history_lstm = model_lstm.fit(
+    model_lstm.fit(
         X_train_sequences, y_train_sequences,
         batch_size=4,
         epochs=2,

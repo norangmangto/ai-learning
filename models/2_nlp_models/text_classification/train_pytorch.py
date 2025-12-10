@@ -1,7 +1,7 @@
 import torch
 from transformers import BertTokenizer, BertForSequenceClassification, Trainer, TrainingArguments
 from datasets import load_dataset, Dataset
-from sklearn.metrics import accuracy_score, f1_score, classification_report
+from sklearn.metrics import accuracy_score, f1_score
 import numpy as np
 
 def train():

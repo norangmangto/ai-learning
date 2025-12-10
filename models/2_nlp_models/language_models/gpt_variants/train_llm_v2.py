@@ -2,9 +2,6 @@
 Alternative LLM Approaches - Using Open-source Models and APIs
 """
 
-import numpy as np
-import json
-from typing import List, Dict
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -15,12 +12,6 @@ def train():
     print("\n=== Approach 1: Hugging Face Models (Local) ===")
     try:
         from transformers import pipeline
-
-        # Available models (lightweight)
-        models = [
-            "distilgpt2",  # Lightweight GPT-2
-            "gpt2",         # Standard GPT-2
-        ]
 
         text_generator = pipeline("text-generation", model="distilgpt2")
         print("✓ Loaded DistilGPT2 (142M parameters)")
@@ -55,7 +46,6 @@ def train():
     # Approach 4: Quantized Models
     print("\n=== Approach 4: Quantized Models (GGML/GGUF) ===")
     try:
-        from ctransformers import AutoModelForCausalLM
         print("Available quantized models:")
         print("- TheBloke/Mistral-7B-Instruct-v0.1-GGUF")
         print("- TheBloke/Neural-Chat-7B-v3-1-GGUF")

@@ -10,7 +10,7 @@ from tqdm.auto import tqdm
 # Diffusers & Transformers
 from transformers import CLIPTextModel, CLIPTokenizer
 from diffusers import AutoencoderKL, DDPMScheduler, UNet2DConditionModel
-from peft import LoraConfig, get_peft_model, PeftModel
+from peft import LoraConfig, get_peft_model
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Simple Dreambooth LoRA Trainer")

@@ -1,10 +1,7 @@
 import torch
-import torchvision
 from torchvision.models.detection import fasterrcnn_resnet50_fpn, retinanet_resnet50_fpn
-from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision.transforms import functional as F
 from PIL import Image
-import numpy as np
 import cv2
 
 class ObjectDetector:

@@ -19,8 +19,6 @@ from sklearn.datasets import make_blobs, make_moons
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import silhouette_score, davies_bouldin_score, calinski_harabasz_score
 from scipy.cluster.hierarchy import dendrogram, linkage
-from scipy.spatial.distance import pdist, squareform
-import seaborn as sns
 
 
 def generate_sample_data(n_samples=500, dataset_type='blobs'):
@@ -373,9 +371,9 @@ def main():
     print(f"Dataset shape: {X_scaled.shape}")
     print(f"Number of true clusters: {len(np.unique(y_true))}")
 
-    # 2. Plot dendrogram
+     # 2. Plot dendrogram
     print("\n2. Creating dendrogram...")
-    Z = plot_dendrogram(X_scaled, linkage_method='ward')
+    plot_dendrogram(X_scaled, linkage_method='ward')
 
     # 3. Find optimal number of clusters
     print("\n3. Finding optimal number of clusters...")
@@ -390,9 +388,9 @@ def main():
     model, labels = train_hierarchical_clustering(X_scaled, n_clusters=optimal_k,
                                                   linkage='ward')
 
-    # 6. Evaluate clustering
+     # 6. Evaluate clustering
     print("\n6. Evaluating clustering performance...")
-    metrics = evaluate_clustering(X_scaled, labels)
+    evaluate_clustering(X_scaled, labels)
 
     # 7. Visualize results
     print("\n7. Visualizing clustering results...")

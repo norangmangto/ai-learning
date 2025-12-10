@@ -12,21 +12,15 @@ Model: Faster R-CNN with ResNet-50 FPN backbone
 """
 
 import torch
-import torch.nn as nn
-from torch.utils.data import DataLoader
-import torchvision
-from torchvision.models.detection import fasterrcnn_resnet50_fpn, FasterRCNN
+from torchvision.models.detection import fasterrcnn_resnet50_fpn
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
-from torchvision.datasets import CocoDetection
 import torchvision.transforms as T
-from torchvision.ops import box_iou
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from pathlib import Path
 import time
 from PIL import Image
-import json
 
 # Configuration
 CONFIG = {

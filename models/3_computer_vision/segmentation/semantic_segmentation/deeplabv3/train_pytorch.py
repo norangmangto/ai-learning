@@ -404,7 +404,7 @@ def main():
 
     # Train
     print("\n3. Training model...")
-    history = train_deeplabv3(model, train_loader, val_loader, epochs=30, lr=0.0001)
+    train_deeplabv3(model, train_loader, val_loader, epochs=30, lr=0.0001)
 
     # Visualize
     print("\n4. Visualizing predictions...")

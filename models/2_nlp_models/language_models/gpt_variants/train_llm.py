@@ -8,15 +8,15 @@ This script demonstrates how to fine-tune LLMs that work with LangChain:
 
 import torch
 from transformers import (
-    AutoModelForCausalLM, 
-    AutoTokenizer, 
-    TrainingArguments, 
+    AutoModelForCausalLM,
+    AutoTokenizer,
+    TrainingArguments,
     Trainer,
     DataCollatorForLanguageModeling
 )
 from datasets import Dataset
 import os
-from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
+from peft import LoraConfig, get_peft_model
 import json
 
 # For LangChain integration
@@ -35,7 +35,7 @@ def create_instruction_dataset():
     Create instruction-following dataset for fine-tuning.
     Format: Instruction -> Response pairs
     """
-    
+
     # Sample instruction-response pairs
     # In production, use larger datasets like Alpaca, Dolly, or domain-specific data
     data = [
@@ -72,7 +72,7 @@ def create_instruction_dataset():
             "response": "Key LangChain components include: 1) LLMs - the language models for generation, 2) Prompts - templates for formatting inputs, 3) Chains - sequences of LLM calls and logic, 4) Memory - conversation history management, 5) Embeddings - for semantic search, 6) Vector stores - document storage and retrieval, 7) Agents - autonomous decision-making systems, 8) Tools - external APIs and functions the LLM can use."
         },
     ]
-    
+
     # Format as instruction-following prompts
     formatted_data = []
     for item in data:
@@ -83,7 +83,7 @@ def create_instruction_dataset():
 ### Response:
 {item['response']}"""
         formatted_data.append({"text": text})
-    
+
     return Dataset.from_list(formatted_data)
 
 
@@ -92,30 +92,30 @@ def train_gpt2_model():
     Fine-tune GPT-2 (small, fast, good for learning)
     Can be used with LangChain's HuggingFacePipeline
     """
-    
+
     print("=" * 60)
     print("Fine-tuning GPT-2 for LangChain Applications")
     print("=" * 60)
-    
+
     model_name = "gpt2"  # or "gpt2-medium" for better quality
     print(f"\n1. Loading base model: {model_name}")
-    
+
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     tokenizer.pad_token = tokenizer.eos_token  # GPT-2 doesn't have pad token
-    
+
     model = AutoModelForCausalLM.from_pretrained(
         model_name,
         torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32,
     )
-    
+
     print(f"✓ Model loaded")
     print(f"  Parameters: {model.num_parameters() / 1e6:.1f}M")
     print(f"  Device: {'CUDA' if torch.cuda.is_available() else 'CPU'}")
-    
+
     # 2. Prepare dataset
     print("\n2. Preparing training dataset...")
     dataset = create_instruction_dataset()
-    
+
     # Tokenize
     def tokenize_function(examples):
         return tokenizer(
@@ -125,19 +125,19 @@ def train_gpt2_model():
             max_length=512,
             return_tensors="pt"
         )
-    
+
     tokenized_dataset = dataset.map(
         tokenize_function,
         batched=True,
         remove_columns=dataset.column_names
     )
-    
+
     print(f"✓ Dataset prepared: {len(tokenized_dataset)} examples")
-    
+
     # 3. Set up training
     output_dir = "models/finetuned_gpt2"
     os.makedirs(output_dir, exist_ok=True)
-    
+
     training_args = TrainingArguments(
         output_dir=output_dir,
         num_train_epochs=3,
@@ -151,13 +151,13 @@ def train_gpt2_model():
         fp16=torch.cuda.is_available(),
         report_to="none",  # Disable wandb
     )
-    
+
     # Data collator for causal language modeling
     data_collator = DataCollatorForLanguageModeling(
         tokenizer=tokenizer,
         mlm=False,  # Causal LM, not masked LM
     )
-    
+
     # 4. Train
     print("\n3. Fine-tuning model...")
     trainer = Trainer(
@@ -166,36 +166,36 @@ def train_gpt2_model():
         train_dataset=tokenized_dataset,
         data_collator=data_collator,
     )
-    
+
     trainer.train()
-    
+
     # 5. Save model
     print("\n4. Saving fine-tuned model...")
     model.save_pretrained(output_dir)
     tokenizer.save_pretrained(output_dir)
     print(f"✓ Model saved to: {output_dir}")
-    
+
     # 6. QA Validation
     print("\n" + "=" * 60)
     print("QA Validation")
     print("=" * 60)
-    
+
     # Test generation
     test_prompts = [
         "### Instruction:\nWhat is LangChain?\n\n### Response:",
         "### Instruction:\nExplain vector databases.\n\n### Response:",
     ]
-    
+
     print("\n--- Generation Tests ---")
     model.eval()
-    
+
     for prompt in test_prompts:
         print(f"\nPrompt: {prompt.split('Instruction:')[1].split('Response:')[0].strip()}")
-        
+
         inputs = tokenizer(prompt, return_tensors="pt", padding=True)
         if torch.cuda.is_available():
             inputs = {k: v.cuda() for k, v in inputs.items()}
-        
+
         with torch.no_grad():
             outputs = model.generate(
                 **inputs,
@@ -205,31 +205,30 @@ def train_gpt2_model():
                 top_p=0.9,
                 pad_token_id=tokenizer.eos_token_id
             )
-        
+
         generated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
         response = generated_text.split("### Response:")[-1].strip()
-        
+
         print(f"Response: {response[:200]}...")
-    
+
     # Sanity checks
     print("\n--- Sanity Checks ---")
-    
+
     # Check 1: Model files exist
-    model_file = os.path.join(output_dir, "pytorch_model.bin")
     config_file = os.path.join(output_dir, "config.json")
-    
+
     if os.path.exists(config_file):
         print("✓ Model configuration saved")
     else:
         print("✗ WARNING: Model config missing")
-    
+
     # Check 2: Can load model
     try:
-        test_model = AutoModelForCausalLM.from_pretrained(output_dir)
+        AutoModelForCausalLM.from_pretrained(output_dir)
         print("✓ Model can be reloaded successfully")
     except Exception as e:
         print(f"✗ WARNING: Cannot reload model: {e}")
-    
+
     # Check 3: Tokenizer works
     test_text = "Hello world"
     tokens = tokenizer(test_text, return_tensors="pt")
@@ -237,18 +236,18 @@ def train_gpt2_model():
         print("✓ Tokenizer working correctly")
     else:
         print("✗ WARNING: Tokenizer issue")
-    
+
     print("\n=== Overall Validation Result ===")
     validation_passed = (
         os.path.exists(config_file) and
         len(response) > 10
     )
-    
+
     if validation_passed:
         print("✓ Model validation PASSED - Ready for LangChain integration")
     else:
         print("✗ Model validation FAILED - Review training process")
-    
+
     return output_dir
 
 
@@ -257,30 +256,30 @@ def train_with_lora():
     Fine-tune a model using LoRA (Low-Rank Adaptation)
     More memory efficient, suitable for larger models like LLaMA/Mistral
     """
-    
+
     print("\n" + "=" * 60)
     print("Fine-tuning with LoRA (Efficient Approach)")
     print("=" * 60)
-    
+
     # Use a small model for demonstration
     # For production, use: "meta-llama/Llama-2-7b-hf" or "mistralai/Mistral-7B-v0.1"
     model_name = "gpt2"
-    
+
     print(f"\n1. Loading base model: {model_name}")
-    
+
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     tokenizer.pad_token = tokenizer.eos_token
-    
+
     model = AutoModelForCausalLM.from_pretrained(
         model_name,
         torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32,
     )
-    
+
     print(f"✓ Base model loaded: {model.num_parameters() / 1e6:.1f}M parameters")
-    
+
     # 2. Configure LoRA
     print("\n2. Configuring LoRA...")
-    
+
     lora_config = LoraConfig(
         r=8,  # Rank - higher = more parameters but better quality
         lora_alpha=32,  # Scaling factor
@@ -289,19 +288,19 @@ def train_with_lora():
         bias="none",
         task_type="CAUSAL_LM"
     )
-    
+
     model = get_peft_model(model, lora_config)
     trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     total_params = sum(p.numel() for p in model.parameters())
-    
+
     print(f"✓ LoRA configured")
     print(f"  Trainable parameters: {trainable_params / 1e6:.2f}M ({100 * trainable_params / total_params:.2f}%)")
     print(f"  Total parameters: {total_params / 1e6:.2f}M")
-    
+
     # 3. Prepare dataset
     print("\n3. Preparing dataset...")
     dataset = create_instruction_dataset()
-    
+
     def tokenize_function(examples):
         return tokenizer(
             examples["text"],
@@ -309,14 +308,14 @@ def train_with_lora():
             truncation=True,
             max_length=512,
         )
-    
+
     tokenized_dataset = dataset.map(tokenize_function, batched=True, remove_columns=dataset.column_names)
     print(f"✓ Dataset ready: {len(tokenized_dataset)} examples")
-    
+
     # 4. Training
     output_dir = "models/finetuned_lora"
     os.makedirs(output_dir, exist_ok=True)
-    
+
     training_args = TrainingArguments(
         output_dir=output_dir,
         num_train_epochs=5,
@@ -328,9 +327,9 @@ def train_with_lora():
         fp16=torch.cuda.is_available(),
         report_to="none",
     )
-    
+
     data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)
-    
+
     print("\n4. Training with LoRA...")
     trainer = Trainer(
         model=model,
@@ -338,14 +337,14 @@ def train_with_lora():
         train_dataset=tokenized_dataset,
         data_collator=data_collator,
     )
-    
+
     trainer.train()
-    
+
     # 5. Save LoRA adapters
     print("\n5. Saving LoRA adapters...")
     model.save_pretrained(output_dir)
     tokenizer.save_pretrained(output_dir)
-    
+
     # Save config
     config = {
         "base_model": model_name,
@@ -353,15 +352,15 @@ def train_with_lora():
         "lora_alpha": lora_config.lora_alpha,
         "target_modules": lora_config.target_modules,
     }
-    
+
     with open(os.path.join(output_dir, "training_config.json"), "w") as f:
         json.dump(config, f, indent=2)
-    
+
     print(f"✓ LoRA adapters saved to: {output_dir}")
     print(f"  Note: Only adapter weights saved (~few MB), not full model")
-    
+
     print("\n=== Validation ===")
-    
+
     # Check files
     adapter_file = os.path.join(output_dir, "adapter_model.bin")
     if os.path.exists(adapter_file):
@@ -369,9 +368,9 @@ def train_with_lora():
         print(f"✓ LoRA adapter saved: {size_mb:.2f} MB")
     else:
         print("✗ WARNING: Adapter file not found")
-    
+
     print("✓ LoRA fine-tuning complete")
-    
+
     return output_dir
 
 
@@ -379,26 +378,26 @@ def test_langchain_integration():
     """
     Test fine-tuned models with LangChain
     """
-    
+
     if not LANGCHAIN_AVAILABLE:
         print("\nSkipping LangChain tests - package not installed")
         return
-    
+
     print("\n" + "=" * 60)
     print("Testing LangChain Integration")
     print("=" * 60)
-    
+
     from transformers import pipeline
-    
+
     model_path = "models/finetuned_gpt2"
-    
+
     if not os.path.exists(model_path):
         print(f"⚠ Model not found: {model_path}")
         print("  Run training first to create the model")
         return
-    
+
     print(f"\n1. Loading fine-tuned model: {model_path}")
-    
+
     # Create HuggingFace pipeline
     pipe = pipeline(
         "text-generation",
@@ -408,64 +407,64 @@ def test_langchain_integration():
         temperature=0.7,
         do_sample=True,
     )
-    
+
     # Create LangChain LLM
     llm = HuggingFacePipeline(pipeline=pipe)
-    
+
     print("✓ Model loaded into LangChain")
-    
+
     # 2. Test with simple prompts
     print("\n2. Testing direct prompts...")
-    
+
     test_prompts = [
         "What is RAG?",
         "Explain vector databases in simple terms.",
     ]
-    
+
     for prompt in test_prompts:
         formatted_prompt = f"### Instruction:\n{prompt}\n\n### Response:"
         print(f"\nPrompt: {prompt}")
         response = llm.invoke(formatted_prompt)
         print(f"Response: {response[:150]}...")
-    
+
     # 3. Test with LangChain chain
     print("\n3. Testing LangChain Chains...")
-    
+
     template = """### Instruction:
 {question}
 
 ### Response:"""
-    
+
     prompt = PromptTemplate(template=template, input_variables=["question"])
     chain = LLMChain(llm=llm, prompt=prompt)
-    
+
     questions = [
         "What are the benefits of using LangChain?",
         "How do embeddings work?",
     ]
-    
+
     for question in questions:
         print(f"\nQuestion: {question}")
         response = chain.invoke({"question": question})
         print(f"Response: {response['text'][:150]}...")
-    
+
     print("\n✓ LangChain integration test complete")
 
 
 def main():
     """Main training pipeline"""
-    
+
     print("\n🤖 Language Model Fine-tuning for LangChain")
     print("=" * 60)
-    
+
     print("\nChoose training approach:")
     print("1. Full fine-tuning (GPT-2) - Good for learning")
     print("2. LoRA fine-tuning - Memory efficient for larger models")
     print("3. Both + LangChain integration test")
-    
+
     # For automation, run option 1
     choice = "1"
-    
+
     if choice == "1":
         train_gpt2_model()
     elif choice == "2":
@@ -474,10 +473,10 @@ def main():
         # Run both
         train_gpt2_model()
         train_with_lora()
-    
+
     # Test LangChain integration
     test_langchain_integration()
-    
+
     print("\n" + "=" * 60)
     print("Training Complete!")
     print("=" * 60)

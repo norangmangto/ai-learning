@@ -21,9 +21,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
-import time
 from sklearn.model_selection import train_test_split
-import seaborn as sns
 
 
 class AdditiveAttention(nn.Module):
@@ -499,7 +497,7 @@ def main():
     val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
 
     model = Seq2SeqWithAttention(input_size, 128, num_classes, attention_type='additive')
-    history = train_model(model, train_loader, val_loader, epochs=50, lr=0.001)
+    train_model(model, train_loader, val_loader, epochs=50, lr=0.001)
 
     # Visualize attention
     print("\n4. Visualizing attention weights...")

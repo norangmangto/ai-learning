@@ -80,10 +80,10 @@ def train():
         plt.close()
 
     print("PyTorch Autoencoder Training Complete.")
-    
+
     # 5. QA Validation and Results Evaluation
     print("\n=== QA Validation ===")
-    
+
     # Evaluate reconstruction quality on test batch
     model.eval()
     with torch.no_grad():
@@ -93,39 +93,39 @@ def train():
             if batch_idx >= 5:  # Use 5 batches for evaluation
                 break
             test_images.append(img)
-        
+
         test_images = torch.cat(test_images, dim=0)
         test_flat = test_images.view(test_images.size(0), -1)
         reconstructed = model(test_flat)
-        
-        # Calculate reconstruction error
-        reconstruction_loss = criterion(reconstructed, test_flat).item()
-    
+
+         # Calculate reconstruction error
+        criterion(reconstructed, test_flat).item()
+
     # Convert to numpy for metrics
     original_np = test_flat.numpy()
     reconstructed_np = reconstructed.numpy()
-    
+
     # Calculate comprehensive metrics
     mse = mean_squared_error(original_np, reconstructed_np)
     mae = mean_absolute_error(original_np, reconstructed_np)
     rmse = np.sqrt(mse)
-    
+
     print(f"\nReconstruction Metrics:")
     print(f"MSE: {mse:.6f}")
     print(f"MAE: {mae:.6f}")
     print(f"RMSE: {rmse:.6f}")
     print(f"Final training loss: {loss.item():.6f}")
-    
+
     # Sanity checks
     print("\n--- Sanity Checks ---")
-    
+
     # Check 1: Reconstructions are in valid range [0, 1]
     if np.all((reconstructed_np >= 0) & (reconstructed_np <= 1)):
         print("✓ All reconstructed pixel values are in valid range [0, 1]")
     else:
         out_of_range = np.sum((reconstructed_np < 0) | (reconstructed_np > 1))
         print(f"⚠ WARNING: {out_of_range} pixel values are outside [0, 1] range")
-    
+
     # Check 2: Reconstruction quality
     if mse < 0.01:
         print(f"✓ Excellent reconstruction quality: MSE = {mse:.6f}")
@@ -135,26 +135,26 @@ def train():
         print(f"⚠ Moderate reconstruction quality: MSE = {mse:.6f}")
     else:
         print(f"✗ WARNING: Poor reconstruction quality: MSE = {mse:.6f}")
-    
+
     # Check 3: Check if model is learning (loss decreased)
     if loss.item() < 0.1:
         print(f"✓ Model converged well - Final loss: {loss.item():.6f}")
     else:
         print(f"⚠ Model loss: {loss.item():.6f} (may need more training)")
-    
+
     # Check 4: No NaN or Inf in reconstructions
     if np.all(np.isfinite(reconstructed_np)):
         print("✓ All reconstructed values are finite (no NaN or Inf)")
     else:
         print("✗ WARNING: Some reconstructed values are NaN or Inf!")
-    
+
     # Check 5: Latent space dimensionality
     with torch.no_grad():
         sample = test_flat[:10]
         latent = model.encoder(sample)
         print(f"\n✓ Latent space dimension: {latent.shape[1]} (compressed from {test_flat.shape[1]})")
         print(f"  Compression ratio: {test_flat.shape[1] / latent.shape[1]:.1f}x")
-    
+
     # Overall validation result
     print("\n=== Overall Validation Result ===")
     validation_passed = (
@@ -162,12 +162,12 @@ def train():
         mse < 0.2 and
         np.sum((reconstructed_np < -0.1) | (reconstructed_np > 1.1)) == 0
     )
-    
+
     if validation_passed:
         print("✓ Model validation PASSED - Autoencoder is performing as expected")
     else:
         print("✗ Model validation FAILED - Please review model performance")
-    
+
     print("\nReconstruction visualization saved to: autoencoder_images_pytorch/result.png")
 
 if __name__ == "__main__":

@@ -10,7 +10,6 @@ from sklearn.datasets import make_moons, make_blobs, make_circles
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import silhouette_score, davies_bouldin_score
 from sklearn.neighbors import NearestNeighbors
-import seaborn as sns
 
 def generate_sample_data(dataset_type='moons', n_samples=1000):
     """
@@ -290,9 +289,9 @@ def compare_with_kmeans(X, n_clusters=None):
     ax1.set_ylabel('Feature 2')
     ax1.grid(True, alpha=0.3)
 
-    # K-Means
-    scatter = ax2.scatter(X[:, 0], X[:, 1], c=kmeans_labels, cmap='viridis',
-                         s=50, alpha=0.8, edgecolors='k')
+     # K-Means
+    ax2.scatter(X[:, 0], X[:, 1], c=kmeans_labels, cmap='viridis',
+               s=50, alpha=0.8, edgecolors='k')
     ax2.scatter(kmeans.cluster_centers_[:, 0], kmeans.cluster_centers_[:, 1],
                c='red', marker='X', s=200, edgecolors='black', linewidths=2)
     ax2.set_title(f'K-Means ({n_clusters} clusters)')
@@ -346,7 +345,7 @@ def main():
     print("🔬 Analyzing parameter sensitivity...")
     eps_range = np.linspace(0.1, 1.0, 5)
     min_samples_range = [3, 5, 10]
-    param_results = parameter_sensitivity_analysis(X_scaled, eps_range, min_samples_range)
+    parameter_sensitivity_analysis(X_scaled, eps_range, min_samples_range)
 
     # 8. Compare with K-Means
     print("⚖️  Comparing with K-Means...")

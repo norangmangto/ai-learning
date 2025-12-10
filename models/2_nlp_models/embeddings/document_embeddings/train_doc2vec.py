@@ -22,9 +22,6 @@ import time
 from sklearn.manifold import TSNE
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
-import seaborn as sns
-from collections import Counter
-import re
 
 
 def generate_document_corpus(n_documents=500, doc_length_range=(20, 50)):
@@ -209,8 +206,6 @@ def compare_document_embeddings(documents, labels):
     print("="*70)
 
     n_clusters = len(set(labels))
-    label_to_id = {label: i for i, label in enumerate(set(labels))}
-    true_labels = [label_to_id[label] for label in labels]
 
     for name, vectors in [('PV-DM', dm_vectors), ('PV-DBOW', dbow_vectors),
                           ('Averaged Word2Vec', w2v_vectors)]:
