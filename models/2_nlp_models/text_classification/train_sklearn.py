@@ -9,6 +9,7 @@ from sklearn.metrics import accuracy_score, f1_score
 import tempfile
 import os
 
+
 def train():
     print("Training Text Classification with FastText...")
 
@@ -16,7 +17,9 @@ def train():
         # FastText is a separate library, attempt installation if not available
         import fasttext
     except ImportError:
-        print("Warning: fasttext package not installed. Simulating with simple classifier...")
+        print(
+            "Warning: fasttext package not installed. Simulating with simple classifier..."
+        )
         return train_simple_classifier()
 
     try:
@@ -34,32 +37,34 @@ def train():
         test_file = os.path.join(tmpdir, "test.txt")
 
         # Write training data
-        with open(train_file, 'w') as f:
+        with open(train_file, "w") as f:
             for item in dataset:
                 label = f"__label__{item['label']}"
-                text = item['text'].replace('\n', ' ')
+                text = item["text"].replace("\n", " ")
                 f.write(f"{label} {text}\n")
 
         # Write test data
-        with open(test_file, 'w') as f:
+        with open(test_file, "w") as f:
             for item in test_dataset:
                 label = f"__label__{item['label']}"
-                text = item['text'].replace('\n', ' ')
+                text = item["text"].replace("\n", " ")
                 f.write(f"{label} {text}\n")
 
         # 3. Train FastText Model
-        model = fasttext.train_supervised(input=train_file, epoch=10, lr=0.5, wordNgrams=2)
+        model = fasttext.train_supervised(
+            input=train_file, epoch=10, lr=0.5, wordNgrams=2
+        )
 
         print("✓ FastText model trained successfully")
 
         # 4. Evaluate
-        test_texts = [item['text'].replace('\n', ' ') for item in test_dataset]
-        test_labels = np.array([item['label'] for item in test_dataset])
+        test_texts = [item["text"].replace("\n", " ") for item in test_dataset]
+        test_labels = np.array([item["label"] for item in test_dataset])
 
         predictions = []
         for text in test_texts:
             pred = model.predict(text)
-            predictions.append(int(pred[0][0].split('__')[-1]))
+            predictions.append(int(pred[0][0].split("__")[-1]))
         predictions = np.array(predictions)
 
         accuracy = accuracy_score(test_labels, predictions)
@@ -67,7 +72,7 @@ def train():
 
         # 5. QA Validation
         print("\n=== QA Validation ===")
-        f1 = f1_score(test_labels, predictions, average='weighted')
+        f1 = f1_score(test_labels, predictions, average="weighted")
         print(f"F1-Score (weighted): {f1:.4f}")
 
         print("\n--- Sanity Checks ---")
@@ -97,11 +102,11 @@ def train_simple_classifier():
     dataset = create_synthetic_dataset(2000)
     test_dataset = create_synthetic_dataset(500)
 
-    texts = [item['text'] for item in dataset]
-    labels = np.array([item['label'] for item in dataset])
+    texts = [item["text"] for item in dataset]
+    labels = np.array([item["label"] for item in dataset])
 
-    test_texts = [item['text'] for item in test_dataset]
-    test_labels = np.array([item['label'] for item in test_dataset])
+    test_texts = [item["text"] for item in test_dataset]
+    test_labels = np.array([item["label"] for item in test_dataset])
 
     vectorizer = TfidfVectorizer(max_features=3000)
     X_train = vectorizer.fit_transform(texts)

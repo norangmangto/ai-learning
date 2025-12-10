@@ -6,12 +6,15 @@ from sklearn.datasets import make_regression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score
 
+
 def train():
     print("Training Linear Regression with JAX...")
 
     # 1. Prepare Data
     X, y = make_regression(n_samples=1000, n_features=1, noise=10, random_state=42)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42
+    )
 
     X_train = jnp.array(X_train, dtype=jnp.float32)
     y_train = jnp.array(y_train, dtype=jnp.float32)
@@ -79,7 +82,9 @@ def train():
         print(f"✗ WARNING: Poor R² score: {r2:.4f}")
 
     print("\n=== Overall Validation Result ===")
-    validation_passed = np.all(np.isfinite(predictions)) and r2 > 0 and mse < np.var(y_test) * 2
+    validation_passed = (
+        np.all(np.isfinite(predictions)) and r2 > 0 and mse < np.var(y_test) * 2
+    )
 
     if validation_passed:
         print("✓ Validation PASSED")

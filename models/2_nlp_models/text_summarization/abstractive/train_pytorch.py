@@ -1,9 +1,13 @@
 import torch
 from transformers import (
-    BartForConditionalGeneration, BartTokenizer,
-    T5ForConditionalGeneration, T5Tokenizer,
-    PegasusForConditionalGeneration, PegasusTokenizer,
-    Trainer, TrainingArguments
+    BartForConditionalGeneration,
+    BartTokenizer,
+    T5ForConditionalGeneration,
+    T5Tokenizer,
+    PegasusForConditionalGeneration,
+    PegasusTokenizer,
+    Trainer,
+    TrainingArguments,
 )
 from datasets import load_dataset
 from torch.utils.data import Dataset
@@ -11,8 +15,10 @@ import numpy as np
 from rouge_score import rouge_scorer
 import evaluate
 
+
 class SummarizationDataset(Dataset):
     """Custom dataset for text summarization"""
+
     def __init__(self, data, tokenizer, max_input_length=1024, max_target_length=128):
         self.data = data
         self.tokenizer = tokenizer
@@ -23,16 +29,16 @@ class SummarizationDataset(Dataset):
         return len(self.data)
 
     def __getitem__(self, idx):
-        article = self.data[idx]['article']
-        summary = self.data[idx]['highlights']
+        article = self.data[idx]["article"]
+        summary = self.data[idx]["highlights"]
 
         # Tokenize inputs
         model_inputs = self.tokenizer(
             article,
             max_length=self.max_input_length,
-            padding='max_length',
+            padding="max_length",
             truncation=True,
-            return_tensors='pt'
+            return_tensors="pt",
         )
 
         # Tokenize targets
@@ -40,18 +46,19 @@ class SummarizationDataset(Dataset):
             labels = self.tokenizer(
                 summary,
                 max_length=self.max_target_length,
-                padding='max_length',
+                padding="max_length",
                 truncation=True,
-                return_tensors='pt'
+                return_tensors="pt",
             )
 
-        model_inputs['labels'] = labels['input_ids']
+        model_inputs["labels"] = labels["input_ids"]
 
         return {
-            'input_ids': model_inputs['input_ids'].squeeze(),
-            'attention_mask': model_inputs['attention_mask'].squeeze(),
-            'labels': labels['input_ids'].squeeze()
+            "input_ids": model_inputs["input_ids"].squeeze(),
+            "attention_mask": model_inputs["attention_mask"].squeeze(),
+            "labels": labels["input_ids"].squeeze(),
         }
+
 
 def compute_metrics(eval_pred):
     """Compute ROUGE scores for evaluation"""
@@ -66,13 +73,14 @@ def compute_metrics(eval_pred):
     decoded_preds = tokenizer.batch_decode(predictions, skip_special_tokens=True)
 
     # Compute ROUGE scores
-    rouge = evaluate.load('rouge')
+    rouge = evaluate.load("rouge")
     result = rouge.compute(predictions=decoded_preds)
     return {
-        'rouge1': result['rouge1'],
-        'rouge2': result['rouge2'],
-        'rougeL': result['rougeL'],
+        "rouge1": result["rouge1"],
+        "rouge2": result["rouge2"],
+        "rougeL": result["rougeL"],
     }
+
 
 def create_synthetic_dataset():
     """Create synthetic summarization data"""
@@ -150,13 +158,15 @@ def train():
 
     model.eval()
     for i in range(min(3, len(test_dataset))):
-        article = test_dataset[i]['article']
-        reference = test_dataset[i]['highlights']
+        article = test_dataset[i]["article"]
+        reference = test_dataset[i]["highlights"]
 
         print(f"\nSample {i + 1}:")
         print(f"Article (first 200 chars): {article[:200]}...")
 
-        inputs = tokenizer([article], max_length=1024, return_tensors="pt", truncation=True)
+        inputs = tokenizer(
+            [article], max_length=1024, return_tensors="pt", truncation=True
+        )
         inputs = {k: v.to(device) for k, v in inputs.items()}
 
         with torch.no_grad():
@@ -166,7 +176,7 @@ def train():
                 min_length=40,
                 length_penalty=2.0,
                 num_beams=4,
-                early_stopping=True
+                early_stopping=True,
             )
 
         generated_summary = tokenizer.decode(summary_ids[0], skip_special_tokens=True)
@@ -174,11 +184,12 @@ def train():
         print(f"Generated: {generated_summary}")
         print(f"Reference: {reference}")
 
-        scorer = rouge_scorer.RougeScorer(['rougeL'], use_stemmer=True)
+        scorer = rouge_scorer.RougeScorer(["rougeL"], use_stemmer=True)
         score = scorer.score(reference, generated_summary)
         print(f"ROUGE-L: {score['rougeL'].fmeasure:.4f}")
 
     return model, tokenizer
+
 
 def train_t5():
     """Train T5 model for summarization"""
@@ -213,7 +224,9 @@ def train_t5():
 
     # T5 requires 'summarize:' prefix
     class T5SummarizationDataset(Dataset):
-        def __init__(self, data, tokenizer, max_input_length=512, max_target_length=128):
+        def __init__(
+            self, data, tokenizer, max_input_length=512, max_target_length=128
+        ):
             self.data = data
             self.tokenizer = tokenizer
             self.max_input_length = max_input_length
@@ -223,8 +236,8 @@ def train_t5():
             return len(self.data)
 
         def __getitem__(self, idx):
-            article = self.data[idx]['article']
-            summary = self.data[idx]['highlights']
+            article = self.data[idx]["article"]
+            summary = self.data[idx]["highlights"]
 
             # T5 requires prefix for task type
             input_text = "summarize: " + article
@@ -232,30 +245,34 @@ def train_t5():
             model_inputs = self.tokenizer(
                 input_text,
                 max_length=self.max_input_length,
-                padding='max_length',
+                padding="max_length",
                 truncation=True,
-                return_tensors='pt'
+                return_tensors="pt",
             )
 
             with self.tokenizer.as_target_tokenizer():
                 labels = self.tokenizer(
                     summary,
                     max_length=self.max_target_length,
-                    padding='max_length',
+                    padding="max_length",
                     truncation=True,
-                    return_tensors='pt'
+                    return_tensors="pt",
                 )
 
-            model_inputs['labels'] = labels['input_ids']
+            model_inputs["labels"] = labels["input_ids"]
 
             return {
-                'input_ids': model_inputs['input_ids'].squeeze(),
-                'attention_mask': model_inputs['attention_mask'].squeeze(),
-                'labels': labels['input_ids'].squeeze()
+                "input_ids": model_inputs["input_ids"].squeeze(),
+                "attention_mask": model_inputs["attention_mask"].squeeze(),
+                "labels": labels["input_ids"].squeeze(),
             }
 
-    train_dataset_prepared = T5SummarizationDataset(train_dataset, tokenizer, max_input_length=512)
-    val_dataset_prepared = T5SummarizationDataset(val_dataset, tokenizer, max_input_length=512)
+    train_dataset_prepared = T5SummarizationDataset(
+        train_dataset, tokenizer, max_input_length=512
+    )
+    val_dataset_prepared = T5SummarizationDataset(
+        val_dataset, tokenizer, max_input_length=512
+    )
 
     training_args = TrainingArguments(
         output_dir="./results/t5_summarization",
@@ -289,14 +306,16 @@ def train_t5():
 
     model.eval()
     for i in range(min(3, len(test_dataset))):
-        article = test_dataset[i]['article']
-        reference = test_dataset[i]['highlights']
+        article = test_dataset[i]["article"]
+        reference = test_dataset[i]["highlights"]
 
         print(f"\nSample {i + 1}:")
         print(f"Article (first 200 chars): {article[:200]}...")
 
         input_text = "summarize: " + article
-        inputs = tokenizer([input_text], max_length=512, return_tensors="pt", truncation=True)
+        inputs = tokenizer(
+            [input_text], max_length=512, return_tensors="pt", truncation=True
+        )
         inputs = {k: v.to(device) for k, v in inputs.items()}
 
         with torch.no_grad():
@@ -306,7 +325,7 @@ def train_t5():
                 min_length=40,
                 length_penalty=2.0,
                 num_beams=4,
-                early_stopping=True
+                early_stopping=True,
             )
 
         generated_summary = tokenizer.decode(summary_ids[0], skip_special_tokens=True)
@@ -314,11 +333,12 @@ def train_t5():
         print(f"Generated: {generated_summary}")
         print(f"Reference: {reference}")
 
-        scorer = rouge_scorer.RougeScorer(['rougeL'], use_stemmer=True)
+        scorer = rouge_scorer.RougeScorer(["rougeL"], use_stemmer=True)
         score = scorer.score(reference, generated_summary)
         print(f"ROUGE-L: {score['rougeL'].fmeasure:.4f}")
 
     return model, tokenizer
+
 
 def train_pegasus():
     """Train PEGASUS model for summarization"""
@@ -386,13 +406,15 @@ def train_pegasus():
 
     model.eval()
     for i in range(min(3, len(test_dataset))):
-        article = test_dataset[i]['article']
-        reference = test_dataset[i]['highlights']
+        article = test_dataset[i]["article"]
+        reference = test_dataset[i]["highlights"]
 
         print(f"\nSample {i + 1}:")
         print(f"Article (first 200 chars): {article[:200]}...")
 
-        inputs = tokenizer([article], max_length=1024, return_tensors="pt", truncation=True)
+        inputs = tokenizer(
+            [article], max_length=1024, return_tensors="pt", truncation=True
+        )
         inputs = {k: v.to(device) for k, v in inputs.items()}
 
         with torch.no_grad():
@@ -402,7 +424,7 @@ def train_pegasus():
                 min_length=40,
                 length_penalty=2.0,
                 num_beams=4,
-                early_stopping=True
+                early_stopping=True,
             )
 
         generated_summary = tokenizer.decode(summary_ids[0], skip_special_tokens=True)
@@ -410,11 +432,12 @@ def train_pegasus():
         print(f"Generated: {generated_summary}")
         print(f"Reference: {reference}")
 
-        scorer = rouge_scorer.RougeScorer(['rougeL'], use_stemmer=True)
+        scorer = rouge_scorer.RougeScorer(["rougeL"], use_stemmer=True)
         score = scorer.score(reference, generated_summary)
         print(f"ROUGE-L: {score['rougeL'].fmeasure:.4f}")
 
     return model, tokenizer
+
 
 def train():
     """Train all summarization models"""
@@ -422,7 +445,8 @@ def train():
     print("TEXT SUMMARIZATION MODELS - COMPREHENSIVE TRAINING")
     print("=" * 80)
 
-    print("""
+    print(
+        """
     This script trains three different architectures for text summarization:
 
     1. BART (Bidirectional and Auto-Regressive Transformers)
@@ -442,7 +466,8 @@ def train():
        - Larger model than BART
        - Best performance on summarization benchmarks
        - Requires more compute resources
-    """)
+    """
+    )
 
     # Train BART
     try:
@@ -469,7 +494,8 @@ def train():
     print("\n" + "=" * 80)
     print("MODEL COMPARISON SUMMARY")
     print("=" * 80)
-    print("""
+    print(
+        """
     ┌─────────────────────────────────────────────────────────────────────────┐
     │ Model   │ Size    │ Speed │ Quality │ Best For                           │
     ├─────────────────────────────────────────────────────────────────────────┤
@@ -477,7 +503,8 @@ def train():
     │ T5      │ Large   │ Slow  │ Better  │ Multi-task, maximum flexibility    │
     │ PEGASUS │ Large   │ Slow  │ Best    │ Best quality summaries             │
     └─────────────────────────────────────────────────────────────────────────┘
-    """)
+    """
+    )
 
     print("\n=== QA Validation ===")
     print("✓ BART model: Fine-tuned for abstractive summarization")
@@ -486,6 +513,7 @@ def train():
     print("✓ All models can generate fluent, coherent summaries")
     print("✓ All models evaluate with ROUGE scores")
     print("✓ Models saved for inference and deployment")
+
 
 if __name__ == "__main__":
     train()

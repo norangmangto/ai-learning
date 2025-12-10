@@ -30,6 +30,7 @@ class AdditiveAttention(nn.Module):
 
     score(h_t, h_s) = v^T * tanh(W_1 * h_t + W_2 * h_s)
     """
+
     def __init__(self, hidden_size):
         super(AdditiveAttention, self).__init__()
 
@@ -49,9 +50,9 @@ class AdditiveAttention(nn.Module):
         query_expanded = query.unsqueeze(1)  # (batch, 1, hidden_size)
 
         # Calculate attention scores
-        scores = self.v(torch.tanh(
-            self.W1(query_expanded) + self.W2(keys)
-        ))  # (batch, seq_len, 1)
+        scores = self.v(
+            torch.tanh(self.W1(query_expanded) + self.W2(keys))
+        )  # (batch, seq_len, 1)
 
         scores = scores.squeeze(-1)  # (batch, seq_len)
 
@@ -65,8 +66,10 @@ class AdditiveAttention(nn.Module):
         # Calculate context vector
         context = torch.bmm(
             attention_weights.unsqueeze(1),  # (batch, 1, seq_len)
-            values  # (batch, seq_len, hidden_size)
-        ).squeeze(1)  # (batch, hidden_size)
+            values,  # (batch, seq_len, hidden_size)
+        ).squeeze(
+            1
+        )  # (batch, hidden_size)
 
         return context, attention_weights
 
@@ -77,6 +80,7 @@ class MultiplicativeAttention(nn.Module):
 
     score(h_t, h_s) = h_t^T * W * h_s
     """
+
     def __init__(self, hidden_size):
         super(MultiplicativeAttention, self).__init__()
 
@@ -90,18 +94,17 @@ class MultiplicativeAttention(nn.Module):
         # Calculate scores
         scores = torch.bmm(
             query_transformed,  # (batch, 1, hidden_size)
-            keys.transpose(1, 2)  # (batch, hidden_size, seq_len)
-        ).squeeze(1)  # (batch, seq_len)
+            keys.transpose(1, 2),  # (batch, hidden_size, seq_len)
+        ).squeeze(
+            1
+        )  # (batch, seq_len)
 
         if mask is not None:
             scores = scores.masked_fill(mask == 0, -1e9)
 
         attention_weights = torch.softmax(scores, dim=1)
 
-        context = torch.bmm(
-            attention_weights.unsqueeze(1),
-            values
-        ).squeeze(1)
+        context = torch.bmm(attention_weights.unsqueeze(1), values).squeeze(1)
 
         return context, attention_weights
 
@@ -112,26 +115,27 @@ class ScaledDotProductAttention(nn.Module):
 
     Attention(Q, K, V) = softmax(Q * K^T / sqrt(d_k)) * V
     """
+
     def __init__(self, hidden_size):
         super(ScaledDotProductAttention, self).__init__()
         self.scale = np.sqrt(hidden_size)
 
     def forward(self, query, keys, values, mask=None):
         # Calculate scores
-        scores = torch.bmm(
-            query.unsqueeze(1),  # (batch, 1, hidden_size)
-            keys.transpose(1, 2)  # (batch, hidden_size, seq_len)
-        ).squeeze(1) / self.scale  # (batch, seq_len)
+        scores = (
+            torch.bmm(
+                query.unsqueeze(1),  # (batch, 1, hidden_size)
+                keys.transpose(1, 2),  # (batch, hidden_size, seq_len)
+            ).squeeze(1)
+            / self.scale
+        )  # (batch, seq_len)
 
         if mask is not None:
             scores = scores.masked_fill(mask == 0, -1e9)
 
         attention_weights = torch.softmax(scores, dim=1)
 
-        context = torch.bmm(
-            attention_weights.unsqueeze(1),
-            values
-        ).squeeze(1)
+        context = torch.bmm(attention_weights.unsqueeze(1), values).squeeze(1)
 
         return context, attention_weights
 
@@ -142,6 +146,7 @@ class SelfAttention(nn.Module):
 
     Allows the model to attend to different positions in the same sequence.
     """
+
     def __init__(self, hidden_size):
         super(SelfAttention, self).__init__()
 
@@ -163,7 +168,9 @@ class SelfAttention(nn.Module):
         V = self.value(x)
 
         # Calculate attention scores
-        scores = torch.bmm(Q, K.transpose(1, 2)) / self.scale  # (batch, seq_len, seq_len)
+        scores = (
+            torch.bmm(Q, K.transpose(1, 2)) / self.scale
+        )  # (batch, seq_len, seq_len)
 
         if mask is not None:
             scores = scores.masked_fill(mask == 0, -1e9)
@@ -171,21 +178,24 @@ class SelfAttention(nn.Module):
         attention_weights = torch.softmax(scores, dim=-1)
 
         # Apply attention to values
-        attended = torch.bmm(attention_weights, V)  # (batch, seq_len, hidden_size)
+        # (batch, seq_len, hidden_size)
+        attended = torch.bmm(attention_weights, V)
 
         return attended, attention_weights
 
 
 class EncoderRNN(nn.Module):
     """Encoder with LSTM."""
+
     def __init__(self, input_size, hidden_size, num_layers=1):
         super(EncoderRNN, self).__init__()
 
         self.hidden_size = hidden_size
         self.num_layers = num_layers
 
-        self.lstm = nn.LSTM(input_size, hidden_size, num_layers,
-                           batch_first=True, bidirectional=True)
+        self.lstm = nn.LSTM(
+            input_size, hidden_size, num_layers, batch_first=True, bidirectional=True
+        )
 
     def forward(self, x):
         outputs, (hidden, cell) = self.lstm(x)
@@ -194,17 +204,18 @@ class EncoderRNN(nn.Module):
 
 class AttentionDecoder(nn.Module):
     """Decoder with attention mechanism."""
-    def __init__(self, hidden_size, output_size, attention_type='additive'):
+
+    def __init__(self, hidden_size, output_size, attention_type="additive"):
         super(AttentionDecoder, self).__init__()
 
         self.hidden_size = hidden_size
 
         # Attention mechanism
-        if attention_type == 'additive':
+        if attention_type == "additive":
             self.attention = AdditiveAttention(hidden_size * 2)
-        elif attention_type == 'multiplicative':
+        elif attention_type == "multiplicative":
             self.attention = MultiplicativeAttention(hidden_size * 2)
-        elif attention_type == 'scaled_dot':
+        elif attention_type == "scaled_dot":
             self.attention = ScaledDotProductAttention(hidden_size * 2)
 
         # Decoder LSTM
@@ -241,7 +252,8 @@ class AttentionDecoder(nn.Module):
 
 class Seq2SeqWithAttention(nn.Module):
     """Sequence-to-Sequence model with attention."""
-    def __init__(self, input_size, hidden_size, output_size, attention_type='additive'):
+
+    def __init__(self, input_size, hidden_size, output_size, attention_type="additive"):
         super(Seq2SeqWithAttention, self).__init__()
 
         self.encoder = EncoderRNN(input_size, hidden_size)
@@ -262,7 +274,9 @@ class Seq2SeqWithAttention(nn.Module):
         return output, attention_weights
 
 
-def generate_synthetic_sequences(n_samples=1000, seq_length=30, n_features=10, n_classes=3):
+def generate_synthetic_sequences(
+    n_samples=1000, seq_length=30, n_features=10, n_classes=3
+):
     """Generate synthetic sequences with important regions."""
     print(f"Generating {n_samples} sequences...")
 
@@ -284,7 +298,7 @@ def generate_synthetic_sequences(n_samples=1000, seq_length=30, n_features=10, n
         elif label == 1:
             # Important pattern in middle
             mid = seq_length // 2
-            sequence[mid-2:mid+3] = np.sin(np.linspace(0, np.pi, 5))[:, None]
+            sequence[mid - 2 : mid + 3] = np.sin(np.linspace(0, np.pi, 5))[:, None]
         else:
             # Important pattern at end
             sequence[-5:] = np.linspace(-1, -2, 5)[:, None]
@@ -309,14 +323,14 @@ class SequenceDataset(Dataset):
 
 def train_model(model, train_loader, val_loader, epochs=50, lr=0.001):
     """Train attention-based model."""
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"\nTraining on {device}")
 
     model = model.to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=lr)
 
-    history = {'train_loss': [], 'val_loss': [], 'train_acc': [], 'val_acc': []}
+    history = {"train_loss": [], "val_loss": [], "train_acc": [], "val_acc": []}
 
     for epoch in range(epochs):
         # Training
@@ -341,7 +355,7 @@ def train_model(model, train_loader, val_loader, epochs=50, lr=0.001):
             train_correct += predicted.eq(labels).sum().item()
 
         train_loss /= len(train_loader)
-        train_acc = 100. * train_correct / train_total
+        train_acc = 100.0 * train_correct / train_total
 
         # Validation
         model.eval()
@@ -361,15 +375,17 @@ def train_model(model, train_loader, val_loader, epochs=50, lr=0.001):
                 val_correct += predicted.eq(labels).sum().item()
 
         val_loss /= len(val_loader)
-        val_acc = 100. * val_correct / val_total
+        val_acc = 100.0 * val_correct / val_total
 
-        history['train_loss'].append(train_loss)
-        history['val_loss'].append(val_loss)
-        history['train_acc'].append(train_acc)
-        history['val_acc'].append(val_acc)
+        history["train_loss"].append(train_loss)
+        history["val_loss"].append(val_loss)
+        history["train_acc"].append(train_acc)
+        history["val_acc"].append(val_acc)
 
         if (epoch + 1) % 10 == 0:
-            print(f"Epoch [{epoch+1}/{epochs}] - Train: {train_acc:.2f}% | Val: {val_acc:.2f}%")
+            print(
+                f"Epoch [{epoch+1}/{epochs}] - Train: {train_acc:.2f}% | Val: {val_acc:.2f}%"
+            )
 
     return history
 
@@ -379,52 +395,63 @@ def visualize_attention_heatmap(model, sequences, labels, class_names, n_samples
     device = next(model.parameters()).device
     model.eval()
 
-    fig, axes = plt.subplots(n_samples, 2, figsize=(14, 3*n_samples))
+    fig, axes = plt.subplots(n_samples, 2, figsize=(14, 3 * n_samples))
 
     with torch.no_grad():
         for i in range(n_samples):
-            seq_tensor = torch.FloatTensor(sequences[i:i+1]).to(device)
+            seq_tensor = torch.FloatTensor(sequences[i : i + 1]).to(device)
             output, attention_weights = model(seq_tensor)
             _, predicted = output.max(1)
 
             attention = attention_weights.cpu().numpy()[0]
 
             # Plot sequence (first feature)
-            axes[i, 0].plot(sequences[i, :, 0], linewidth=2, color='steelblue')
-            axes[i, 0].set_title(f'Input Sequence\nTrue: {class_names[labels[i]]}, '
-                                f'Pred: {class_names[predicted.item()]}')
-            axes[i, 0].set_xlabel('Time Step')
-            axes[i, 0].set_ylabel('Value')
+            axes[i, 0].plot(sequences[i, :, 0], linewidth=2, color="steelblue")
+            axes[i, 0].set_title(
+                f"Input Sequence\nTrue: {class_names[labels[i]]}, "
+                f"Pred: {class_names[predicted.item()]}"
+            )
+            axes[i, 0].set_xlabel("Time Step")
+            axes[i, 0].set_ylabel("Value")
             axes[i, 0].grid(True, alpha=0.3)
 
             # Plot attention weights
-            axes[i, 1].bar(range(len(attention)), attention, color='coral')
-            axes[i, 1].set_title('Attention Weights')
-            axes[i, 1].set_xlabel('Time Step')
-            axes[i, 1].set_ylabel('Attention Weight')
-            axes[i, 1].grid(True, alpha=0.3, axis='y')
+            axes[i, 1].bar(range(len(attention)), attention, color="coral")
+            axes[i, 1].set_title("Attention Weights")
+            axes[i, 1].set_xlabel("Time Step")
+            axes[i, 1].set_ylabel("Attention Weight")
+            axes[i, 1].grid(True, alpha=0.3, axis="y")
 
             # Highlight important regions
             if labels[i] == 0:
-                axes[i, 0].axvspan(0, 5, alpha=0.2, color='red', label='Important Region')
+                axes[i, 0].axvspan(
+                    0, 5, alpha=0.2, color="red", label="Important Region"
+                )
             elif labels[i] == 1:
                 mid = len(sequences[i]) // 2
-                axes[i, 0].axvspan(mid-2, mid+3, alpha=0.2, color='red', label='Important Region')
+                axes[i, 0].axvspan(
+                    mid - 2, mid + 3, alpha=0.2, color="red", label="Important Region"
+                )
             else:
-                axes[i, 0].axvspan(len(sequences[i])-5, len(sequences[i]), alpha=0.2,
-                                  color='red', label='Important Region')
+                axes[i, 0].axvspan(
+                    len(sequences[i]) - 5,
+                    len(sequences[i]),
+                    alpha=0.2,
+                    color="red",
+                    label="Important Region",
+                )
             axes[i, 0].legend()
 
     plt.tight_layout()
-    plt.savefig('attention_visualization.png', dpi=300, bbox_inches='tight')
+    plt.savefig("attention_visualization.png", dpi=300, bbox_inches="tight")
     plt.show()
 
 
 def compare_attention_types(X_train, y_train, X_val, y_val, input_size, num_classes):
     """Compare different attention mechanisms."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("Comparing Attention Mechanisms")
-    print("="*70)
+    print("=" * 70)
 
     train_dataset = SequenceDataset(X_train, y_train)
     val_dataset = SequenceDataset(X_val, y_val)
@@ -432,16 +459,18 @@ def compare_attention_types(X_train, y_train, X_val, y_val, input_size, num_clas
     val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
 
     attention_types = {
-        'Additive (Bahdanau)': 'additive',
-        'Multiplicative (Luong)': 'multiplicative',
-        'Scaled Dot-Product': 'scaled_dot',
+        "Additive (Bahdanau)": "additive",
+        "Multiplicative (Luong)": "multiplicative",
+        "Scaled Dot-Product": "scaled_dot",
     }
 
     results = {}
 
     for name, att_type in attention_types.items():
         print(f"\n{name}:")
-        model = Seq2SeqWithAttention(input_size, 64, num_classes, attention_type=att_type)
+        model = Seq2SeqWithAttention(
+            input_size, 64, num_classes, attention_type=att_type
+        )
         history = train_model(model, train_loader, val_loader, epochs=30, lr=0.001)
         results[name] = history
 
@@ -449,41 +478,47 @@ def compare_attention_types(X_train, y_train, X_val, y_val, input_size, num_clas
     fig, axes = plt.subplots(1, 2, figsize=(14, 4))
 
     for name, history in results.items():
-        axes[0].plot(history['val_loss'], label=name, linewidth=2)
-        axes[1].plot(history['val_acc'], label=name, linewidth=2)
+        axes[0].plot(history["val_loss"], label=name, linewidth=2)
+        axes[1].plot(history["val_acc"], label=name, linewidth=2)
 
-    axes[0].set_xlabel('Epoch')
-    axes[0].set_ylabel('Loss')
-    axes[0].set_title('Validation Loss')
+    axes[0].set_xlabel("Epoch")
+    axes[0].set_ylabel("Loss")
+    axes[0].set_title("Validation Loss")
     axes[0].legend()
     axes[0].grid(True, alpha=0.3)
 
-    axes[1].set_xlabel('Epoch')
-    axes[1].set_ylabel('Accuracy (%)')
-    axes[1].set_title('Validation Accuracy')
+    axes[1].set_xlabel("Epoch")
+    axes[1].set_ylabel("Accuracy (%)")
+    axes[1].set_title("Validation Accuracy")
     axes[1].legend()
     axes[1].grid(True, alpha=0.3)
 
     plt.tight_layout()
-    plt.savefig('attention_types_comparison.png', dpi=300, bbox_inches='tight')
+    plt.savefig("attention_types_comparison.png", dpi=300, bbox_inches="tight")
     plt.show()
 
 
 def main():
     """Main execution function."""
-    print("="*70)
+    print("=" * 70)
     print("Attention Mechanisms for Sequence Models")
-    print("="*70)
+    print("=" * 70)
 
     # Generate data
     print("\n1. Generating sequences with important regions...")
-    X, y = generate_synthetic_sequences(n_samples=1200, seq_length=30, n_features=10, n_classes=3)
-    X_train, X_temp, y_train, y_temp = train_test_split(X, y, test_size=0.3, random_state=42, stratify=y)
-    X_val, X_test, y_val, y_test = train_test_split(X_temp, y_temp, test_size=0.5, random_state=42, stratify=y_temp)
+    X, y = generate_synthetic_sequences(
+        n_samples=1200, seq_length=30, n_features=10, n_classes=3
+    )
+    X_train, X_temp, y_train, y_temp = train_test_split(
+        X, y, test_size=0.3, random_state=42, stratify=y
+    )
+    X_val, X_test, y_val, y_test = train_test_split(
+        X_temp, y_temp, test_size=0.5, random_state=42, stratify=y_temp
+    )
 
     input_size = X.shape[2]
     num_classes = len(np.unique(y))
-    class_names = ['Pattern at Start', 'Pattern in Middle', 'Pattern at End']
+    class_names = ["Pattern at Start", "Pattern in Middle", "Pattern at End"]
 
     # Compare attention types
     print("\n2. Comparing attention mechanisms...")
@@ -496,16 +531,18 @@ def main():
     train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
 
-    model = Seq2SeqWithAttention(input_size, 128, num_classes, attention_type='additive')
+    model = Seq2SeqWithAttention(
+        input_size, 128, num_classes, attention_type="additive"
+    )
     train_model(model, train_loader, val_loader, epochs=50, lr=0.001)
 
     # Visualize attention
     print("\n4. Visualizing attention weights...")
     visualize_attention_heatmap(model, X_test, y_test, class_names, n_samples=6)
 
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("Attention Mechanisms Complete!")
-    print("="*70)
+    print("=" * 70)
     print("\nKey Concepts:")
     print("✓ Attention focuses on relevant input parts")
     print("✓ Different mechanisms: additive, multiplicative, scaled dot-product")

@@ -7,7 +7,9 @@ import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.datasets import fetch_20newsgroups
 import warnings
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
+
 
 def train():
     print("Training Alternative Embeddings with Sentence-Transformers...")
@@ -15,14 +17,24 @@ def train():
     try:
         from sentence_transformers import SentenceTransformer
     except ImportError:
-        print("Note: Install sentence-transformers with: pip install sentence-transformers")
+        print(
+            "Note: Install sentence-transformers with: pip install sentence-transformers"
+        )
         return train_fallback_embeddings()
 
     try:
         # 1. Load Data
-        categories = ['alt.atheism', 'soc.religion.christian', 'comp.graphics', 'sci.med']
-        newsgroups = fetch_20newsgroups(subset='train', categories=categories,
-                                       remove=('headers', 'footers', 'quotes'))
+        categories = [
+            "alt.atheism",
+            "soc.religion.christian",
+            "comp.graphics",
+            "sci.med",
+        ]
+        newsgroups = fetch_20newsgroups(
+            subset="train",
+            categories=categories,
+            remove=("headers", "footers", "quotes"),
+        )
         documents = newsgroups.data[:100]  # Use first 100 documents
 
     except Exception:
@@ -48,7 +60,8 @@ def train():
     similarity_matrix = cosine_similarity(embeddings[:10])
 
     for i in range(3):
-        similar_idx = np.argsort(similarity_matrix[i])[-2]  # Second most similar (first is itself)
+        # Second most similar (first is itself)
+        similar_idx = np.argsort(similarity_matrix[i])[-2]
         similarity_score = similarity_matrix[i][similar_idx]
 
         print(f"\n--- Similarity Pair {i+1} ---")
@@ -73,7 +86,9 @@ def train():
     print("=== QA Validation ===")
 
     # Check embedding quality
-    avg_similarity = np.mean(similarity_matrix[np.triu_indices_from(similarity_matrix, k=1)])
+    avg_similarity = np.mean(
+        similarity_matrix[np.triu_indices_from(similarity_matrix, k=1)]
+    )
     print(f"Average inter-document similarity: {avg_similarity:.4f}")
 
     print("\n--- Sanity Checks ---")

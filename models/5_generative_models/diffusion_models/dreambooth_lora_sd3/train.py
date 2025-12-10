@@ -11,17 +11,36 @@ from tqdm.auto import tqdm
 from diffusers import StableDiffusion3Pipeline
 from peft import LoraConfig, get_peft_model
 
+
 def parse_args():
     parser = argparse.ArgumentParser(description="SD3 Dreambooth LoRA Trainer")
-    parser.add_argument("--image_dir", type=str, required=True, help="Directory containing instance images")
-    parser.add_argument("--output_dir", type=str, default="lora_weights", help="Where to save weights")
-    parser.add_argument("--instance_prompt", type=str, default="a photo of sks dog", help="Prompt with unique identifier")
-    parser.add_argument("--pretrained_model", type=str, default="stabilityai/stable-diffusion-3.5-large", help="Path to pretrained model")
+    parser.add_argument(
+        "--image_dir",
+        type=str,
+        required=True,
+        help="Directory containing instance images",
+    )
+    parser.add_argument(
+        "--output_dir", type=str, default="lora_weights", help="Where to save weights"
+    )
+    parser.add_argument(
+        "--instance_prompt",
+        type=str,
+        default="a photo of sks dog",
+        help="Prompt with unique identifier",
+    )
+    parser.add_argument(
+        "--pretrained_model",
+        type=str,
+        default="stabilityai/stable-diffusion-3.5-large",
+        help="Path to pretrained model",
+    )
     parser.add_argument("--resolution", type=int, default=1024)
     parser.add_argument("--train_batch_size", type=int, default=1)
     parser.add_argument("--max_train_steps", type=int, default=500)
     parser.add_argument("--learning_rate", type=float, default=1e-4)
     return parser.parse_args()
+
 
 class DreamBoothDataset(Dataset):
     def __init__(self, image_dir, instance_prompt, size=1024):
@@ -29,14 +48,22 @@ class DreamBoothDataset(Dataset):
         self.instance_prompt = instance_prompt
         self.size = size
 
-        self.images = [os.path.join(image_dir, f) for f in os.listdir(image_dir) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+        self.images = [
+            os.path.join(image_dir, f)
+            for f in os.listdir(image_dir)
+            if f.lower().endswith((".png", ".jpg", ".jpeg"))
+        ]
 
-        self.transforms = transforms.Compose([
-            transforms.Resize(size, interpolation=transforms.InterpolationMode.BILINEAR),
-            transforms.CenterCrop(size),
-            transforms.ToTensor(),
-            transforms.Normalize([0.5], [0.5]),
-        ])
+        self.transforms = transforms.Compose(
+            [
+                transforms.Resize(
+                    size, interpolation=transforms.InterpolationMode.BILINEAR
+                ),
+                transforms.CenterCrop(size),
+                transforms.ToTensor(),
+                transforms.Normalize([0.5], [0.5]),
+            ]
+        )
 
     def __len__(self):
         return len(self.images)
@@ -48,15 +75,24 @@ class DreamBoothDataset(Dataset):
 
         return {"pixel_values": img, "prompt": self.instance_prompt}
 
+
 def collate_fn(examples):
     pixel_values = torch.stack([example["pixel_values"] for example in examples])
     prompts = [example["prompt"] for example in examples]
     return {"pixel_values": pixel_values, "prompts": prompts}
 
-def train(args):
-    print(f"Initializing SD3 Dreambooth LoRA training for: {args.instance_prompt}")
 
-    device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
+def train(args):
+    print(
+        f"Initializing SD3 Dreambooth LoRA training for: {
+        args.instance_prompt}"
+    )
+
+    device = (
+        "cuda"
+        if torch.cuda.is_available()
+        else "mps" if torch.backends.mps.is_available() else "cpu"
+    )
     print(f"Using device: {device}")
 
     # 1. Load Pipeline (used for encoding & noise scheduling)
@@ -65,7 +101,9 @@ def train(args):
     # Load in bfloat16 to save memory, generally required for SD3
     dtype = torch.bfloat16 if device == "cuda" or device == "mps" else torch.float32
 
-    pipe = StableDiffusion3Pipeline.from_pretrained(args.pretrained_model, torch_dtype=dtype)
+    pipe = StableDiffusion3Pipeline.from_pretrained(
+        args.pretrained_model, torch_dtype=dtype
+    )
     pipe.to(device)
 
     transformer = pipe.transformer
@@ -90,14 +128,17 @@ def train(args):
     # Enable gradients for LoRA
     # In PEFT > 0.4 we can just use the model, but let's be explicit
     # get_peft_model is usually wrapper, but add_adapter is transformer specific method in diffusers or requires PEFT injection
-    # Actually, recent diffusers integration is cleaner. Let's use get_peft_model wrapper to be safe standard PEFT
+    # Actually, recent diffusers integration is cleaner. Let's use
+    # get_peft_model wrapper to be safe standard PEFT
     transformer = get_peft_model(transformer, lora_config)
     transformer.print_trainable_parameters()
-    transformer.to(device) # ensure on device
+    transformer.to(device)  # ensure on device
 
     # 3. Dataset & Dataloader
     dataset = DreamBoothDataset(args.image_dir, args.instance_prompt, args.resolution)
-    dataloader = DataLoader(dataset, batch_size=args.train_batch_size, shuffle=True, collate_fn=collate_fn)
+    dataloader = DataLoader(
+        dataset, batch_size=args.train_batch_size, shuffle=True, collate_fn=collate_fn
+    )
 
     # 4. Optimizer
     optimizer = torch.optim.AdamW(transformer.parameters(), lr=args.learning_rate)
@@ -121,8 +162,12 @@ def train(args):
                 latents = latents * vae.config.scaling_factor
 
                 # Encode prompt (using pipeline helper)
-                # SD3 encode_prompt returns: (prompt_embeds, negative_prompt_embeds, pooled_prompt_embeds, negative_pooled_prompt_embeds)
-                prompt_embeds, _, pooled_prompt_embeds, _ = pipe.encode_prompt(prompt=prompts, device=device)
+                # SD3 encode_prompt returns: (prompt_embeds,
+                # negative_prompt_embeds, pooled_prompt_embeds,
+                # negative_pooled_prompt_embeds)
+                prompt_embeds, _, pooled_prompt_embeds, _ = pipe.encode_prompt(
+                    prompt=prompts, device=device
+                )
 
             # Sample noise
             noise = torch.randn_like(latents)
@@ -151,7 +196,7 @@ def train(args):
             noisy_latents = (1 - sigmas) * latents + sigmas * noise
             target = noise - latents
 
-            timesteps = u * 1000.0 # Transformer expects 0-1000 typically
+            timesteps = u * 1000.0  # Transformer expects 0-1000 typically
 
             # Predict
             model_pred = transformer(
@@ -159,7 +204,7 @@ def train(args):
                 timestep=timesteps,
                 encoder_hidden_states=prompt_embeds,
                 pooled_projections=pooled_prompt_embeds,
-                return_dict=False
+                return_dict=False,
             )[0]
 
             # Loss (MSE between v-prediction and target)
@@ -181,12 +226,17 @@ def train(args):
 
     # 6. Save
     print(f"Saving LoRA weights to {args.output_dir}...")
-    pipe.save_lora_weights(args.output_dir) # Pipeline helper saves attached adapters cleanly
+    # Pipeline helper saves attached adapters cleanly
+    pipe.save_lora_weights(args.output_dir)
     print("Done.")
+
 
 if __name__ == "__main__":
     args = parse_args()
     if not os.path.exists(args.image_dir):
-        print(f"Error: Image directory '{args.image_dir}' not found. Please create it.")
+        print(
+            f"Error: Image directory '{
+        args.image_dir}' not found. Please create it."
+        )
     else:
         train(args)

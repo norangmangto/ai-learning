@@ -24,38 +24,39 @@ import time
 
 # Configuration
 CONFIG = {
-    'vector_size': 100,  # Embedding dimension
-    'window': 5,  # Context window size
-    'min_count': 5,  # Minimum word frequency
-    'workers': 4,  # Parallel workers
-    'epochs': 5,  # Training epochs
-    'sg': 1,  # 0=CBOW, 1=Skip-gram
-    'negative': 5,  # Negative sampling
-    'sample': 1e-3,  # Downsampling frequent words
-    'alpha': 0.025,  # Initial learning rate
-    'min_alpha': 0.0001,  # Minimum learning rate
+    "vector_size": 100,  # Embedding dimension
+    "window": 5,  # Context window size
+    "min_count": 5,  # Minimum word frequency
+    "workers": 4,  # Parallel workers
+    "epochs": 5,  # Training epochs
+    "sg": 1,  # 0=CBOW, 1=Skip-gram
+    "negative": 5,  # Negative sampling
+    "sample": 1e-3,  # Downsampling frequent words
+    "alpha": 0.025,  # Initial learning rate
+    "min_alpha": 0.0001,  # Minimum learning rate
 }
+
 
 def download_text8():
     """Download text8 dataset"""
-    data_dir = Path('data')
+    data_dir = Path("data")
     data_dir.mkdir(exist_ok=True)
 
-    zip_file = data_dir / 'text8.zip'
-    text_file = data_dir / 'text8'
+    zip_file = data_dir / "text8.zip"
+    text_file = data_dir / "text8"
 
     if text_file.exists():
         print(f"Text8 dataset already exists at {text_file}")
         return str(text_file)
 
     print("Downloading text8 dataset...")
-    url = 'http://mattmahoney.net/dc/text8.zip'
+    url = "http://mattmahoney.net/dc/text8.zip"
 
     try:
         urllib.request.urlretrieve(url, zip_file)
 
         print("Extracting text8 dataset...")
-        with zipfile.ZipFile(zip_file, 'r') as zip_ref:
+        with zipfile.ZipFile(zip_file, "r") as zip_ref:
             zip_ref.extractall(data_dir)
 
         os.remove(zip_file)
@@ -67,11 +68,12 @@ def download_text8():
         print(f"Error downloading text8: {e}")
         return None
 
+
 def load_corpus(file_path):
     """Load and preprocess corpus"""
     print(f"\nLoading corpus from {file_path}...")
 
-    with open(file_path, 'r') as f:
+    with open(file_path, "r") as f:
         text = f.read()
 
     # Split into sentences (simple approach)
@@ -83,7 +85,7 @@ def load_corpus(file_path):
     sentences = []
 
     for i in range(0, len(words), sentence_length):
-        sentence = words[i:i+sentence_length]
+        sentence = words[i : i + sentence_length]
         if len(sentence) > 0:
             sentences.append(sentence)
 
@@ -93,11 +95,12 @@ def load_corpus(file_path):
 
     return sentences
 
+
 def train_word2vec(sentences, config):
     """Train Word2Vec model"""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("TRAINING WORD2VEC MODEL")
-    print("="*80)
+    print("=" * 80)
     print(f"\nConfiguration:")
     for key, value in config.items():
         print(f"  {key}: {value}")
@@ -108,16 +111,16 @@ def train_word2vec(sentences, config):
 
     model = Word2Vec(
         sentences=sentences,
-        vector_size=config['vector_size'],
-        window=config['window'],
-        min_count=config['min_count'],
-        workers=config['workers'],
-        sg=config['sg'],
-        negative=config['negative'],
-        sample=config['sample'],
-        alpha=config['alpha'],
-        min_alpha=config['min_alpha'],
-        epochs=config['epochs']
+        vector_size=config["vector_size"],
+        window=config["window"],
+        min_count=config["min_count"],
+        workers=config["workers"],
+        sg=config["sg"],
+        negative=config["negative"],
+        sample=config["sample"],
+        alpha=config["alpha"],
+        min_alpha=config["min_alpha"],
+        epochs=config["epochs"],
     )
 
     training_time = time.time() - start_time
@@ -128,11 +131,12 @@ def train_word2vec(sentences, config):
 
     return model
 
+
 def load_glove_embeddings():
     """Load pre-trained GloVe embeddings"""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("LOADING PRE-TRAINED GLOVE EMBEDDINGS")
-    print("="*80)
+    print("=" * 80)
 
     # Note: This is a placeholder. In practice, download GloVe from:
     # https://nlp.stanford.edu/projects/glove/
@@ -146,8 +150,8 @@ def load_glove_embeddings():
     print("   model = KeyedVectors.load_word2vec_format('glove.word2vec.txt')")
 
     # Try to load if available
-    glove_file = Path('data/glove.6B.100d.txt')
-    w2v_file = Path('data/glove.word2vec.txt')
+    glove_file = Path("data/glove.6B.100d.txt")
+    w2v_file = Path("data/glove.word2vec.txt")
 
     if glove_file.exists():
         print(f"\nFound GloVe file: {glove_file}")
@@ -155,6 +159,7 @@ def load_glove_embeddings():
         if not w2v_file.exists():
             print("Converting GloVe to Word2Vec format...")
             from gensim.scripts.glove2word2vec import glove2word2vec
+
             glove2word2vec(str(glove_file), str(w2v_file))
 
         print("Loading GloVe embeddings...")
@@ -167,17 +172,18 @@ def load_glove_embeddings():
         print("Continuing with Word2Vec model only...")
         return None
 
+
 def explore_embeddings(model, model_name="Word2Vec"):
     """Explore word embeddings"""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print(f"EXPLORING {model_name} EMBEDDINGS")
-    print("="*80)
+    print("=" * 80)
 
     # Get word vectors
-    wv = model.wv if hasattr(model, 'wv') else model
+    wv = model.wv if hasattr(model, "wv") else model
 
     # Test words
-    test_words = ['king', 'queen', 'man', 'woman', 'computer', 'science']
+    test_words = ["king", "queen", "man", "woman", "computer", "science"]
 
     print("\n1. WORD SIMILARITIES")
     print("-" * 80)
@@ -196,24 +202,24 @@ def explore_embeddings(model, model_name="Word2Vec"):
     print("-" * 80)
 
     analogies = [
-        ('king', 'man', 'queen'),  # king - man + woman ≈ queen
-        ('paris', 'france', 'london'),  # paris - france + england ≈ london
-        ('good', 'better', 'bad'),  # good - better + bad ≈ worse
+        ("king", "man", "queen"),  # king - man + woman ≈ queen
+        ("paris", "france", "london"),  # paris - france + england ≈ london
+        ("good", "better", "bad"),  # good - better + bad ≈ worse
     ]
 
     for word_a, word_b, word_c in analogies:
         try:
             if all(w in wv for w in [word_a, word_b, word_c]):
                 result = wv.most_similar(
-                    positive=[word_b, word_c],
-                    negative=[word_a],
-                    topn=3
+                    positive=[word_b, word_c], negative=[word_a], topn=3
                 )
                 print(f"\n'{word_a}' is to '{word_b}' as '{word_c}' is to:")
                 for word, score in result:
                     print(f"  {word:15} {score:.4f}")
             else:
-                print(f"\nSkipping analogy (words not in vocabulary): {word_a}, {word_b}, {word_c}")
+                print(
+                    f"\nSkipping analogy (words not in vocabulary): {word_a}, {word_b}, {word_c}"
+                )
         except Exception as e:
             print(f"\nError computing analogy: {e}")
 
@@ -222,8 +228,8 @@ def explore_embeddings(model, model_name="Word2Vec"):
     print("-" * 80)
 
     word_lists = [
-        ['breakfast', 'cereal', 'dinner', 'lunch'],
-        ['dog', 'cat', 'mouse', 'furniture'],
+        ["breakfast", "cereal", "dinner", "lunch"],
+        ["dog", "cat", "mouse", "furniture"],
     ]
 
     for words in word_lists:
@@ -243,11 +249,11 @@ def explore_embeddings(model, model_name="Word2Vec"):
     print("-" * 80)
 
     word_pairs = [
-        ('king', 'queen'),
-        ('man', 'woman'),
-        ('computer', 'keyboard'),
-        ('car', 'automobile'),
-        ('king', 'car'),
+        ("king", "queen"),
+        ("man", "woman"),
+        ("computer", "keyboard"),
+        ("car", "automobile"),
+        ("king", "car"),
     ]
 
     for word1, word2 in word_pairs:
@@ -257,13 +263,14 @@ def explore_embeddings(model, model_name="Word2Vec"):
         else:
             print(f"Skipping pair (not in vocabulary): {word1}, {word2}")
 
-def visualize_embeddings(model, words=None, method='tsne'):
-    """Visualize word embeddings in 2D"""
-    print("\n" + "="*80)
-    print("VISUALIZING EMBEDDINGS")
-    print("="*80)
 
-    wv = model.wv if hasattr(model, 'wv') else model
+def visualize_embeddings(model, words=None, method="tsne"):
+    """Visualize word embeddings in 2D"""
+    print("\n" + "=" * 80)
+    print("VISUALIZING EMBEDDINGS")
+    print("=" * 80)
+
+    wv = model.wv if hasattr(model, "wv") else model
 
     # Select words to visualize
     if words is None:
@@ -283,10 +290,12 @@ def visualize_embeddings(model, words=None, method='tsne'):
     word_vectors = np.array([wv[word] for word in words])
 
     # Dimensionality reduction
-    if method == 'pca':
+    if method == "pca":
         reducer = PCA(n_components=2)
     else:  # tsne
-        reducer = TSNE(n_components=2, random_state=42, perplexity=min(30, len(words)-1))
+        reducer = TSNE(
+            n_components=2, random_state=42, perplexity=min(30, len(words) - 1)
+        )
 
     reduced_vectors = reducer.fit_transform(word_vectors)
 
@@ -300,44 +309,46 @@ def visualize_embeddings(model, words=None, method='tsne'):
             word,
             xy=(reduced_vectors[i, 0], reduced_vectors[i, 1]),
             xytext=(5, 2),
-            textcoords='offset points',
-            ha='right',
+            textcoords="offset points",
+            ha="right",
             fontsize=8,
-            alpha=0.7
+            alpha=0.7,
         )
 
-    plt.title(f'Word Embeddings Visualization ({method.upper()})')
-    plt.xlabel('Dimension 1')
-    plt.ylabel('Dimension 2')
+    plt.title(f"Word Embeddings Visualization ({method.upper()})")
+    plt.xlabel("Dimension 1")
+    plt.ylabel("Dimension 2")
     plt.grid(True, alpha=0.3)
 
     # Save plot
-    output_dir = Path('results')
+    output_dir = Path("results")
     output_dir.mkdir(exist_ok=True)
-    output_file = output_dir / f'word_embeddings_{method}.png'
-    plt.savefig(output_file, dpi=300, bbox_inches='tight')
+    output_file = output_dir / f"word_embeddings_{method}.png"
+    plt.savefig(output_file, dpi=300, bbox_inches="tight")
     print(f"Visualization saved to: {output_file}")
 
     plt.close()
 
-def save_model(model, model_name='word2vec'):
+
+def save_model(model, model_name="word2vec"):
     """Save trained model"""
-    output_dir = Path('models')
+    output_dir = Path("models")
     output_dir.mkdir(exist_ok=True)
 
-    output_file = output_dir / f'{model_name}.model'
+    output_file = output_dir / f"{model_name}.model"
     model.save(str(output_file))
     print(f"\nModel saved to: {output_file}")
 
     # Save word vectors only (smaller file)
-    wv_file = output_dir / f'{model_name}.wordvectors'
+    wv_file = output_dir / f"{model_name}.wordvectors"
     model.wv.save(str(wv_file))
     print(f"Word vectors saved to: {wv_file}")
 
+
 def main():
-    print("="*80)
+    print("=" * 80)
     print("WORD EMBEDDINGS WITH GENSIM")
-    print("="*80)
+    print("=" * 80)
 
     # Download and load corpus
     corpus_file = download_text8()
@@ -368,22 +379,34 @@ def main():
 
     # Visualize embeddings
     visualization_words = [
-        'man', 'woman', 'king', 'queen',
-        'computer', 'science', 'technology',
-        'cat', 'dog', 'animal',
-        'good', 'bad', 'better', 'worse',
-        'run', 'walk', 'jump'
+        "man",
+        "woman",
+        "king",
+        "queen",
+        "computer",
+        "science",
+        "technology",
+        "cat",
+        "dog",
+        "animal",
+        "good",
+        "bad",
+        "better",
+        "worse",
+        "run",
+        "walk",
+        "jump",
     ]
 
-    visualize_embeddings(model, words=visualization_words, method='tsne')
-    visualize_embeddings(model, words=visualization_words, method='pca')
+    visualize_embeddings(model, words=visualization_words, method="tsne")
+    visualize_embeddings(model, words=visualization_words, method="pca")
 
     # Save model
-    save_model(model, 'word2vec_text8')
+    save_model(model, "word2vec_text8")
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("TRAINING COMPLETED")
-    print("="*80)
+    print("=" * 80)
 
     print("\nModel Summary:")
     print(f"- Algorithm: {'Skip-gram' if CONFIG['sg'] == 1 else 'CBOW'}")
@@ -396,7 +419,9 @@ def main():
     print("✓ Word2Vec learns distributed representations of words")
     print("✓ Similar words have similar vector representations")
     print("✓ Can capture semantic relationships (king - man + woman ≈ queen)")
-    print("✓ Two training algorithms: CBOW (fast) and Skip-gram (better for rare words)")
+    print(
+        "✓ Two training algorithms: CBOW (fast) and Skip-gram (better for rare words)"
+    )
     print("✓ Negative sampling improves training efficiency")
 
     print("\nUse Cases:")
@@ -407,5 +432,6 @@ def main():
     print("- Named entity recognition")
     print("- Sentiment analysis")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

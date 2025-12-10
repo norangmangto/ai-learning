@@ -12,7 +12,7 @@ from transformers import (
     AutoTokenizer,
     TrainingArguments,
     Trainer,
-    DataCollatorForLanguageModeling
+    DataCollatorForLanguageModeling,
 )
 from datasets import Dataset
 import os
@@ -24,9 +24,12 @@ try:
     from langchain_community.llms import HuggingFacePipeline
     from langchain.prompts import PromptTemplate
     from langchain.chains import LLMChain
+
     LANGCHAIN_AVAILABLE = True
 except ImportError:
-    print("⚠ LangChain not installed. Install with: pip install langchain langchain-community")
+    print(
+        "⚠ LangChain not installed. Install with: pip install langchain langchain-community"
+    )
     LANGCHAIN_AVAILABLE = False
 
 
@@ -41,35 +44,35 @@ def create_instruction_dataset():
     data = [
         {
             "instruction": "Explain what a vector database is.",
-            "response": "A vector database is a specialized database designed to store and query high-dimensional vector embeddings. It enables semantic search by finding similar vectors using distance metrics like cosine similarity. Vector databases are essential for RAG systems, recommendation engines, and similarity search applications."
+            "response": "A vector database is a specialized database designed to store and query high-dimensional vector embeddings. It enables semantic search by finding similar vectors using distance metrics like cosine similarity. Vector databases are essential for RAG systems, recommendation engines, and similarity search applications.",
         },
         {
             "instruction": "What is LangChain and what is it used for?",
-            "response": "LangChain is a framework for developing applications powered by language models. It provides tools for chaining LLM calls, managing prompts, integrating with vector stores, and building complex AI applications. LangChain is commonly used for chatbots, question-answering systems, document analysis, and retrieval-augmented generation (RAG) pipelines."
+            "response": "LangChain is a framework for developing applications powered by language models. It provides tools for chaining LLM calls, managing prompts, integrating with vector stores, and building complex AI applications. LangChain is commonly used for chatbots, question-answering systems, document analysis, and retrieval-augmented generation (RAG) pipelines.",
         },
         {
             "instruction": "How does RAG (Retrieval Augmented Generation) work?",
-            "response": "RAG combines information retrieval with language model generation. First, relevant documents are retrieved from a knowledge base using semantic search. Then, these documents are provided as context to a language model, which generates a response based on both the retrieved information and its training. This approach reduces hallucinations and grounds responses in factual information."
+            "response": "RAG combines information retrieval with language model generation. First, relevant documents are retrieved from a knowledge base using semantic search. Then, these documents are provided as context to a language model, which generates a response based on both the retrieved information and its training. This approach reduces hallucinations and grounds responses in factual information.",
         },
         {
             "instruction": "What are the benefits of using LoRA for fine-tuning?",
-            "response": "LoRA (Low-Rank Adaptation) offers several benefits: 1) Memory efficiency - only trains a small subset of parameters, 2) Faster training - requires less computational resources, 3) Modular - LoRA adapters can be swapped without changing the base model, 4) Preserves base model - original model weights remain frozen, 5) Cost-effective - enables fine-tuning large models on consumer hardware."
+            "response": "LoRA (Low-Rank Adaptation) offers several benefits: 1) Memory efficiency - only trains a small subset of parameters, 2) Faster training - requires less computational resources, 3) Modular - LoRA adapters can be swapped without changing the base model, 4) Preserves base model - original model weights remain frozen, 5) Cost-effective - enables fine-tuning large models on consumer hardware.",
         },
         {
             "instruction": "Explain the difference between embeddings and language models.",
-            "response": "Embeddings convert text into fixed-size numerical vectors that capture semantic meaning, enabling similarity comparisons. They're typically smaller models (100M-1B parameters) used for search and retrieval. Language models generate text and understand complex instructions, typically being much larger (7B-70B+ parameters). In a RAG system, embeddings find relevant information while language models generate coherent responses."
+            "response": "Embeddings convert text into fixed-size numerical vectors that capture semantic meaning, enabling similarity comparisons. They're typically smaller models (100M-1B parameters) used for search and retrieval. Language models generate text and understand complex instructions, typically being much larger (7B-70B+ parameters). In a RAG system, embeddings find relevant information while language models generate coherent responses.",
         },
         {
             "instruction": "What is prompt engineering?",
-            "response": "Prompt engineering is the practice of designing effective prompts to get desired outputs from language models. It involves crafting instructions, providing examples (few-shot learning), structuring context, and using templates. Good prompt engineering can significantly improve model performance without fine-tuning, making it a cost-effective way to adapt LLMs to specific tasks."
+            "response": "Prompt engineering is the practice of designing effective prompts to get desired outputs from language models. It involves crafting instructions, providing examples (few-shot learning), structuring context, and using templates. Good prompt engineering can significantly improve model performance without fine-tuning, making it a cost-effective way to adapt LLMs to specific tasks.",
         },
         {
             "instruction": "How do you evaluate a language model's performance?",
-            "response": "Language models are evaluated using multiple methods: 1) Perplexity - measures how well the model predicts text, 2) Task-specific metrics - accuracy for classification, BLEU/ROUGE for generation, 3) Human evaluation - rating quality, coherence, and factuality, 4) Benchmark datasets - MMLU, HellaSwag, TruthfulQA, 5) Domain-specific tests - accuracy on your use case."
+            "response": "Language models are evaluated using multiple methods: 1) Perplexity - measures how well the model predicts text, 2) Task-specific metrics - accuracy for classification, BLEU/ROUGE for generation, 3) Human evaluation - rating quality, coherence, and factuality, 4) Benchmark datasets - MMLU, HellaSwag, TruthfulQA, 5) Domain-specific tests - accuracy on your use case.",
         },
         {
             "instruction": "What are the key components of a LangChain application?",
-            "response": "Key LangChain components include: 1) LLMs - the language models for generation, 2) Prompts - templates for formatting inputs, 3) Chains - sequences of LLM calls and logic, 4) Memory - conversation history management, 5) Embeddings - for semantic search, 6) Vector stores - document storage and retrieval, 7) Agents - autonomous decision-making systems, 8) Tools - external APIs and functions the LLM can use."
+            "response": "Key LangChain components include: 1) LLMs - the language models for generation, 2) Prompts - templates for formatting inputs, 3) Chains - sequences of LLM calls and logic, 4) Memory - conversation history management, 5) Embeddings - for semantic search, 6) Vector stores - document storage and retrieval, 7) Agents - autonomous decision-making systems, 8) Tools - external APIs and functions the LLM can use.",
         },
     ]
 
@@ -123,13 +126,11 @@ def train_gpt2_model():
             padding="max_length",
             truncation=True,
             max_length=512,
-            return_tensors="pt"
+            return_tensors="pt",
         )
 
     tokenized_dataset = dataset.map(
-        tokenize_function,
-        batched=True,
-        remove_columns=dataset.column_names
+        tokenize_function, batched=True, remove_columns=dataset.column_names
     )
 
     print(f"✓ Dataset prepared: {len(tokenized_dataset)} examples")
@@ -190,7 +191,9 @@ def train_gpt2_model():
     model.eval()
 
     for prompt in test_prompts:
-        print(f"\nPrompt: {prompt.split('Instruction:')[1].split('Response:')[0].strip()}")
+        print(
+            f"\nPrompt: {prompt.split('Instruction:')[1].split('Response:')[0].strip()}"
+        )
 
         inputs = tokenizer(prompt, return_tensors="pt", padding=True)
         if torch.cuda.is_available():
@@ -203,7 +206,7 @@ def train_gpt2_model():
                 temperature=0.7,
                 do_sample=True,
                 top_p=0.9,
-                pad_token_id=tokenizer.eos_token_id
+                pad_token_id=tokenizer.eos_token_id,
             )
 
         generated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
@@ -232,16 +235,13 @@ def train_gpt2_model():
     # Check 3: Tokenizer works
     test_text = "Hello world"
     tokens = tokenizer(test_text, return_tensors="pt")
-    if tokens['input_ids'].shape[1] > 0:
+    if tokens["input_ids"].shape[1] > 0:
         print("✓ Tokenizer working correctly")
     else:
         print("✗ WARNING: Tokenizer issue")
 
     print("\n=== Overall Validation Result ===")
-    validation_passed = (
-        os.path.exists(config_file) and
-        len(response) > 10
-    )
+    validation_passed = os.path.exists(config_file) and len(response) > 10
 
     if validation_passed:
         print("✓ Model validation PASSED - Ready for LangChain integration")
@@ -286,7 +286,7 @@ def train_with_lora():
         target_modules=["c_attn"],  # For GPT-2; adjust for other models
         lora_dropout=0.05,
         bias="none",
-        task_type="CAUSAL_LM"
+        task_type="CAUSAL_LM",
     )
 
     model = get_peft_model(model, lora_config)
@@ -294,7 +294,9 @@ def train_with_lora():
     total_params = sum(p.numel() for p in model.parameters())
 
     print(f"✓ LoRA configured")
-    print(f"  Trainable parameters: {trainable_params / 1e6:.2f}M ({100 * trainable_params / total_params:.2f}%)")
+    print(
+        f"  Trainable parameters: {trainable_params / 1e6:.2f}M ({100 * trainable_params / total_params:.2f}%)"
+    )
     print(f"  Total parameters: {total_params / 1e6:.2f}M")
 
     # 3. Prepare dataset
@@ -309,7 +311,9 @@ def train_with_lora():
             max_length=512,
         )
 
-    tokenized_dataset = dataset.map(tokenize_function, batched=True, remove_columns=dataset.column_names)
+    tokenized_dataset = dataset.map(
+        tokenize_function, batched=True, remove_columns=dataset.column_names
+    )
     print(f"✓ Dataset ready: {len(tokenized_dataset)} examples")
 
     # 4. Training

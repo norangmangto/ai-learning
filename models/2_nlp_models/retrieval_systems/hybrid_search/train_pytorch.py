@@ -25,29 +25,30 @@ from collections import defaultdict
 
 # Download NLTK data
 try:
-    nltk.data.find('tokenizers/punkt')
+    nltk.data.find("tokenizers/punkt")
 except LookupError:
-    nltk.download('punkt')
+    nltk.download("punkt")
 
 try:
-    nltk.data.find('corpora/stopwords')
+    nltk.data.find("corpora/stopwords")
 except LookupError:
-    nltk.download('stopwords')
+    nltk.download("stopwords")
 
 # Configuration
 CONFIG = {
-    'semantic_model': 'all-MiniLM-L6-v2',
-    'corpus_size': 1000,
-    'top_k': 10,
-    'alpha': 0.5,  # Hybrid weight (0=BM25, 1=semantic)
-    'device': 'cuda' if torch.cuda.is_available() else 'cpu',
-    'output_dir': 'results/hybrid_search'
+    "semantic_model": "all-MiniLM-L6-v2",
+    "corpus_size": 1000,
+    "top_k": 10,
+    "alpha": 0.5,  # Hybrid weight (0=BM25, 1=semantic)
+    "device": "cuda" if torch.cuda.is_available() else "cpu",
+    "output_dir": "results/hybrid_search",
 }
+
 
 class HybridSearchSystem:
     """Hybrid search combining BM25 and semantic search"""
 
-    def __init__(self, corpus, semantic_model_name='all-MiniLM-L6-v2', device='cpu'):
+    def __init__(self, corpus, semantic_model_name="all-MiniLM-L6-v2", device="cpu"):
         self.corpus = corpus
         self.device = device
 
@@ -68,9 +69,7 @@ class HybridSearchSystem:
 
         print("\n3. Encoding corpus...")
         self.corpus_embeddings = self.semantic_model.encode(
-            corpus,
-            convert_to_tensor=True,
-            show_progress_bar=True
+            corpus, convert_to_tensor=True, show_progress_bar=True
         )
         print(f"   Corpus embeddings shape: {self.corpus_embeddings.shape}")
 
@@ -82,7 +81,7 @@ class HybridSearchSystem:
         try:
             tokens = word_tokenize(text.lower())
             # Remove stopwords and short tokens
-            stop_words = set(stopwords.words('english'))
+            stop_words = set(stopwords.words("english"))
             tokens = [t for t in tokens if t not in stop_words and len(t) > 2]
             return tokens
         except:
@@ -98,20 +97,15 @@ class HybridSearchSystem:
 
         results = []
         for idx in top_indices:
-            results.append({
-                'idx': int(idx),
-                'score': float(scores[idx]),
-                'text': self.corpus[idx]
-            })
+            results.append(
+                {"idx": int(idx), "score": float(scores[idx]), "text": self.corpus[idx]}
+            )
 
         return results
 
     def search_semantic(self, query, top_k=10):
         """Semantic search with embeddings"""
-        query_embedding = self.semantic_model.encode(
-            query,
-            convert_to_tensor=True
-        )
+        query_embedding = self.semantic_model.encode(query, convert_to_tensor=True)
 
         # Cosine similarity
         cos_scores = util.cos_sim(query_embedding, self.corpus_embeddings)[0]
@@ -121,11 +115,9 @@ class HybridSearchSystem:
 
         results = []
         for score, idx in zip(top_results.values, top_results.indices):
-            results.append({
-                'idx': int(idx),
-                'score': float(score),
-                'text': self.corpus[idx]
-            })
+            results.append(
+                {"idx": int(idx), "score": float(score), "text": self.corpus[idx]}
+            )
 
         return results
 
@@ -139,40 +131,34 @@ class HybridSearchSystem:
             alpha: Weight (0=only BM25, 1=only semantic, 0.5=balanced)
         """
         # Get results from both methods
-        bm25_results = self.search_bm25(query, top_k=top_k*2)
-        semantic_results = self.search_semantic(query, top_k=top_k*2)
+        bm25_results = self.search_bm25(query, top_k=top_k * 2)
+        semantic_results = self.search_semantic(query, top_k=top_k * 2)
 
         # Normalize scores
         if len(bm25_results) > 0:
-            max_bm25 = max(r['score'] for r in bm25_results)
-            min_bm25 = min(r['score'] for r in bm25_results)
+            max_bm25 = max(r["score"] for r in bm25_results)
+            min_bm25 = min(r["score"] for r in bm25_results)
             if max_bm25 > min_bm25:
                 for r in bm25_results:
-                    r['score'] = (r['score'] - min_bm25) / (max_bm25 - min_bm25)
+                    r["score"] = (r["score"] - min_bm25) / (max_bm25 - min_bm25)
 
         # Combine scores
         combined_scores = defaultdict(float)
 
         for r in bm25_results:
-            combined_scores[r['idx']] += (1 - alpha) * r['score']
+            combined_scores[r["idx"]] += (1 - alpha) * r["score"]
 
         for r in semantic_results:
-            combined_scores[r['idx']] += alpha * r['score']
+            combined_scores[r["idx"]] += alpha * r["score"]
 
         # Sort by combined score
         sorted_indices = sorted(
-            combined_scores.items(),
-            key=lambda x: x[1],
-            reverse=True
+            combined_scores.items(), key=lambda x: x[1], reverse=True
         )[:top_k]
 
         results = []
         for idx, score in sorted_indices:
-            results.append({
-                'idx': idx,
-                'score': score,
-                'text': self.corpus[idx]
-            })
+            results.append({"idx": idx, "score": score, "text": self.corpus[idx]})
 
         return results
 
@@ -184,12 +170,12 @@ class HybridSearchSystem:
         RRF score = sum(1 / (k + rank))
         """
         # Get results from both methods
-        bm25_results = self.search_bm25(query, top_k=top_k*2)
-        semantic_results = self.search_semantic(query, top_k=top_k*2)
+        bm25_results = self.search_bm25(query, top_k=top_k * 2)
+        semantic_results = self.search_semantic(query, top_k=top_k * 2)
 
         # Build rank dictionaries
-        bm25_ranks = {r['idx']: rank+1 for rank, r in enumerate(bm25_results)}
-        semantic_ranks = {r['idx']: rank+1 for rank, r in enumerate(semantic_results)}
+        bm25_ranks = {r["idx"]: rank + 1 for rank, r in enumerate(bm25_results)}
+        semantic_ranks = {r["idx"]: rank + 1 for rank, r in enumerate(semantic_results)}
 
         # Compute RRF scores
         all_indices = set(bm25_ranks.keys()) | set(semantic_ranks.keys())
@@ -204,39 +190,34 @@ class HybridSearchSystem:
             rrf_scores[idx] = score
 
         # Sort by RRF score
-        sorted_indices = sorted(
-            rrf_scores.items(),
-            key=lambda x: x[1],
-            reverse=True
-        )[:top_k]
+        sorted_indices = sorted(rrf_scores.items(), key=lambda x: x[1], reverse=True)[
+            :top_k
+        ]
 
         results = []
         for idx, score in sorted_indices:
-            results.append({
-                'idx': idx,
-                'score': score,
-                'text': self.corpus[idx]
-            })
+            results.append({"idx": idx, "score": score, "text": self.corpus[idx]})
 
         return results
 
+
 def load_corpus(max_size=1000):
     """Load document corpus"""
-    print("="*80)
+    print("=" * 80)
     print("LOADING CORPUS")
-    print("="*80)
+    print("=" * 80)
 
     try:
         # Load MS MARCO passages
-        dataset = load_dataset('ms_marco', 'v2.1', split='train', streaming=True)
+        dataset = load_dataset("ms_marco", "v2.1", split="train", streaming=True)
 
         corpus = []
         for i, item in enumerate(dataset):
             if i >= max_size:
                 break
 
-            if 'passages' in item and len(item['passages']['passage_text']) > 0:
-                text = item['passages']['passage_text'][0]
+            if "passages" in item and len(item["passages"]["passage_text"]) > 0:
+                text = item["passages"]["passage_text"][0]
                 corpus.append(text)
 
         print(f"Loaded {len(corpus)} documents from MS MARCO")
@@ -267,16 +248,17 @@ def load_corpus(max_size=1000):
             "Generative adversarial networks consist of two neural networks competing against each other.",
             "Feature engineering transforms raw data into meaningful inputs for machine learning models.",
             "Cross-validation is a technique for assessing model generalization on unseen data.",
-            "Hyperparameter tuning optimizes model configuration for better performance on validation data."
+            "Hyperparameter tuning optimizes model configuration for better performance on validation data.",
         ]
 
         return corpus
 
+
 def compare_search_methods(hybrid_system, queries):
     """Compare different search methods"""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("COMPARING SEARCH METHODS")
-    print("="*80)
+    print("=" * 80)
 
     for i, query in enumerate(queries, 1):
         print(f"\n{'='*80}")
@@ -331,22 +313,21 @@ def compare_search_methods(hybrid_system, queries):
             print(f"   {result['text'][:100]}...")
         print(f"Time: {rrf_time*1000:.2f}ms")
 
+
 def main():
-    print("="*80)
+    print("=" * 80)
     print("HYBRID SEARCH SYSTEM")
     print("BM25 + Semantic Search")
-    print("="*80)
+    print("=" * 80)
 
     print(f"\nDevice: {CONFIG['device']}")
 
     # Load corpus
-    corpus = load_corpus(CONFIG['corpus_size'])
+    corpus = load_corpus(CONFIG["corpus_size"])
 
     # Build hybrid search system
     hybrid_system = HybridSearchSystem(
-        corpus,
-        CONFIG['semantic_model'],
-        CONFIG['device']
+        corpus, CONFIG["semantic_model"], CONFIG["device"]
     )
 
     # Test queries
@@ -354,15 +335,15 @@ def main():
         "How do neural networks learn?",
         "What is the difference between supervised and unsupervised learning?",
         "Explain transformers in deep learning",
-        "Python frameworks for machine learning"
+        "Python frameworks for machine learning",
     ]
 
     # Compare methods
     compare_search_methods(hybrid_system, test_queries)
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("HYBRID SEARCH COMPLETED")
-    print("="*80)
+    print("=" * 80)
 
     print("\nSearch Method Comparison:")
     print("\n1. BM25 (Lexical)")
@@ -398,5 +379,6 @@ def main():
     print("- Enterprise knowledge bases")
     print("- Legal document discovery")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

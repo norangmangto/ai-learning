@@ -8,7 +8,12 @@ This script covers:
 """
 
 import numpy as np
-from sentence_transformers import SentenceTransformer, CrossEncoder, losses, InputExample
+from sentence_transformers import (
+    SentenceTransformer,
+    CrossEncoder,
+    losses,
+    InputExample,
+)
 from torch.utils.data import DataLoader
 import os
 
@@ -18,9 +23,12 @@ try:
     from langchain_community.embeddings import HuggingFaceEmbeddings
     from langchain.retrievers import BM25Retriever, EnsembleRetriever
     from langchain.schema import Document
+
     LANGCHAIN_AVAILABLE = True
 except ImportError:
-    print("⚠ LangChain not installed. Install with: pip install langchain langchain-community chromadb faiss-cpu rank-bm25")
+    print(
+        "⚠ LangChain not installed. Install with: pip install langchain langchain-community chromadb faiss-cpu rank-bm25"
+    )
     LANGCHAIN_AVAILABLE = False
 
 
@@ -31,38 +39,39 @@ def create_retrieval_training_data():
     """
 
     # Sample training triplets
-    # In production, use datasets like MS MARCO, Natural Questions, or domain-specific data
+    # In production, use datasets like MS MARCO, Natural Questions, or
+    # domain-specific data
     train_data = [
         # Query, Positive document, Negative document
         (
             "What is a vector database?",
             "Vector databases are specialized databases designed to store and query high-dimensional vector embeddings efficiently. They use algorithms like HNSW or IVF for approximate nearest neighbor search.",
-            "Traditional relational databases use SQL for querying structured data in tables with rows and columns."
+            "Traditional relational databases use SQL for querying structured data in tables with rows and columns.",
         ),
         (
             "How does RAG work?",
             "RAG (Retrieval Augmented Generation) first retrieves relevant documents from a knowledge base, then uses these as context for a language model to generate accurate, grounded responses.",
-            "RNN (Recurrent Neural Networks) are neural networks designed for sequential data processing with feedback connections."
+            "RNN (Recurrent Neural Networks) are neural networks designed for sequential data processing with feedback connections.",
         ),
         (
             "Explain semantic search",
             "Semantic search uses embeddings to find content based on meaning rather than exact keywords. It converts queries and documents to vectors and finds similar items using cosine similarity.",
-            "Binary search is an algorithm for finding an element in a sorted array by repeatedly dividing the search interval in half."
+            "Binary search is an algorithm for finding an element in a sorted array by repeatedly dividing the search interval in half.",
         ),
         (
             "What are embedding models?",
             "Embedding models convert text into dense vector representations that capture semantic meaning. Popular models include BERT, Sentence-BERT, and OpenAI's text-embedding models.",
-            "Image generation models like DALL-E and Stable Diffusion create images from text descriptions using diffusion processes."
+            "Image generation models like DALL-E and Stable Diffusion create images from text descriptions using diffusion processes.",
         ),
         (
             "LangChain retrieval techniques",
             "LangChain provides multiple retrieval methods including vector stores (FAISS, Chroma), BM25 for keyword search, hybrid retrievers combining both, and multi-query retrievers for improved recall.",
-            "React hooks are functions that let you use state and lifecycle features in functional components without writing classes."
+            "React hooks are functions that let you use state and lifecycle features in functional components without writing classes.",
         ),
         (
             "Fine-tuning vs prompt engineering",
             "Fine-tuning updates model weights on task-specific data for optimal performance but requires compute and data. Prompt engineering modifies inputs without changing the model, offering quick adaptation with less overhead.",
-            "CSS Grid and Flexbox are layout systems in CSS for creating responsive web designs with different alignment capabilities."
+            "CSS Grid and Flexbox are layout systems in CSS for creating responsive web designs with different alignment capabilities.",
         ),
     ]
 
@@ -92,7 +101,10 @@ def train_dense_retriever():
     print(f"\n1. Loading base model: {model_name}")
 
     model = SentenceTransformer(model_name)
-    print(f"✓ Model loaded: {model.get_sentence_embedding_dimension()} dimensions")
+    print(
+        f"✓ Model loaded: {
+        model.get_sentence_embedding_dimension()} dimensions"
+    )
 
     # 2. Prepare training data
     print("\n2. Preparing retrieval training data...")
@@ -132,7 +144,7 @@ def train_dense_retriever():
     queries = [
         "What is semantic search?",
         "Explain vector databases",
-        "How to use LangChain?"
+        "How to use LangChain?",
     ]
 
     documents = [
@@ -152,7 +164,7 @@ def train_dense_retriever():
 
     correct_retrievals = 0
     for i, query in enumerate(queries):
-        similarities = cos_sim(query_embeddings[i:i+1], doc_embeddings)[0]
+        similarities = cos_sim(query_embeddings[i : i + 1], doc_embeddings)[0]
         top_idx = similarities.argmax().item()
 
         print(f"\nQuery: '{query}'")
@@ -191,9 +203,9 @@ def train_dense_retriever():
 
     print("\n=== Overall Validation Result ===")
     validation_passed = (
-        len(test_emb) == model.get_sentence_embedding_dimension() and
-        retrieval_accuracy >= 0.3 and
-        os.path.exists(os.path.join(output_path, "config.json"))
+        len(test_emb) == model.get_sentence_embedding_dimension()
+        and retrieval_accuracy >= 0.3
+        and os.path.exists(os.path.join(output_path, "config.json"))
     )
 
     if validation_passed:
@@ -228,10 +240,11 @@ def train_cross_encoder_reranker():
     # Convert to cross-encoder format
     train_samples = []
     for example in train_data:
-        train_samples.append(InputExample(
-            texts=[example.texts[0], example.texts[1]],
-            label=float(example.label)
-        ))
+        train_samples.append(
+            InputExample(
+                texts=[example.texts[0], example.texts[1]], label=float(example.label)
+            )
+        )
 
     print(f"✓ Created {len(train_samples)} training samples")
 
@@ -304,10 +317,9 @@ def train_cross_encoder_reranker():
         print("✗ WARNING: Model files missing")
 
     print("\n=== Overall Validation Result ===")
-    validation_passed = (
-        all(isinstance(s, (int, float, np.number)) for s in scores) and
-        os.path.exists(os.path.join(output_path, "config.json"))
-    )
+    validation_passed = all(
+        isinstance(s, (int, float, np.number)) for s in scores
+    ) and os.path.exists(os.path.join(output_path, "config.json"))
 
     if validation_passed:
         print("✓ Cross-encoder validation PASSED")
@@ -355,7 +367,9 @@ def demonstrate_langchain_retrieval():
         embeddings = HuggingFaceEmbeddings(model_name=retriever_path)
     else:
         print("  Using default embeddings (fine-tuned model not found)")
-        embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+        embeddings = HuggingFaceEmbeddings(
+            model_name="sentence-transformers/all-MiniLM-L6-v2"
+        )
 
     # Create vector store
     vector_store = FAISS.from_documents(docs, embeddings)
@@ -387,7 +401,7 @@ def demonstrate_langchain_retrieval():
 
     hybrid_retriever = EnsembleRetriever(
         retrievers=[dense_retriever, bm25_retriever],
-        weights=[0.5, 0.5]  # Equal weighting
+        weights=[0.5, 0.5],  # Equal weighting
     )
 
     results = hybrid_retriever.invoke(test_query)
@@ -405,7 +419,7 @@ def demonstrate_langchain_retrieval():
     query_variations = [
         "How does semantic search work?",
         "What is the mechanism behind semantic search?",
-        "Explain semantic search functionality"
+        "Explain semantic search functionality",
     ]
 
     all_results = []

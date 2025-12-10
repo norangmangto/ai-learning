@@ -4,11 +4,13 @@ import cv2
 import numpy as np
 from collections import defaultdict
 
+
 class VideoObjectDetector:
     """
     Object detection and tracking in videos using TensorFlow
     """
-    def __init__(self, model_type='efficientdet'):
+
+    def __init__(self, model_type="efficientdet"):
         """
         Initialize video object detector
         model_type: 'efficientdet', 'ssd'
@@ -16,9 +18,9 @@ class VideoObjectDetector:
         self.model_type = model_type
 
         # Load detection model from TensorFlow Hub
-        if model_type == 'efficientdet':
+        if model_type == "efficientdet":
             model_url = "https://tfhub.dev/tensorflow/efficientdet/d0/1"
-        elif model_type == 'ssd':
+        elif model_type == "ssd":
             model_url = "https://tfhub.dev/tensorflow/ssd_mobilenet_v2/2"
         else:
             model_url = "https://tfhub.dev/tensorflow/efficientdet/d0/1"
@@ -32,18 +34,86 @@ class VideoObjectDetector:
 
         # COCO class names
         self.coco_names = [
-            'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus',
-            'train', 'truck', 'boat', 'traffic light', 'fire hydrant', 'stop sign',
-            'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow',
-            'elephant', 'bear', 'zebra', 'giraffe', 'backpack', 'umbrella',
-            'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball',
-            'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard', 'tennis racket',
-            'bottle', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl',
-            'banana', 'apple', 'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza',
-            'donut', 'cake', 'chair', 'couch', 'potted plant', 'bed', 'dining table',
-            'toilet', 'tv', 'laptop', 'mouse', 'remote', 'keyboard',
-            'cell phone', 'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'book',
-            'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush'
+            "person",
+            "bicycle",
+            "car",
+            "motorcycle",
+            "airplane",
+            "bus",
+            "train",
+            "truck",
+            "boat",
+            "traffic light",
+            "fire hydrant",
+            "stop sign",
+            "parking meter",
+            "bench",
+            "bird",
+            "cat",
+            "dog",
+            "horse",
+            "sheep",
+            "cow",
+            "elephant",
+            "bear",
+            "zebra",
+            "giraffe",
+            "backpack",
+            "umbrella",
+            "handbag",
+            "tie",
+            "suitcase",
+            "frisbee",
+            "skis",
+            "snowboard",
+            "sports ball",
+            "kite",
+            "baseball bat",
+            "baseball glove",
+            "skateboard",
+            "surfboard",
+            "tennis racket",
+            "bottle",
+            "wine glass",
+            "cup",
+            "fork",
+            "knife",
+            "spoon",
+            "bowl",
+            "banana",
+            "apple",
+            "sandwich",
+            "orange",
+            "broccoli",
+            "carrot",
+            "hot dog",
+            "pizza",
+            "donut",
+            "cake",
+            "chair",
+            "couch",
+            "potted plant",
+            "bed",
+            "dining table",
+            "toilet",
+            "tv",
+            "laptop",
+            "mouse",
+            "remote",
+            "keyboard",
+            "cell phone",
+            "microwave",
+            "oven",
+            "toaster",
+            "sink",
+            "refrigerator",
+            "book",
+            "clock",
+            "vase",
+            "scissors",
+            "teddy bear",
+            "hair drier",
+            "toothbrush",
         ]
 
     def detect_frame(self, frame, confidence_threshold=0.5):
@@ -59,35 +129,44 @@ class VideoObjectDetector:
         detections = self.model(input_tensor)
 
         # Extract results
-        num_detections = int(detections.pop('num_detections'))
-        detections = {key: value[0, :num_detections].numpy()
-                     for key, value in detections.items()}
-        detections['num_detections'] = num_detections
-        detections['detection_classes'] = detections['detection_classes'].astype(np.int64)
+        num_detections = int(detections.pop("num_detections"))
+        detections = {
+            key: value[0, :num_detections].numpy() for key, value in detections.items()
+        }
+        detections["num_detections"] = num_detections
+        detections["detection_classes"] = detections["detection_classes"].astype(
+            np.int64
+        )
 
         # Convert to list format
         results = []
         height, width = frame.shape[:2]
 
         for i in range(num_detections):
-            score = detections['detection_scores'][i]
+            score = detections["detection_scores"][i]
             if score >= confidence_threshold:
-                class_id = detections['detection_classes'][i]
-                bbox = detections['detection_boxes'][i]
+                class_id = detections["detection_classes"][i]
+                bbox = detections["detection_boxes"][i]
 
                 # Convert normalized coordinates to pixel coordinates
                 ymin, xmin, ymax, xmax = bbox
                 x1, y1 = int(xmin * width), int(ymin * height)
                 x2, y2 = int(xmax * width), int(ymax * height)
 
-                label = self.coco_names[class_id - 1] if class_id <= len(self.coco_names) else f"class_{class_id}"
+                label = (
+                    self.coco_names[class_id - 1]
+                    if class_id <= len(self.coco_names)
+                    else f"class_{class_id}"
+                )
 
-                results.append({
-                    'label': label,
-                    'confidence': float(score),
-                    'bbox': [x1, y1, x2, y2],
-                    'class_id': int(class_id)
-                })
+                results.append(
+                    {
+                        "label": label,
+                        "confidence": float(score),
+                        "bbox": [x1, y1, x2, y2],
+                        "class_id": int(class_id),
+                    }
+                )
 
         return results
 
@@ -119,7 +198,7 @@ class VideoObjectDetector:
         if not self.tracks:
             for det in detections:
                 self.tracks[self.next_track_id] = det
-                det['track_id'] = self.next_track_id
+                det["track_id"] = self.next_track_id
                 self.next_track_id += 1
             return detections
 
@@ -136,13 +215,13 @@ class VideoObjectDetector:
                 if track_id in matched_track_ids:
                     continue
 
-                iou = self.compute_iou(det['bbox'], track['bbox'])
+                iou = self.compute_iou(det["bbox"], track["bbox"])
                 if iou > best_iou and iou >= iou_threshold:
                     best_iou = iou
                     best_track_id = track_id
 
             if best_track_id is not None:
-                det['track_id'] = best_track_id
+                det["track_id"] = best_track_id
                 self.tracks[best_track_id] = det
                 matched_track_ids.add(best_track_id)
                 matched_detections.append(det)
@@ -152,13 +231,15 @@ class VideoObjectDetector:
         # Create new tracks for unmatched detections
         for det in unmatched_detections:
             self.tracks[self.next_track_id] = det
-            det['track_id'] = self.next_track_id
+            det["track_id"] = self.next_track_id
             self.next_track_id += 1
             matched_detections.append(det)
 
         # Remove old tracks
-        active_track_ids = {det['track_id'] for det in matched_detections}
-        self.tracks = {tid: track for tid, track in self.tracks.items() if tid in active_track_ids}
+        active_track_ids = {det["track_id"] for det in matched_detections}
+        self.tracks = {
+            tid: track for tid, track in self.tracks.items() if tid in active_track_ids
+        }
 
         return matched_detections
 
@@ -177,7 +258,7 @@ class VideoObjectDetector:
 
         # Video writer
         if output_path:
-            fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+            fourcc = cv2.VideoWriter_fourcc(*"mp4v")
             out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
 
         frame_count = 0
@@ -196,18 +277,19 @@ class VideoObjectDetector:
 
             # Draw detections with track IDs
             for det in tracked_detections:
-                x1, y1, x2, y2 = det['bbox']
-                track_id = det.get('track_id', -1)
+                x1, y1, x2, y2 = det["bbox"]
+                track_id = det.get("track_id", -1)
                 label = f"{det['label']} ID:{track_id} {det['confidence']:.2f}"
 
                 # Different color for each track
                 color = self.get_track_color(track_id)
 
                 cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
-                cv2.putText(frame, label, (x1, y1 - 10),
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+                cv2.putText(
+                    frame, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2
+                )
 
-                total_detections[det['label']] += 1
+                total_detections[det["label"]] += 1
 
             if output_path:
                 out.write(frame)
@@ -231,6 +313,7 @@ class VideoObjectDetector:
         """Generate consistent color for each track"""
         np.random.seed(track_id)
         return tuple(np.random.randint(0, 255, 3).tolist())
+
 
 def train():
     print("Training Video Object Detection with TensorFlow...")
@@ -259,7 +342,8 @@ def train():
 
     # 4. Implementation Example
     print("\n=== Basic Implementation ===")
-    print("""
+    print(
+        """
     # Initialize detector
     detector = VideoObjectDetector(model_type='efficientdet')
 
@@ -271,11 +355,13 @@ def train():
     )
 
     # Results contain counts of detected objects per class
-    """)
+    """
+    )
 
     # 5. OpenCV Trackers
     print("\n=== OpenCV Built-in Trackers ===")
-    print("""
+    print(
+        """
     OpenCV provides several tracking algorithms:
 
     # KCF (Kernelized Correlation Filters)
@@ -293,11 +379,13 @@ def train():
 
     # Update tracker
     success, bbox = tracker.update(next_frame)
-    """)
+    """
+    )
 
     # 6. Multi-Object Tracking
     print("\n=== Multi-Object Tracking ===")
-    print("""
+    print(
+        """
     For tracking multiple objects:
 
     1. Detection-based tracking:
@@ -313,7 +401,8 @@ def train():
     3. Joint detection-tracking:
        - FairMOT: Single network for both tasks
        - CenterTrack: Track objects by center points
-    """)
+    """
+    )
 
     # 7. Performance Optimization
     print("\n=== Performance Optimization ===")
@@ -325,7 +414,8 @@ def train():
 
     # 8. TensorFlow Lite for Mobile
     print("\n=== TensorFlow Lite Deployment ===")
-    print("""
+    print(
+        """
     Convert model to TFLite for mobile/edge devices:
 
     # Convert model
@@ -340,7 +430,8 @@ def train():
     # Load and run inference
     interpreter = tf.lite.Interpreter(model_path='model.tflite')
     interpreter.allocate_tensors()
-    """)
+    """
+    )
 
     # 9. Use Cases
     print("\n=== Use Cases ===")
@@ -376,6 +467,7 @@ def train():
     print("• Anomaly detection: Detect unusual behavior")
     print("• Trajectory prediction: Predict future paths")
     print("• Multi-camera tracking: Track across multiple views")
+
 
 if __name__ == "__main__":
     train()

@@ -4,12 +4,15 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, r2_score
 import numpy as np
 
+
 def train():
     print("Training Linear Regression with TensorFlow...")
 
     # 1. Prepare Data
     X, y = make_regression(n_samples=1000, n_features=1, noise=10, random_state=42)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42
+    )
 
     X_train = tf.constant(X_train, dtype=tf.float32)
     y_train = tf.constant(y_train, dtype=tf.float32)
@@ -17,12 +20,10 @@ def train():
     y_test = tf.constant(y_test, dtype=tf.float32)
 
     # 2. Build Model
-    model = tf.keras.Sequential([
-        tf.keras.layers.Dense(1, input_shape=(1,))
-    ])
+    model = tf.keras.Sequential([tf.keras.layers.Dense(1, input_shape=(1,))])
 
     # 3. Compile Model
-    model.compile(optimizer='sgd', loss='mse', metrics=['mae'])
+    model.compile(optimizer="sgd", loss="mse", metrics=["mae"])
 
     # 4. Train Model
     model.fit(X_train, y_train, epochs=100, batch_size=32, verbose=0)

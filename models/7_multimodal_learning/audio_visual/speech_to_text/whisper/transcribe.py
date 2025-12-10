@@ -3,9 +3,14 @@ from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
 import argparse
 import os
 
+
 def load_model(model_id="openai/whisper-large-v3-turbo"):
     print(f"Loading Whisper model: {model_id}...")
-    device = "cuda:0" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
+    device = (
+        "cuda:0"
+        if torch.cuda.is_available()
+        else "mps" if torch.backends.mps.is_available() else "cpu"
+    )
     torch_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
 
     model = AutoModelForSpeechSeq2Seq.from_pretrained(
@@ -24,6 +29,7 @@ def load_model(model_id="openai/whisper-large-v3-turbo"):
         device=device,
     )
     return pipe
+
 
 def transcribe(audio_path, model_id="openai/whisper-large-v3-turbo", language=None):
     if not os.path.exists(audio_path):
@@ -54,11 +60,26 @@ def transcribe(audio_path, model_id="openai/whisper-large-v3-turbo", language=No
         f.write(result["text"])
     print(f"Transcription saved to '{output_path}'")
 
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Transcribe audio using OpenAI Whisper (Hugging Face)")
-    parser.add_argument("audio_path", type=str, help="Path to the audio file (mp3, wav, m4a)")
-    parser.add_argument("--model", type=str, default="openai/whisper-large-v3-turbo", help="Model ID (default: large-v3-turbo)")
-    parser.add_argument("--language", type=str, default=None, help="Target language (default: auto-detect). Example: 'english', 'german'")
+    parser = argparse.ArgumentParser(
+        description="Transcribe audio using OpenAI Whisper (Hugging Face)"
+    )
+    parser.add_argument(
+        "audio_path", type=str, help="Path to the audio file (mp3, wav, m4a)"
+    )
+    parser.add_argument(
+        "--model",
+        type=str,
+        default="openai/whisper-large-v3-turbo",
+        help="Model ID (default: large-v3-turbo)",
+    )
+    parser.add_argument(
+        "--language",
+        type=str,
+        default=None,
+        help="Target language (default: auto-detect). Example: 'english', 'german'",
+    )
 
     args = parser.parse_args()
     transcribe(args.audio_path, args.model, args.language)

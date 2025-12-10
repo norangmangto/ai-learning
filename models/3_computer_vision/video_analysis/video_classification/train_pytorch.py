@@ -4,21 +4,23 @@ from torchvision import transforms, models
 import cv2
 import numpy as np
 
+
 class VideoClassifier:
     """
     Video classification using 3D CNN or frame-based approach
     """
-    def __init__(self, num_classes=5, method='frame_based'):
+
+    def __init__(self, num_classes=5, method="frame_based"):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.num_classes = num_classes
         self.method = method
 
-        if method == 'frame_based':
+        if method == "frame_based":
             # Use pre-trained 2D CNN for frame-level features
             self.model = models.resnet50(pretrained=True)
             num_features = self.model.fc.in_features
             self.model.fc = nn.Linear(num_features, num_classes)
-        elif method == '3d_cnn':
+        elif method == "3d_cnn":
             # Use 3D CNN (e.g., R3D, MC3)
             self.model = models.video.r3d_18(pretrained=True)
             num_features = self.model.fc.in_features
@@ -26,12 +28,16 @@ class VideoClassifier:
 
         self.model = self.model.to(self.device)
 
-        self.transform = transforms.Compose([
-            transforms.ToPILImage(),
-            transforms.Resize((224, 224)),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-        ])
+        self.transform = transforms.Compose(
+            [
+                transforms.ToPILImage(),
+                transforms.Resize((224, 224)),
+                transforms.ToTensor(),
+                transforms.Normalize(
+                    mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+                ),
+            ]
+        )
 
     def extract_frames(self, video_path, num_frames=16):
         """Extract frames from video"""
@@ -57,7 +63,7 @@ class VideoClassifier:
 
         frames = self.extract_frames(video_path)
 
-        if self.method == 'frame_based':
+        if self.method == "frame_based":
             # Average predictions across frames
             frame_predictions = []
 
@@ -78,15 +84,18 @@ class VideoClassifier:
 
         return 0, 0.0
 
+
 def train():
     print("Training Video Theme Classification with PyTorch...")
 
     # 1. Data Preparation
-    print("Note: Video classification typically requires large datasets like Kinetics, UCF-101, or HMDB-51")
+    print(
+        "Note: Video classification typically requires large datasets like Kinetics, UCF-101, or HMDB-51"
+    )
     print("For demonstration, we'll use a frame-based approach with synthetic data")
 
     # Sample action categories
-    class_names = ['walking', 'running', 'jumping', 'waving', 'clapping']
+    class_names = ["walking", "running", "jumping", "waving", "clapping"]
     num_classes = len(class_names)
 
     # 2. Model Setup
@@ -177,14 +186,17 @@ def train():
 
     # 9. Example Usage
     print("\n=== Example Usage ===")
-    print("""
+    print(
+        """
     # To use with real videos:
     classifier = VideoClassifier(num_classes=5, method='frame_based')
 
     # Classify a video
     predicted_class, confidence = classifier.classify_video('path/to/video.mp4')
     print(f"Predicted: {class_names[predicted_class]} (confidence: {confidence:.2f})")
-    """)
+    """
+    )
+
 
 if __name__ == "__main__":
     train()

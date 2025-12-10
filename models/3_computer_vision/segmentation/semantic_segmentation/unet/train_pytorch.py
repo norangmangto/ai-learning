@@ -35,6 +35,7 @@ class UNet(nn.Module):
     - Decoder: 4 blocks of UpConv-Concat-Conv-ReLU-Conv-ReLU
     - Output: 1x1 Conv for final prediction
     """
+
     def __init__(self, in_channels=3, out_channels=1, init_features=32):
         super(UNet, self).__init__()
 
@@ -57,16 +58,24 @@ class UNet(nn.Module):
         self.bottleneck = self._block(features * 8, features * 16, name="bottleneck")
 
         # Decoder (Expanding Path)
-        self.upconv4 = nn.ConvTranspose2d(features * 16, features * 8, kernel_size=2, stride=2)
+        self.upconv4 = nn.ConvTranspose2d(
+            features * 16, features * 8, kernel_size=2, stride=2
+        )
         self.decoder4 = self._block((features * 8) * 2, features * 8, name="dec4")
 
-        self.upconv3 = nn.ConvTranspose2d(features * 8, features * 4, kernel_size=2, stride=2)
+        self.upconv3 = nn.ConvTranspose2d(
+            features * 8, features * 4, kernel_size=2, stride=2
+        )
         self.decoder3 = self._block((features * 4) * 2, features * 4, name="dec3")
 
-        self.upconv2 = nn.ConvTranspose2d(features * 4, features * 2, kernel_size=2, stride=2)
+        self.upconv2 = nn.ConvTranspose2d(
+            features * 4, features * 2, kernel_size=2, stride=2
+        )
         self.decoder2 = self._block((features * 2) * 2, features * 2, name="dec2")
 
-        self.upconv1 = nn.ConvTranspose2d(features * 2, features, kernel_size=2, stride=2)
+        self.upconv1 = nn.ConvTranspose2d(
+            features * 2, features, kernel_size=2, stride=2
+        )
         self.decoder1 = self._block(features * 2, features, name="dec1")
 
         # Output layer
@@ -109,7 +118,7 @@ class UNet(nn.Module):
             nn.ReLU(inplace=True),
             nn.Conv2d(features, features, kernel_size=3, padding=1, bias=False),
             nn.BatchNorm2d(features),
-            nn.ReLU(inplace=True)
+            nn.ReLU(inplace=True),
         )
 
 
@@ -141,18 +150,18 @@ def generate_synthetic_segmentation_data(n_samples=200, img_size=128):
         n_shapes = np.random.randint(2, 5)
 
         for _ in range(n_shapes):
-            shape_type = np.random.choice(['circle', 'rectangle'])
+            shape_type = np.random.choice(["circle", "rectangle"])
 
-            if shape_type == 'circle':
+            if shape_type == "circle":
                 # Random circle
-                cx = np.random.randint(20, img_size-20)
-                cy = np.random.randint(20, img_size-20)
+                cx = np.random.randint(20, img_size - 20)
+                cy = np.random.randint(20, img_size - 20)
                 radius = np.random.randint(10, 25)
                 color = np.random.rand(3)
 
                 # Draw circle
                 y, x = np.ogrid[:img_size, :img_size]
-                circle_mask = (x - cx)**2 + (y - cy)**2 <= radius**2
+                circle_mask = (x - cx) ** 2 + (y - cy) ** 2 <= radius**2
 
                 for c in range(3):
                     img[c][circle_mask] = color[c]
@@ -160,16 +169,16 @@ def generate_synthetic_segmentation_data(n_samples=200, img_size=128):
 
             else:
                 # Random rectangle
-                x1 = np.random.randint(10, img_size-40)
-                y1 = np.random.randint(10, img_size-40)
+                x1 = np.random.randint(10, img_size - 40)
+                y1 = np.random.randint(10, img_size - 40)
                 w = np.random.randint(20, 40)
                 h = np.random.randint(20, 40)
                 color = np.random.rand(3)
 
                 # Draw rectangle
                 for c in range(3):
-                    img[c, y1:y1+h, x1:x1+w] = color[c]
-                mask[0, y1:y1+h, x1:x1+w] = 1.0
+                    img[c, y1 : y1 + h, x1 : x1 + w] = color[c]
+                mask[0, y1 : y1 + h, x1 : x1 + w] = 1.0
 
         # Add noise
         img += np.random.randn(3, img_size, img_size) * 0.05
@@ -188,6 +197,7 @@ def generate_synthetic_segmentation_data(n_samples=200, img_size=128):
 
 class SegmentationDataset(Dataset):
     """PyTorch Dataset for segmentation."""
+
     def __init__(self, images, masks):
         self.images = torch.FloatTensor(images)
         self.masks = torch.FloatTensor(masks)
@@ -206,6 +216,7 @@ class DiceLoss(nn.Module):
     Dice coefficient = 2 * |X ∩ Y| / (|X| + |Y|)
     Dice loss = 1 - Dice coefficient
     """
+
     def __init__(self, smooth=1.0):
         super(DiceLoss, self).__init__()
         self.smooth = smooth
@@ -216,7 +227,9 @@ class DiceLoss(nn.Module):
         target = target.view(-1)
 
         intersection = (pred * target).sum()
-        dice = (2. * intersection + self.smooth) / (pred.sum() + target.sum() + self.smooth)
+        dice = (2.0 * intersection + self.smooth) / (
+            pred.sum() + target.sum() + self.smooth
+        )
 
         return 1 - dice
 
@@ -257,7 +270,7 @@ def train_unet(model, train_loader, val_loader, epochs=50, lr=0.001):
     Returns:
         history: Training history
     """
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"\nTraining U-Net on {device}")
     print(f"  Epochs: {epochs}")
     print(f"  Learning rate: {lr}")
@@ -267,17 +280,13 @@ def train_unet(model, train_loader, val_loader, epochs=50, lr=0.001):
     # Loss and optimizer
     criterion = DiceLoss()
     optimizer = optim.Adam(model.parameters(), lr=lr)
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min',
-                                                      patience=5, factor=0.5)
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, mode="min", patience=5, factor=0.5
+    )
 
-    history = {
-        'train_loss': [],
-        'val_loss': [],
-        'train_iou': [],
-        'val_iou': []
-    }
+    history = {"train_loss": [], "val_loss": [], "train_iou": [], "val_iou": []}
 
-    best_val_loss = float('inf')
+    best_val_loss = float("inf")
 
     for epoch in range(epochs):
         start_time = time.time()
@@ -335,22 +344,24 @@ def train_unet(model, train_loader, val_loader, epochs=50, lr=0.001):
         scheduler.step(val_loss)
 
         # Save history
-        history['train_loss'].append(train_loss)
-        history['val_loss'].append(val_loss)
-        history['train_iou'].append(train_iou)
-        history['val_iou'].append(val_iou)
+        history["train_loss"].append(train_loss)
+        history["val_loss"].append(val_loss)
+        history["train_iou"].append(train_iou)
+        history["val_iou"].append(val_iou)
 
         # Save best model
         if val_loss < best_val_loss:
             best_val_loss = val_loss
-            torch.save(model.state_dict(), 'best_unet_model.pth')
+            torch.save(model.state_dict(), "best_unet_model.pth")
 
         epoch_time = time.time() - start_time
 
         if (epoch + 1) % 10 == 0:
-            print(f"Epoch [{epoch+1}/{epochs}] ({epoch_time:.2f}s) - "
-                  f"Train Loss: {train_loss:.4f}, Train IoU: {train_iou:.4f} | "
-                  f"Val Loss: {val_loss:.4f}, Val IoU: {val_iou:.4f}")
+            print(
+                f"Epoch [{epoch+1}/{epochs}] ({epoch_time:.2f}s) - "
+                f"Train Loss: {train_loss:.4f}, Train IoU: {train_iou:.4f} | "
+                f"Val Loss: {val_loss:.4f}, Val IoU: {val_iou:.4f}"
+            )
 
     print(f"\nTraining complete! Best validation loss: {best_val_loss:.4f}")
 
@@ -362,25 +373,25 @@ def plot_training_history(history):
     fig, axes = plt.subplots(1, 2, figsize=(14, 5))
 
     # Loss
-    axes[0].plot(history['train_loss'], label='Train Loss', linewidth=2)
-    axes[0].plot(history['val_loss'], label='Val Loss', linewidth=2)
-    axes[0].set_xlabel('Epoch', fontsize=12)
-    axes[0].set_ylabel('Loss (Dice)', fontsize=12)
-    axes[0].set_title('Training and Validation Loss', fontsize=13)
+    axes[0].plot(history["train_loss"], label="Train Loss", linewidth=2)
+    axes[0].plot(history["val_loss"], label="Val Loss", linewidth=2)
+    axes[0].set_xlabel("Epoch", fontsize=12)
+    axes[0].set_ylabel("Loss (Dice)", fontsize=12)
+    axes[0].set_title("Training and Validation Loss", fontsize=13)
     axes[0].legend()
     axes[0].grid(True, alpha=0.3)
 
     # IoU
-    axes[1].plot(history['train_iou'], label='Train IoU', linewidth=2)
-    axes[1].plot(history['val_iou'], label='Val IoU', linewidth=2)
-    axes[1].set_xlabel('Epoch', fontsize=12)
-    axes[1].set_ylabel('IoU Score', fontsize=12)
-    axes[1].set_title('Training and Validation IoU', fontsize=13)
+    axes[1].plot(history["train_iou"], label="Train IoU", linewidth=2)
+    axes[1].plot(history["val_iou"], label="Val IoU", linewidth=2)
+    axes[1].set_xlabel("Epoch", fontsize=12)
+    axes[1].set_ylabel("IoU Score", fontsize=12)
+    axes[1].set_title("Training and Validation IoU", fontsize=13)
     axes[1].legend()
     axes[1].grid(True, alpha=0.3)
 
     plt.tight_layout()
-    plt.savefig('unet_training_history.png', dpi=300, bbox_inches='tight')
+    plt.savefig("unet_training_history.png", dpi=300, bbox_inches="tight")
     plt.show()
 
 
@@ -397,42 +408,44 @@ def visualize_predictions(model, images, masks, n_samples=4):
     device = next(model.parameters()).device
     model.eval()
 
-    fig, axes = plt.subplots(n_samples, 3, figsize=(12, 3*n_samples))
+    fig, axes = plt.subplots(n_samples, 3, figsize=(12, 3 * n_samples))
 
     with torch.no_grad():
         for i in range(n_samples):
-            img_tensor = torch.FloatTensor(images[i:i+1]).to(device)
+            img_tensor = torch.FloatTensor(images[i : i + 1]).to(device)
             pred = model(img_tensor)
             pred_mask = torch.sigmoid(pred).cpu().numpy()[0, 0]
 
             # Original image
             img_display = images[i].transpose(1, 2, 0)
             axes[i, 0].imshow(img_display)
-            axes[i, 0].set_title('Input Image')
-            axes[i, 0].axis('off')
+            axes[i, 0].set_title("Input Image")
+            axes[i, 0].axis("off")
 
             # Ground truth mask
-            axes[i, 1].imshow(masks[i, 0], cmap='gray')
-            axes[i, 1].set_title('Ground Truth')
-            axes[i, 1].axis('off')
+            axes[i, 1].imshow(masks[i, 0], cmap="gray")
+            axes[i, 1].set_title("Ground Truth")
+            axes[i, 1].axis("off")
 
             # Predicted mask
-            axes[i, 2].imshow(pred_mask, cmap='gray')
-            iou = calculate_iou(torch.FloatTensor(pred_mask[None, None, :, :]),
-                               torch.FloatTensor(masks[i:i+1]))
-            axes[i, 2].set_title(f'Prediction (IoU: {iou:.3f})')
-            axes[i, 2].axis('off')
+            axes[i, 2].imshow(pred_mask, cmap="gray")
+            iou = calculate_iou(
+                torch.FloatTensor(pred_mask[None, None, :, :]),
+                torch.FloatTensor(masks[i : i + 1]),
+            )
+            axes[i, 2].set_title(f"Prediction (IoU: {iou:.3f})")
+            axes[i, 2].axis("off")
 
     plt.tight_layout()
-    plt.savefig('unet_predictions.png', dpi=300, bbox_inches='tight')
+    plt.savefig("unet_predictions.png", dpi=300, bbox_inches="tight")
     plt.show()
 
 
 def main():
     """Main execution function."""
-    print("="*70)
+    print("=" * 70)
     print("U-Net for Semantic Segmentation")
-    print("="*70)
+    print("=" * 70)
 
     # 1. Generate synthetic data
     print("\n1. Generating synthetic segmentation dataset...")
@@ -471,12 +484,12 @@ def main():
 
     # 6. Load best model and visualize predictions
     print("\n5. Visualizing predictions...")
-    model.load_state_dict(torch.load('best_unet_model.pth'))
+    model.load_state_dict(torch.load("best_unet_model.pth"))
     visualize_predictions(model, X_val, y_val, n_samples=4)
 
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("U-Net Training Complete!")
-    print("="*70)
+    print("=" * 70)
 
     print("\nKey Features of U-Net:")
     print("✓ Skip connections preserve spatial information")

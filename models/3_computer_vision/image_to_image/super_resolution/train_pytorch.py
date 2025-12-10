@@ -26,15 +26,16 @@ import math
 
 # Configuration
 CONFIG = {
-    'scale_factor': 4,  # 4x upsampling
-    'image_size': 64,  # Low-res size (HR will be 256)
-    'batch_size': 16,
-    'epochs': 50,
-    'learning_rate': 0.0001,
-    'device': 'cuda' if torch.cuda.is_available() else 'cpu',
-    'num_workers': 4,
-    'output_dir': 'results/super_resolution'
+    "scale_factor": 4,  # 4x upsampling
+    "image_size": 64,  # Low-res size (HR will be 256)
+    "batch_size": 16,
+    "epochs": 50,
+    "learning_rate": 0.0001,
+    "device": "cuda" if torch.cuda.is_available() else "cpu",
+    "num_workers": 4,
+    "output_dir": "results/super_resolution",
 }
+
 
 def calculate_psnr(img1, img2):
     """Calculate Peak Signal-to-Noise Ratio"""
@@ -43,6 +44,7 @@ def calculate_psnr(img1, img2):
         return 100
     return 20 * torch.log10(1.0 / torch.sqrt(mse))
 
+
 def calculate_ssim(img1, img2, window_size=11):
     """
     Calculate Structural Similarity Index (SSIM)
@@ -50,24 +52,45 @@ def calculate_ssim(img1, img2, window_size=11):
     Measures structural similarity between images
     Better correlates with human perception than PSNR
     """
-    C1 = 0.01 ** 2
-    C2 = 0.03 ** 2
+    C1 = 0.01**2
+    C2 = 0.03**2
 
-    mu1 = nn.functional.avg_pool2d(img1, window_size, stride=1, padding=window_size//2)
-    mu2 = nn.functional.avg_pool2d(img2, window_size, stride=1, padding=window_size//2)
+    mu1 = nn.functional.avg_pool2d(
+        img1, window_size, stride=1, padding=window_size // 2
+    )
+    mu2 = nn.functional.avg_pool2d(
+        img2, window_size, stride=1, padding=window_size // 2
+    )
 
-    mu1_sq = mu1 ** 2
-    mu2_sq = mu2 ** 2
+    mu1_sq = mu1**2
+    mu2_sq = mu2**2
     mu1_mu2 = mu1 * mu2
 
-    sigma1_sq = nn.functional.avg_pool2d(img1 * img1, window_size, stride=1, padding=window_size//2) - mu1_sq
-    sigma2_sq = nn.functional.avg_pool2d(img2 * img2, window_size, stride=1, padding=window_size//2) - mu2_sq
-    sigma12 = nn.functional.avg_pool2d(img1 * img2, window_size, stride=1, padding=window_size//2) - mu1_mu2
+    sigma1_sq = (
+        nn.functional.avg_pool2d(
+            img1 * img1, window_size, stride=1, padding=window_size // 2
+        )
+        - mu1_sq
+    )
+    sigma2_sq = (
+        nn.functional.avg_pool2d(
+            img2 * img2, window_size, stride=1, padding=window_size // 2
+        )
+        - mu2_sq
+    )
+    sigma12 = (
+        nn.functional.avg_pool2d(
+            img1 * img2, window_size, stride=1, padding=window_size // 2
+        )
+        - mu1_mu2
+    )
 
-    ssim = ((2 * mu1_mu2 + C1) * (2 * sigma12 + C2)) / \
-           ((mu1_sq + mu2_sq + C1) * (sigma1_sq + sigma2_sq + C2))
+    ssim = ((2 * mu1_mu2 + C1) * (2 * sigma12 + C2)) / (
+        (mu1_sq + mu2_sq + C1) * (sigma1_sq + sigma2_sq + C2)
+    )
 
     return ssim.mean()
+
 
 class ResidualBlock(nn.Module):
     """Residual block for super resolution"""
@@ -94,6 +117,7 @@ class ResidualBlock(nn.Module):
         out = out + residual
         return out
 
+
 class SubPixelConv(nn.Module):
     """
     Sub-pixel convolution (Pixel Shuffle)
@@ -106,10 +130,7 @@ class SubPixelConv(nn.Module):
         super().__init__()
 
         self.conv = nn.Conv2d(
-            in_channels,
-            out_channels * (scale_factor ** 2),
-            3,
-            padding=1
+            in_channels, out_channels * (scale_factor**2), 3, padding=1
         )
         self.pixel_shuffle = nn.PixelShuffle(scale_factor)
 
@@ -117,6 +138,7 @@ class SubPixelConv(nn.Module):
         x = self.conv(x)
         x = self.pixel_shuffle(x)
         return x
+
 
 class SRResNet(nn.Module):
     """
@@ -129,18 +151,15 @@ class SRResNet(nn.Module):
     def __init__(self, scale_factor=4, num_residual_blocks=16):
         super().__init__()
 
-        print("\n" + "="*80)
+        print("\n" + "=" * 80)
         print("BUILDING SUPER RESOLUTION MODEL")
-        print("="*80)
+        print("=" * 80)
 
         print(f"\nScale factor: {scale_factor}x")
         print(f"Residual blocks: {num_residual_blocks}")
 
         # Initial convolution
-        self.conv_input = nn.Sequential(
-            nn.Conv2d(3, 64, 9, padding=4),
-            nn.PReLU()
-        )
+        self.conv_input = nn.Sequential(nn.Conv2d(3, 64, 9, padding=4), nn.PReLU())
 
         # Residual blocks
         self.residual_blocks = nn.Sequential(
@@ -149,8 +168,7 @@ class SRResNet(nn.Module):
 
         # Post-residual convolution
         self.conv_mid = nn.Sequential(
-            nn.Conv2d(64, 64, 3, padding=1),
-            nn.BatchNorm2d(64)
+            nn.Conv2d(64, 64, 3, padding=1), nn.BatchNorm2d(64)
         )
 
         # Upsampling layers
@@ -160,11 +178,8 @@ class SRResNet(nn.Module):
             num_upsample = int(math.log2(scale_factor))
 
             for i in range(num_upsample):
-                self.upsampling.add_module(
-                    f'upsample_{i}',
-                    SubPixelConv(64, 64, 2)
-                )
-                self.upsampling.add_module(f'prelu_{i}', nn.PReLU())
+                self.upsampling.add_module(f"upsample_{i}", SubPixelConv(64, 64, 2))
+                self.upsampling.add_module(f"prelu_{i}", nn.PReLU())
 
         # Output convolution
         self.conv_output = nn.Conv2d(64, 3, 9, padding=4)
@@ -193,6 +208,7 @@ class SRResNet(nn.Module):
 
         return out
 
+
 class SuperResolutionDataset(Dataset):
     """Dataset for super resolution"""
 
@@ -203,23 +219,24 @@ class SuperResolutionDataset(Dataset):
         self.lr_size = hr_size // scale_factor
 
         # High-resolution transform
-        self.hr_transform = transforms.Compose([
-            transforms.Resize((hr_size, hr_size)),
-            transforms.ToTensor()
-        ])
+        self.hr_transform = transforms.Compose(
+            [transforms.Resize((hr_size, hr_size)), transforms.ToTensor()]
+        )
 
         # Low-resolution transform (downsampled)
-        self.lr_transform = transforms.Compose([
-            transforms.Resize((self.lr_size, self.lr_size), Image.BICUBIC),
-            transforms.ToTensor()
-        ])
+        self.lr_transform = transforms.Compose(
+            [
+                transforms.Resize((self.lr_size, self.lr_size), Image.BICUBIC),
+                transforms.ToTensor(),
+            ]
+        )
 
     def __len__(self):
         return len(self.image_paths)
 
     def __getitem__(self, idx):
         # Load image
-        img = Image.open(self.image_paths[idx]).convert('RGB')
+        img = Image.open(self.image_paths[idx]).convert("RGB")
 
         # Create high-resolution and low-resolution pairs
         hr_img = self.hr_transform(img)
@@ -227,20 +244,21 @@ class SuperResolutionDataset(Dataset):
 
         return lr_img, hr_img
 
+
 def create_sample_dataset(num_samples=500):
     """Create sample dataset with diverse patterns"""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("CREATING SAMPLE DATASET")
-    print("="*80)
+    print("=" * 80)
 
-    sample_dir = Path('data/super_resolution_samples')
+    sample_dir = Path("data/super_resolution_samples")
     sample_dir.mkdir(parents=True, exist_ok=True)
 
     image_paths = []
 
     for i in range(num_samples):
         # Create image with various patterns
-        img = Image.new('RGB', (256, 256))
+        img = Image.new("RGB", (256, 256))
         pixels = img.load()
 
         pattern = i % 5
@@ -250,16 +268,18 @@ def create_sample_dataset(num_samples=500):
                 if pattern == 0:  # Gradient
                     pixels[x, y] = (x, y, 255 - x)
                 elif pattern == 1:  # Checkerboard
-                    pixels[x, y] = (255, 255, 255) if (x // 16 + y // 16) % 2 == 0 else (0, 0, 0)
+                    pixels[x, y] = (
+                        (255, 255, 255) if (x // 16 + y // 16) % 2 == 0 else (0, 0, 0)
+                    )
                 elif pattern == 2:  # Circular
-                    dist = math.sqrt((x - 128)**2 + (y - 128)**2)
+                    dist = math.sqrt((x - 128) ** 2 + (y - 128) ** 2)
                     val = int(128 + 127 * math.sin(dist / 10))
                     pixels[x, y] = (val, val, 255 - val)
                 elif pattern == 3:  # Noise
                     pixels[x, y] = (
                         np.random.randint(0, 256),
                         np.random.randint(0, 256),
-                        np.random.randint(0, 256)
+                        np.random.randint(0, 256),
                     )
                 else:  # Waves
                     r = int(128 + 127 * np.sin(x / 15))
@@ -267,18 +287,19 @@ def create_sample_dataset(num_samples=500):
                     b = int(128 + 127 * np.sin((x + y) / 20))
                     pixels[x, y] = (r, g, b)
 
-        img_path = sample_dir / f'sample_{i}.jpg'
+        img_path = sample_dir / f"sample_{i}.jpg"
         img.save(img_path)
         image_paths.append(str(img_path))
 
     print(f"Created {len(image_paths)} sample images")
     return image_paths
 
+
 def train_super_resolution(model, train_loader, val_loader, device):
     """Train super resolution model"""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("TRAINING SUPER RESOLUTION MODEL")
-    print("="*80)
+    print("=" * 80)
 
     model.to(device)
 
@@ -286,17 +307,12 @@ def train_super_resolution(model, train_loader, val_loader, device):
     criterion = nn.MSELoss()
 
     # Optimizer
-    optimizer = optim.Adam(model.parameters(), lr=CONFIG['learning_rate'])
+    optimizer = optim.Adam(model.parameters(), lr=CONFIG["learning_rate"])
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.5)
 
-    history = {
-        'train_loss': [],
-        'val_loss': [],
-        'val_psnr': [],
-        'val_ssim': []
-    }
+    history = {"train_loss": [], "val_loss": [], "val_psnr": [], "val_ssim": []}
 
-    for epoch in range(CONFIG['epochs']):
+    for epoch in range(CONFIG["epochs"]):
         # Training
         model.train()
         train_loss = 0
@@ -317,10 +333,10 @@ def train_super_resolution(model, train_loader, val_loader, device):
             optimizer.step()
 
             train_loss += loss.item()
-            progress_bar.set_postfix({'loss': loss.item()})
+            progress_bar.set_postfix({"loss": loss.item()})
 
         avg_train_loss = train_loss / len(train_loader)
-        history['train_loss'].append(avg_train_loss)
+        history["train_loss"].append(avg_train_loss)
 
         # Validation
         model.eval()
@@ -349,9 +365,9 @@ def train_super_resolution(model, train_loader, val_loader, device):
         avg_val_psnr = val_psnr / len(val_loader)
         avg_val_ssim = val_ssim / len(val_loader)
 
-        history['val_loss'].append(avg_val_loss)
-        history['val_psnr'].append(avg_val_psnr)
-        history['val_ssim'].append(avg_val_ssim)
+        history["val_loss"].append(avg_val_loss)
+        history["val_psnr"].append(avg_val_psnr)
+        history["val_ssim"].append(avg_val_ssim)
 
         print(f"\nEpoch {epoch+1}:")
         print(f"  Train Loss: {avg_train_loss:.4f}")
@@ -362,6 +378,7 @@ def train_super_resolution(model, train_loader, val_loader, device):
         scheduler.step()
 
     return model, history
+
 
 def visualize_super_resolution(model, val_loader, device, num_samples=4):
     """Visualize super resolution results"""
@@ -381,58 +398,64 @@ def visualize_super_resolution(model, val_loader, device, num_samples=4):
     for i in range(num_samples):
         # Bicubic upsampling baseline
         bicubic = nn.functional.interpolate(
-            lr_imgs[i:i+1],
-            scale_factor=CONFIG['scale_factor'],
-            mode='bicubic',
-            align_corners=False
+            lr_imgs[i : i + 1],
+            scale_factor=CONFIG["scale_factor"],
+            mode="bicubic",
+            align_corners=False,
         )
 
-        psnr_bicubic.append(calculate_psnr(bicubic, hr_imgs[i:i+1]).item())
-        psnr_sr.append(calculate_psnr(sr_imgs[i:i+1], hr_imgs[i:i+1]).item())
+        psnr_bicubic.append(calculate_psnr(bicubic, hr_imgs[i : i + 1]).item())
+        psnr_sr.append(calculate_psnr(sr_imgs[i : i + 1], hr_imgs[i : i + 1]).item())
 
     # Plot
-    fig, axes = plt.subplots(num_samples, 4, figsize=(16, num_samples*4))
+    fig, axes = plt.subplots(num_samples, 4, figsize=(16, num_samples * 4))
 
     for i in range(num_samples):
         # Low-resolution
         lr = lr_imgs[i].cpu().permute(1, 2, 0).numpy()
         axes[i, 0].imshow(np.clip(lr, 0, 1))
         axes[i, 0].set_title(f'LR ({CONFIG["image_size"]}x{CONFIG["image_size"]})')
-        axes[i, 0].axis('off')
+        axes[i, 0].axis("off")
 
         # Bicubic upsampling
-        bicubic = nn.functional.interpolate(
-            lr_imgs[i:i+1],
-            scale_factor=CONFIG['scale_factor'],
-            mode='bicubic'
-        )[0].cpu().permute(1, 2, 0).numpy()
+        bicubic = (
+            nn.functional.interpolate(
+                lr_imgs[i : i + 1], scale_factor=CONFIG["scale_factor"], mode="bicubic"
+            )[0]
+            .cpu()
+            .permute(1, 2, 0)
+            .numpy()
+        )
         axes[i, 1].imshow(np.clip(bicubic, 0, 1))
-        axes[i, 1].set_title(f'Bicubic (PSNR: {psnr_bicubic[i]:.2f})')
-        axes[i, 1].axis('off')
+        axes[i, 1].set_title(f"Bicubic (PSNR: {psnr_bicubic[i]:.2f})")
+        axes[i, 1].axis("off")
 
         # Super resolution
         sr = sr_imgs[i].cpu().permute(1, 2, 0).numpy()
         axes[i, 2].imshow(np.clip(sr, 0, 1))
-        axes[i, 2].set_title(f'SR (PSNR: {psnr_sr[i]:.2f})')
-        axes[i, 2].axis('off')
+        axes[i, 2].set_title(f"SR (PSNR: {psnr_sr[i]:.2f})")
+        axes[i, 2].axis("off")
 
         # Ground truth
         hr = hr_imgs[i].cpu().permute(1, 2, 0).numpy()
         axes[i, 3].imshow(np.clip(hr, 0, 1))
-        axes[i, 3].set_title('Ground Truth (HR)')
-        axes[i, 3].axis('off')
+        axes[i, 3].set_title("Ground Truth (HR)")
+        axes[i, 3].axis("off")
 
     plt.tight_layout()
 
-    output_dir = Path(CONFIG['output_dir'])
+    output_dir = Path(CONFIG["output_dir"])
     output_dir.mkdir(parents=True, exist_ok=True)
-    plt.savefig(output_dir / 'super_resolution_results.png', dpi=150, bbox_inches='tight')
+    plt.savefig(
+        output_dir / "super_resolution_results.png", dpi=150, bbox_inches="tight"
+    )
     print(f"\nSaved results to {output_dir / 'super_resolution_results.png'}")
 
+
 def main():
-    print("="*80)
+    print("=" * 80)
     print("SUPER RESOLUTION")
-    print("="*80)
+    print("=" * 80)
 
     # Create dataset
     image_paths = create_sample_dataset(500)
@@ -443,26 +466,38 @@ def main():
     val_paths = image_paths[split:]
 
     # Datasets
-    hr_size = CONFIG['image_size'] * CONFIG['scale_factor']
-    train_dataset = SuperResolutionDataset(train_paths, CONFIG['scale_factor'], hr_size)
-    val_dataset = SuperResolutionDataset(val_paths, CONFIG['scale_factor'], hr_size)
+    hr_size = CONFIG["image_size"] * CONFIG["scale_factor"]
+    train_dataset = SuperResolutionDataset(train_paths, CONFIG["scale_factor"], hr_size)
+    val_dataset = SuperResolutionDataset(val_paths, CONFIG["scale_factor"], hr_size)
 
     # Dataloaders
-    train_loader = DataLoader(train_dataset, batch_size=CONFIG['batch_size'], shuffle=True, num_workers=CONFIG['num_workers'])
-    val_loader = DataLoader(val_dataset, batch_size=CONFIG['batch_size'], shuffle=False, num_workers=CONFIG['num_workers'])
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=CONFIG["batch_size"],
+        shuffle=True,
+        num_workers=CONFIG["num_workers"],
+    )
+    val_loader = DataLoader(
+        val_dataset,
+        batch_size=CONFIG["batch_size"],
+        shuffle=False,
+        num_workers=CONFIG["num_workers"],
+    )
 
     # Model
-    model = SRResNet(scale_factor=CONFIG['scale_factor'])
+    model = SRResNet(scale_factor=CONFIG["scale_factor"])
 
     # Train
-    model, history = train_super_resolution(model, train_loader, val_loader, CONFIG['device'])
+    model, history = train_super_resolution(
+        model, train_loader, val_loader, CONFIG["device"]
+    )
 
     # Visualize
-    visualize_super_resolution(model, val_loader, CONFIG['device'])
+    visualize_super_resolution(model, val_loader, CONFIG["device"])
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("SUPER RESOLUTION COMPLETED")
-    print("="*80)
+    print("=" * 80)
 
     print("\nKey Concepts:")
     print("✓ Sub-pixel convolution (pixel shuffle)")
@@ -481,5 +516,6 @@ def main():
     print("- Medical image enhancement")
     print("- Satellite imagery")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

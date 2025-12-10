@@ -16,11 +16,16 @@ import torch
 import torch.optim as optim
 from torch.utils.data import DataLoader, Dataset
 from transformers import (
-    BertTokenizer, BertForMaskedLM, BertForSequenceClassification,
-    RobertaTokenizer, RobertaForSequenceClassification,
-    AlbertTokenizer, AlbertForSequenceClassification,
-    DistilBertTokenizer, DistilBertForSequenceClassification,
-    get_linear_schedule_with_warmup
+    BertTokenizer,
+    BertForMaskedLM,
+    BertForSequenceClassification,
+    RobertaTokenizer,
+    RobertaForSequenceClassification,
+    AlbertTokenizer,
+    AlbertForSequenceClassification,
+    DistilBertTokenizer,
+    DistilBertForSequenceClassification,
+    get_linear_schedule_with_warmup,
 )
 from datasets import load_dataset
 from pathlib import Path
@@ -28,59 +33,56 @@ from tqdm import tqdm
 
 # Configuration
 CONFIG = {
-    'model_type': 'bert',  # 'bert', 'roberta', 'albert', 'distilbert'
-    'model_name': 'bert-base-uncased',
-    'task': 'classification',  # 'mlm', 'classification'
-    'dataset': 'imdb',  # For classification
-    'max_length': 512,
-    'batch_size': 16,
-    'epochs': 3,
-    'learning_rate': 2e-5,
-    'warmup_steps': 500,
-    'max_grad_norm': 1.0,
-    'device': 'cuda' if torch.cuda.is_available() else 'cpu',
-    'num_workers': 4,
-    'output_dir': 'results/encoder_models'
+    "model_type": "bert",  # 'bert', 'roberta', 'albert', 'distilbert'
+    "model_name": "bert-base-uncased",
+    "task": "classification",  # 'mlm', 'classification'
+    "dataset": "imdb",  # For classification
+    "max_length": 512,
+    "batch_size": 16,
+    "epochs": 3,
+    "learning_rate": 2e-5,
+    "warmup_steps": 500,
+    "max_grad_norm": 1.0,
+    "device": "cuda" if torch.cuda.is_available() else "cpu",
+    "num_workers": 4,
+    "output_dir": "results/encoder_models",
 }
 
-def load_tokenizer_and_model(model_type='bert', task='classification', num_labels=2):
+
+def load_tokenizer_and_model(model_type="bert", task="classification", num_labels=2):
     """Load tokenizer and model based on type"""
-    print("="*80)
+    print("=" * 80)
     print("LOADING MODEL AND TOKENIZER")
-    print("="*80)
+    print("=" * 80)
 
     print(f"\nModel type: {model_type}")
     print(f"Task: {task}")
 
-    if model_type == 'bert':
-        tokenizer = BertTokenizer.from_pretrained(CONFIG['model_name'])
-        if task == 'mlm':
-            model = BertForMaskedLM.from_pretrained(CONFIG['model_name'])
+    if model_type == "bert":
+        tokenizer = BertTokenizer.from_pretrained(CONFIG["model_name"])
+        if task == "mlm":
+            model = BertForMaskedLM.from_pretrained(CONFIG["model_name"])
         else:
             model = BertForSequenceClassification.from_pretrained(
-                CONFIG['model_name'],
-                num_labels=num_labels
+                CONFIG["model_name"], num_labels=num_labels
             )
 
-    elif model_type == 'roberta':
-        tokenizer = RobertaTokenizer.from_pretrained('roberta-base')
+    elif model_type == "roberta":
+        tokenizer = RobertaTokenizer.from_pretrained("roberta-base")
         model = RobertaForSequenceClassification.from_pretrained(
-            'roberta-base',
-            num_labels=num_labels
+            "roberta-base", num_labels=num_labels
         )
 
-    elif model_type == 'albert':
-        tokenizer = AlbertTokenizer.from_pretrained('albert-base-v2')
+    elif model_type == "albert":
+        tokenizer = AlbertTokenizer.from_pretrained("albert-base-v2")
         model = AlbertForSequenceClassification.from_pretrained(
-            'albert-base-v2',
-            num_labels=num_labels
+            "albert-base-v2", num_labels=num_labels
         )
 
-    elif model_type == 'distilbert':
-        tokenizer = DistilBertTokenizer.from_pretrained('distilbert-base-uncased')
+    elif model_type == "distilbert":
+        tokenizer = DistilBertTokenizer.from_pretrained("distilbert-base-uncased")
         model = DistilBertForSequenceClassification.from_pretrained(
-            'distilbert-base-uncased',
-            num_labels=num_labels
+            "distilbert-base-uncased", num_labels=num_labels
         )
 
     else:
@@ -91,8 +93,10 @@ def load_tokenizer_and_model(model_type='bert', task='classification', num_label
 
     return tokenizer, model
 
+
 class TextClassificationDataset(Dataset):
     """Dataset for text classification"""
+
     def __init__(self, texts, labels, tokenizer, max_length=512):
         self.texts = texts
         self.labels = labels
@@ -109,43 +113,44 @@ class TextClassificationDataset(Dataset):
         encoding = self.tokenizer(
             text,
             max_length=self.max_length,
-            padding='max_length',
+            padding="max_length",
             truncation=True,
-            return_tensors='pt'
+            return_tensors="pt",
         )
 
         return {
-            'input_ids': encoding['input_ids'].squeeze(0),
-            'attention_mask': encoding['attention_mask'].squeeze(0),
-            'labels': torch.tensor(label, dtype=torch.long)
+            "input_ids": encoding["input_ids"].squeeze(0),
+            "attention_mask": encoding["attention_mask"].squeeze(0),
+            "labels": torch.tensor(label, dtype=torch.long),
         }
 
-def load_classification_data(dataset_name='imdb'):
+
+def load_classification_data(dataset_name="imdb"):
     """Load classification dataset"""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("LOADING DATASET")
-    print("="*80)
+    print("=" * 80)
 
     print(f"\nDataset: {dataset_name}")
 
     try:
-        if dataset_name == 'imdb':
-            dataset = load_dataset('imdb')
+        if dataset_name == "imdb":
+            dataset = load_dataset("imdb")
 
-            train_texts = dataset['train']['text'][:5000]  # Limit for demo
-            train_labels = dataset['train']['label'][:5000]
-            test_texts = dataset['test']['text'][:1000]
-            test_labels = dataset['test']['label'][:1000]
+            train_texts = dataset["train"]["text"][:5000]  # Limit for demo
+            train_labels = dataset["train"]["label"][:5000]
+            test_texts = dataset["test"]["text"][:1000]
+            test_labels = dataset["test"]["label"][:1000]
 
             num_labels = 2
 
-        elif dataset_name == 'ag_news':
-            dataset = load_dataset('ag_news')
+        elif dataset_name == "ag_news":
+            dataset = load_dataset("ag_news")
 
-            train_texts = dataset['train']['text'][:5000]
-            train_labels = dataset['train']['label'][:5000]
-            test_texts = dataset['test']['text'][:1000]
-            test_labels = dataset['test']['label'][:1000]
+            train_texts = dataset["train"]["text"][:5000]
+            train_labels = dataset["train"]["label"][:5000]
+            test_texts = dataset["test"]["text"][:1000]
+            test_labels = dataset["test"]["label"][:1000]
 
             num_labels = 4
 
@@ -176,11 +181,12 @@ def load_classification_data(dataset_name='imdb'):
 
         return train_texts, train_labels, test_texts, test_labels, 2
 
+
 def train_classifier(model, train_dataloader, val_dataloader, device):
     """Train text classifier"""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("TRAINING CLASSIFIER")
-    print("="*80)
+    print("=" * 80)
 
     print(f"\nConfiguration:")
     print(f"  Epochs: {CONFIG['epochs']}")
@@ -191,17 +197,14 @@ def train_classifier(model, train_dataloader, val_dataloader, device):
     model.to(device)
 
     # Optimizer
-    optimizer = optim.AdamW(
-        model.parameters(),
-        lr=CONFIG['learning_rate']
-    )
+    optimizer = optim.AdamW(model.parameters(), lr=CONFIG["learning_rate"])
 
     # Scheduler
-    total_steps = len(train_dataloader) * CONFIG['epochs']
+    total_steps = len(train_dataloader) * CONFIG["epochs"]
     scheduler = get_linear_schedule_with_warmup(
         optimizer,
-        num_warmup_steps=CONFIG['warmup_steps'],
-        num_training_steps=total_steps
+        num_warmup_steps=CONFIG["warmup_steps"],
+        num_training_steps=total_steps,
     )
 
     # Training history
@@ -211,23 +214,23 @@ def train_classifier(model, train_dataloader, val_dataloader, device):
     print("\nStarting training...")
     print("=" * 80)
 
-    for epoch in range(CONFIG['epochs']):
+    for epoch in range(CONFIG["epochs"]):
         # Training
         model.train()
         total_loss = 0
 
-        progress_bar = tqdm(train_dataloader, desc=f"Epoch {epoch+1}/{CONFIG['epochs']}")
+        progress_bar = tqdm(
+            train_dataloader, desc=f"Epoch {epoch+1}/{CONFIG['epochs']}"
+        )
 
         for batch in progress_bar:
-            input_ids = batch['input_ids'].to(device)
-            attention_mask = batch['attention_mask'].to(device)
-            labels = batch['labels'].to(device)
+            input_ids = batch["input_ids"].to(device)
+            attention_mask = batch["attention_mask"].to(device)
+            labels = batch["labels"].to(device)
 
             # Forward pass
             outputs = model(
-                input_ids=input_ids,
-                attention_mask=attention_mask,
-                labels=labels
+                input_ids=input_ids, attention_mask=attention_mask, labels=labels
             )
 
             loss = outputs.loss
@@ -235,12 +238,12 @@ def train_classifier(model, train_dataloader, val_dataloader, device):
             # Backward pass
             optimizer.zero_grad()
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(model.parameters(), CONFIG['max_grad_norm'])
+            torch.nn.utils.clip_grad_norm_(model.parameters(), CONFIG["max_grad_norm"])
             optimizer.step()
             scheduler.step()
 
             total_loss += loss.item()
-            progress_bar.set_postfix({'loss': loss.item()})
+            progress_bar.set_postfix({"loss": loss.item()})
 
         avg_train_loss = total_loss / len(train_dataloader)
         train_losses.append(avg_train_loss)
@@ -256,6 +259,7 @@ def train_classifier(model, train_dataloader, val_dataloader, device):
 
     return model, train_losses, val_accuracies
 
+
 def evaluate_classifier(model, dataloader, device):
     """Evaluate classifier"""
     model.eval()
@@ -265,14 +269,11 @@ def evaluate_classifier(model, dataloader, device):
 
     with torch.no_grad():
         for batch in dataloader:
-            input_ids = batch['input_ids'].to(device)
-            attention_mask = batch['attention_mask'].to(device)
-            labels = batch['labels'].to(device)
+            input_ids = batch["input_ids"].to(device)
+            attention_mask = batch["attention_mask"].to(device)
+            labels = batch["labels"].to(device)
 
-            outputs = model(
-                input_ids=input_ids,
-                attention_mask=attention_mask
-            )
+            outputs = model(input_ids=input_ids, attention_mask=attention_mask)
 
             predictions = torch.argmax(outputs.logits, dim=-1)
             correct += (predictions == labels).sum().item()
@@ -281,41 +282,42 @@ def evaluate_classifier(model, dataloader, device):
     accuracy = correct / total
     return accuracy
 
+
 def demonstrate_encoder_models():
     """Demonstrate different encoder models"""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("ENCODER MODEL COMPARISON")
-    print("="*80)
+    print("=" * 80)
 
     models_info = {
-        'BERT': {
-            'params': '110M (base), 340M (large)',
-            'architecture': 'Bidirectional Transformer Encoder',
-            'pre-training': 'MLM + NSP',
-            'strengths': 'Strong baseline, widely supported',
-            'use_cases': 'General NLP, fine-tuning'
+        "BERT": {
+            "params": "110M (base), 340M (large)",
+            "architecture": "Bidirectional Transformer Encoder",
+            "pre-training": "MLM + NSP",
+            "strengths": "Strong baseline, widely supported",
+            "use_cases": "General NLP, fine-tuning",
         },
-        'RoBERTa': {
-            'params': '125M (base), 355M (large)',
-            'architecture': 'Same as BERT',
-            'pre-training': 'MLM only (no NSP), dynamic masking',
-            'strengths': 'Better than BERT, more training',
-            'use_cases': 'When accuracy matters'
+        "RoBERTa": {
+            "params": "125M (base), 355M (large)",
+            "architecture": "Same as BERT",
+            "pre-training": "MLM only (no NSP), dynamic masking",
+            "strengths": "Better than BERT, more training",
+            "use_cases": "When accuracy matters",
         },
-        'ALBERT': {
-            'params': '12M (base), 18M (large)',
-            'architecture': 'Parameter sharing across layers',
-            'pre-training': 'MLM + SOP (sentence order)',
-            'strengths': 'Smaller model, efficient',
-            'use_cases': 'Resource-constrained environments'
+        "ALBERT": {
+            "params": "12M (base), 18M (large)",
+            "architecture": "Parameter sharing across layers",
+            "pre-training": "MLM + SOP (sentence order)",
+            "strengths": "Smaller model, efficient",
+            "use_cases": "Resource-constrained environments",
         },
-        'DistilBERT': {
-            'params': '66M (40% smaller than BERT)',
-            'architecture': 'Knowledge distillation from BERT',
-            'pre-training': 'Distilled from BERT',
-            'strengths': '60% faster, 97% performance',
-            'use_cases': 'Fast inference, production'
-        }
+        "DistilBERT": {
+            "params": "66M (40% smaller than BERT)",
+            "architecture": "Knowledge distillation from BERT",
+            "pre-training": "Distilled from BERT",
+            "strengths": "60% faster, 97% performance",
+            "use_cases": "Fast inference, production",
+        },
     }
 
     for model_name, info in models_info.items():
@@ -326,13 +328,15 @@ def demonstrate_encoder_models():
         print(f"  Strengths: {info['strengths']}")
         print(f"  Use cases: {info['use_cases']}")
 
+
 def explain_encoder_architecture():
     """Explain encoder-only architecture"""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("ENCODER-ONLY ARCHITECTURE")
-    print("="*80)
+    print("=" * 80)
 
-    print("""
+    print(
+        """
 BERT Architecture (Encoder-Only):
 
 Input: "The cat sits on the mat"
@@ -358,7 +362,8 @@ Task-Specific Heads:
   - [CLS] token → Classification
   - All tokens → Token Classification (NER)
   - Token pairs → Question Answering
-    """)
+    """
+    )
 
     print("\nKey Differences from Decoder (GPT):")
     print("✓ Bidirectional attention (sees full context)")
@@ -376,10 +381,11 @@ Task-Specific Heads:
     print("   - Given two sentences")
     print("   - Predict if B follows A")
 
+
 def main():
-    print("="*80)
+    print("=" * 80)
     print("ENCODER-ONLY TRANSFORMER MODELS")
-    print("="*80)
+    print("=" * 80)
 
     print(f"\nDevice: {CONFIG['device']}")
 
@@ -390,47 +396,45 @@ def main():
     demonstrate_encoder_models()
 
     # Load data
-    train_texts, train_labels, test_texts, test_labels, num_labels = load_classification_data(
-        CONFIG['dataset']
+    train_texts, train_labels, test_texts, test_labels, num_labels = (
+        load_classification_data(CONFIG["dataset"])
     )
 
     # Load model and tokenizer
     tokenizer, model = load_tokenizer_and_model(
-        CONFIG['model_type'],
-        CONFIG['task'],
-        num_labels
+        CONFIG["model_type"], CONFIG["task"], num_labels
     )
 
     # Create datasets
     train_dataset = TextClassificationDataset(
-        train_texts, train_labels, tokenizer, CONFIG['max_length']
+        train_texts, train_labels, tokenizer, CONFIG["max_length"]
     )
     test_dataset = TextClassificationDataset(
-        test_texts, test_labels, tokenizer, CONFIG['max_length']
+        test_texts, test_labels, tokenizer, CONFIG["max_length"]
     )
 
     # Create dataloaders
     train_dataloader = DataLoader(
         train_dataset,
-        batch_size=CONFIG['batch_size'],
+        batch_size=CONFIG["batch_size"],
         shuffle=True,
-        num_workers=CONFIG['num_workers']
+        num_workers=CONFIG["num_workers"],
     )
 
     test_dataloader = DataLoader(
         test_dataset,
-        batch_size=CONFIG['batch_size'],
+        batch_size=CONFIG["batch_size"],
         shuffle=False,
-        num_workers=CONFIG['num_workers']
+        num_workers=CONFIG["num_workers"],
     )
 
     # Train
     model, train_losses, val_accuracies = train_classifier(
-        model, train_dataloader, test_dataloader, CONFIG['device']
+        model, train_dataloader, test_dataloader, CONFIG["device"]
     )
 
     # Save model
-    output_dir = Path(CONFIG['output_dir'])
+    output_dir = Path(CONFIG["output_dir"])
     output_dir.mkdir(parents=True, exist_ok=True)
 
     model.save_pretrained(output_dir / f"{CONFIG['model_type']}_classifier")
@@ -438,9 +442,9 @@ def main():
 
     print(f"\nModel saved to: {output_dir}/{CONFIG['model_type']}_classifier")
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("TRAINING COMPLETED")
-    print("="*80)
+    print("=" * 80)
 
     print("\nEncoder Models Summary:")
     print("✓ Bidirectional attention for better understanding")
@@ -463,5 +467,6 @@ def main():
     print("- Use gradient clipping")
     print("- Monitor validation metrics")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

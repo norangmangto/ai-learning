@@ -18,9 +18,12 @@ import os
 try:
     from langchain_community.embeddings import HuggingFaceEmbeddings
     from langchain_openai import OpenAIEmbeddings
+
     LANGCHAIN_AVAILABLE = True
 except ImportError:
-    print("⚠ LangChain not installed. Install with: pip install langchain langchain-community langchain-openai")
+    print(
+        "⚠ LangChain not installed. Install with: pip install langchain langchain-community langchain-openai"
+    )
     LANGCHAIN_AVAILABLE = False
 
 
@@ -102,8 +105,7 @@ def train_sentence_transformer():
 
     # 5. Define evaluator
     evaluator = evaluation.EmbeddingSimilarityEvaluator.from_input_examples(
-        eval_data,
-        name='eval'
+        eval_data, name="eval"
     )
 
     # 6. Fine-tune the model
@@ -121,7 +123,7 @@ def train_sentence_transformer():
         warmup_steps=warmup_steps,
         output_path=output_path,
         evaluation_steps=10,
-        show_progress_bar=True
+        show_progress_bar=True,
     )
 
     print(f"\n✓ Model fine-tuned and saved to: {output_path}")
@@ -138,7 +140,7 @@ def train_sentence_transformer():
     test_queries = [
         "What is machine learning?",
         "Explain deep learning",
-        "How to use LangChain?"
+        "How to use LangChain?",
     ]
 
     test_docs = [
@@ -146,7 +148,7 @@ def train_sentence_transformer():
         "Deep learning uses neural networks with multiple layers to learn representations",
         "LangChain is a framework for developing applications powered by language models",
         "Cooking recipes for Italian cuisine",
-        "History of the Roman Empire"
+        "History of the Roman Empire",
     ]
 
     print("\n--- Semantic Similarity Test ---")
@@ -167,8 +169,14 @@ def train_sentence_transformer():
     print("\n--- Sanity Checks ---")
 
     # Check 1: Embedding dimensions are consistent
-    if all(emb.shape[0] == model.get_sentence_embedding_dimension() for emb in query_embeddings):
-        print(f"✓ All embeddings have correct dimension: {model.get_sentence_embedding_dimension()}")
+    if all(
+        emb.shape[0] == model.get_sentence_embedding_dimension()
+        for emb in query_embeddings
+    ):
+        print(
+            f"✓ All embeddings have correct dimension: {
+        model.get_sentence_embedding_dimension()}"
+        )
     else:
         print("✗ WARNING: Inconsistent embedding dimensions!")
 
@@ -195,9 +203,12 @@ def train_sentence_transformer():
 
     print("\n=== Overall Validation Result ===")
     validation_passed = (
-        all(emb.shape[0] == model.get_sentence_embedding_dimension() for emb in query_embeddings) and
-        os.path.exists(model_file) and
-        sim_ml_dl > 0.5
+        all(
+            emb.shape[0] == model.get_sentence_embedding_dimension()
+            for emb in query_embeddings
+        )
+        and os.path.exists(model_file)
+        and sim_ml_dl > 0.5
     )
 
     if validation_passed:
@@ -223,7 +234,7 @@ def test_langchain_embeddings():
     test_texts = [
         "What is artificial intelligence?",
         "How does machine learning work?",
-        "Explain natural language processing"
+        "Explain natural language processing",
     ]
 
     # 1. HuggingFace Embeddings (local, free)
@@ -261,7 +272,9 @@ def test_langchain_embeddings():
                 model="text-embedding-3-small"  # Latest, efficient model
             )
 
-            embeddings = openai_embeddings.embed_documents(test_texts[:2])  # Limit to save costs
+            embeddings = openai_embeddings.embed_documents(
+                test_texts[:2]
+            )  # Limit to save costs
 
             print(f"✓ Model: text-embedding-3-small")
             print(f"✓ Embedding dimension: {len(embeddings[0])}")
@@ -277,9 +290,7 @@ def test_langchain_embeddings():
     output_path = "models/finetuned_embeddings"
     if os.path.exists(output_path):
         try:
-            custom_embeddings = HuggingFaceEmbeddings(
-                model_name=output_path
-            )
+            custom_embeddings = HuggingFaceEmbeddings(model_name=output_path)
 
             embeddings = custom_embeddings.embed_documents(test_texts)
 
@@ -333,7 +344,7 @@ def demonstrate_rag_pipeline():
     queries = [
         "What is RAG?",
         "How do vector databases work?",
-        "Tell me about LangChain"
+        "Tell me about LangChain",
     ]
 
     print("\n--- Retrieval Tests ---")
@@ -369,7 +380,9 @@ def main():
     print("\nNext Steps:")
     print("1. Use fine-tuned model: models/finetuned_embeddings")
     print("2. Integrate with LangChain:")
-    print("   embeddings = HuggingFaceEmbeddings(model_name='models/finetuned_embeddings')")
+    print(
+        "   embeddings = HuggingFaceEmbeddings(model_name='models/finetuned_embeddings')"
+    )
     print("3. Build RAG applications with domain-specific embeddings")
     print("4. Consider training on larger domain-specific datasets")
     print("\nRecommended LangChain Models:")

@@ -25,6 +25,7 @@ import re
 
 class TrainingCallback(CallbackAny2Vec):
     """Callback to track training progress."""
+
     def __init__(self):
         self.epoch = 0
         self.losses = []
@@ -33,7 +34,7 @@ class TrainingCallback(CallbackAny2Vec):
         loss = model.get_latest_training_loss()
         self.losses.append(loss)
         if self.epoch % 5 == 0:
-            print(f'Epoch {self.epoch}: loss = {loss:.4f}')
+            print(f"Epoch {self.epoch}: loss = {loss:.4f}")
         self.epoch += 1
 
 
@@ -45,16 +46,75 @@ def generate_sample_corpus(n_documents=1000, vocab_size=500):
 
     # Define some topic-specific words
     topics = {
-        'technology': ['computer', 'software', 'algorithm', 'data', 'network', 'programming',
-                      'artificial', 'intelligence', 'machine', 'learning', 'neural', 'system'],
-        'nature': ['tree', 'forest', 'mountain', 'river', 'ocean', 'animal', 'bird',
-                  'flower', 'plant', 'weather', 'climate', 'environment'],
-        'food': ['cook', 'recipe', 'ingredient', 'restaurant', 'meal', 'breakfast',
-                'dinner', 'lunch', 'delicious', 'flavor', 'taste', 'kitchen'],
-        'sports': ['game', 'play', 'team', 'player', 'score', 'win', 'competition',
-                  'tournament', 'champion', 'athlete', 'training', 'exercise'],
-        'science': ['experiment', 'research', 'theory', 'hypothesis', 'observation',
-                   'analysis', 'discovery', 'scientist', 'laboratory', 'study', 'method']
+        "technology": [
+            "computer",
+            "software",
+            "algorithm",
+            "data",
+            "network",
+            "programming",
+            "artificial",
+            "intelligence",
+            "machine",
+            "learning",
+            "neural",
+            "system",
+        ],
+        "nature": [
+            "tree",
+            "forest",
+            "mountain",
+            "river",
+            "ocean",
+            "animal",
+            "bird",
+            "flower",
+            "plant",
+            "weather",
+            "climate",
+            "environment",
+        ],
+        "food": [
+            "cook",
+            "recipe",
+            "ingredient",
+            "restaurant",
+            "meal",
+            "breakfast",
+            "dinner",
+            "lunch",
+            "delicious",
+            "flavor",
+            "taste",
+            "kitchen",
+        ],
+        "sports": [
+            "game",
+            "play",
+            "team",
+            "player",
+            "score",
+            "win",
+            "competition",
+            "tournament",
+            "champion",
+            "athlete",
+            "training",
+            "exercise",
+        ],
+        "science": [
+            "experiment",
+            "research",
+            "theory",
+            "hypothesis",
+            "observation",
+            "analysis",
+            "discovery",
+            "scientist",
+            "laboratory",
+            "study",
+            "method",
+        ],
     }
 
     # Generate documents
@@ -74,9 +134,30 @@ def generate_sample_corpus(n_documents=1000, vocab_size=500):
                 doc.append(np.random.choice(topic_words))
             else:
                 # Add some common words
-                common = ['the', 'a', 'an', 'is', 'are', 'was', 'were', 'been',
-                         'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would',
-                         'can', 'could', 'should', 'may', 'might', 'must']
+                common = [
+                    "the",
+                    "a",
+                    "an",
+                    "is",
+                    "are",
+                    "was",
+                    "were",
+                    "been",
+                    "have",
+                    "has",
+                    "had",
+                    "do",
+                    "does",
+                    "did",
+                    "will",
+                    "would",
+                    "can",
+                    "could",
+                    "should",
+                    "may",
+                    "might",
+                    "must",
+                ]
                 doc.append(np.random.choice(common))
 
         documents.append(doc)
@@ -89,12 +170,12 @@ def load_real_text_corpus(text):
     # Simple preprocessing
     text = text.lower()
     # Split into sentences
-    sentences = re.split(r'[.!?]+', text)
+    sentences = re.split(r"[.!?]+", text)
 
     # Tokenize
     corpus = []
     for sentence in sentences:
-        words = re.findall(r'\b\w+\b', sentence)
+        words = re.findall(r"\b\w+\b", sentence)
         if len(words) >= 3:  # Keep sentences with at least 3 words
             corpus.append(words)
 
@@ -116,7 +197,7 @@ def train_word2vec_cbow(corpus, vector_size=100, window=5, min_count=2, epochs=2
         sg=0,  # 0 = CBOW, 1 = Skip-gram
         workers=4,
         epochs=epochs,
-        callbacks=[callback]
+        callbacks=[callback],
     )
 
     return model
@@ -137,7 +218,7 @@ def train_word2vec_skipgram(corpus, vector_size=100, window=5, min_count=2, epoc
         sg=1,  # Skip-gram
         workers=4,
         epochs=epochs,
-        callbacks=[callback]
+        callbacks=[callback],
     )
 
     return model
@@ -146,7 +227,7 @@ def train_word2vec_skipgram(corpus, vector_size=100, window=5, min_count=2, epoc
 def evaluate_word_similarity(model, word_pairs):
     """Evaluate word similarity."""
     print("\nWord Similarity Evaluation:")
-    print("="*60)
+    print("=" * 60)
 
     for word1, word2 in word_pairs:
         try:
@@ -188,7 +269,7 @@ def visualize_embeddings(model, words=None, n_words=50):
     vectors = np.array([model.wv[word] for word in words])
 
     # Reduce to 2D using t-SNE
-    tsne = TSNE(n_components=2, random_state=42, perplexity=min(30, len(words)-1))
+    tsne = TSNE(n_components=2, random_state=42, perplexity=min(30, len(words) - 1))
     vectors_2d = tsne.fit_transform(vectors)
 
     # Plot
@@ -199,51 +280,64 @@ def visualize_embeddings(model, words=None, n_words=50):
 
     for i, word in enumerate(words):
         x, y = vectors_2d[i]
-        color_idx = ord(word[0].lower()) - ord('a')
+        color_idx = ord(word[0].lower()) - ord("a")
         if 0 <= color_idx < 26:
             color = colors[color_idx]
         else:
-            color = 'gray'
+            color = "gray"
 
         plt.scatter(x, y, c=[color], s=100, alpha=0.6)
-        plt.annotate(word, (x, y), xytext=(5, 5), textcoords='offset points',
-                    fontsize=9, alpha=0.8)
+        plt.annotate(
+            word,
+            (x, y),
+            xytext=(5, 5),
+            textcoords="offset points",
+            fontsize=9,
+            alpha=0.8,
+        )
 
-    plt.title('Word Embeddings Visualization (t-SNE)', fontsize=14)
-    plt.xlabel('t-SNE Component 1')
-    plt.ylabel('t-SNE Component 2')
+    plt.title("Word Embeddings Visualization (t-SNE)", fontsize=14)
+    plt.xlabel("t-SNE Component 1")
+    plt.ylabel("t-SNE Component 2")
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
-    plt.savefig('word2vec_embeddings.png', dpi=300, bbox_inches='tight')
+    plt.savefig("word2vec_embeddings.png", dpi=300, bbox_inches="tight")
     plt.show()
 
 
 def compare_cbow_skipgram(corpus, vector_size=100, window=5, epochs=20):
     """Compare CBOW and Skip-gram architectures."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("Comparing CBOW vs Skip-gram")
-    print("="*70)
+    print("=" * 70)
 
     # Train both models
     start_time = time.time()
-    cbow_model = train_word2vec_cbow(corpus, vector_size, window, min_count=2, epochs=epochs)
+    cbow_model = train_word2vec_cbow(
+        corpus, vector_size, window, min_count=2, epochs=epochs
+    )
     cbow_time = time.time() - start_time
 
     start_time = time.time()
-    sg_model = train_word2vec_skipgram(corpus, vector_size, window, min_count=2, epochs=epochs)
+    sg_model = train_word2vec_skipgram(
+        corpus, vector_size, window, min_count=2, epochs=epochs
+    )
     sg_time = time.time() - start_time
 
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("Comparison Results")
-    print("="*70)
+    print("=" * 70)
     print(f"CBOW Training Time: {cbow_time:.2f}s")
     print(f"Skip-gram Training Time: {sg_time:.2f}s")
     print(f"CBOW Vocabulary Size: {len(cbow_model.wv)}")
     print(f"Skip-gram Vocabulary Size: {len(sg_model.wv)}")
 
     # Test similarity on common words
-    test_words = [w for w in ['computer', 'algorithm', 'tree', 'forest', 'cook', 'recipe']
-                  if w in cbow_model.wv and w in sg_model.wv]
+    test_words = [
+        w
+        for w in ["computer", "algorithm", "tree", "forest", "cook", "recipe"]
+        if w in cbow_model.wv and w in sg_model.wv
+    ]
 
     if len(test_words) >= 2:
         print(f"\nSimilarity between '{test_words[0]}' and '{test_words[1]}':")
@@ -260,9 +354,9 @@ def compare_cbow_skipgram(corpus, vector_size=100, window=5, epochs=20):
 
 def hyperparameter_comparison(corpus):
     """Compare different hyperparameters."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("Hyperparameter Comparison")
-    print("="*70)
+    print("=" * 70)
 
     # Different vector sizes
     vector_sizes = [50, 100, 200]
@@ -282,67 +376,85 @@ def hyperparameter_comparison(corpus):
                 min_count=2,
                 sg=1,  # Skip-gram
                 workers=4,
-                epochs=10
+                epochs=10,
             )
 
             train_time = time.time() - start_time
             vocab_size = len(model.wv)
 
-            results.append({
-                'vec_size': vec_size,
-                'window': window,
-                'time': train_time,
-                'vocab': vocab_size
-            })
+            results.append(
+                {
+                    "vec_size": vec_size,
+                    "window": window,
+                    "time": train_time,
+                    "vocab": vocab_size,
+                }
+            )
 
     # Plot results
     fig, axes = plt.subplots(1, 2, figsize=(14, 5))
 
     # Training time
-    data = np.array([[r['time'] for r in results if r['vec_size'] == vs]
-                     for vs in vector_sizes])
-    im1 = axes[0].imshow(data, cmap='YlOrRd', aspect='auto')
+    data = np.array(
+        [[r["time"] for r in results if r["vec_size"] == vs] for vs in vector_sizes]
+    )
+    im1 = axes[0].imshow(data, cmap="YlOrRd", aspect="auto")
     axes[0].set_xticks(range(len(windows)))
     axes[0].set_xticklabels(windows)
     axes[0].set_yticks(range(len(vector_sizes)))
     axes[0].set_yticklabels(vector_sizes)
-    axes[0].set_xlabel('Window Size')
-    axes[0].set_ylabel('Vector Size')
-    axes[0].set_title('Training Time (seconds)')
+    axes[0].set_xlabel("Window Size")
+    axes[0].set_ylabel("Vector Size")
+    axes[0].set_title("Training Time (seconds)")
     plt.colorbar(im1, ax=axes[0])
 
     # Add text annotations
     for i in range(len(vector_sizes)):
         for j in range(len(windows)):
-            axes[0].text(j, i, f'{data[i, j]:.1f}',
-                        ha="center", va="center", color="black", fontsize=10)    # Vocabulary size
-    data = np.array([[r['vocab'] for r in results if r['vec_size'] == vs]
-                     for vs in vector_sizes])
-    im2 = axes[1].imshow(data, cmap='Blues', aspect='auto')
+            axes[0].text(
+                j,
+                i,
+                f"{data[i, j]:.1f}",
+                ha="center",
+                va="center",
+                color="black",
+                fontsize=10,
+            )  # Vocabulary size
+    data = np.array(
+        [[r["vocab"] for r in results if r["vec_size"] == vs] for vs in vector_sizes]
+    )
+    im2 = axes[1].imshow(data, cmap="Blues", aspect="auto")
     axes[1].set_xticks(range(len(windows)))
     axes[1].set_xticklabels(windows)
     axes[1].set_yticks(range(len(vector_sizes)))
     axes[1].set_yticklabels(vector_sizes)
-    axes[1].set_xlabel('Window Size')
-    axes[1].set_ylabel('Vector Size')
-    axes[1].set_title('Vocabulary Size')
+    axes[1].set_xlabel("Window Size")
+    axes[1].set_ylabel("Vector Size")
+    axes[1].set_title("Vocabulary Size")
     plt.colorbar(im2, ax=axes[1])
 
     for i in range(len(vector_sizes)):
         for j in range(len(windows)):
-            axes[1].text(j, i, f'{data[i, j]}',
-                        ha="center", va="center", color="black", fontsize=10)
+            axes[1].text(
+                j,
+                i,
+                f"{data[i, j]}",
+                ha="center",
+                va="center",
+                color="black",
+                fontsize=10,
+            )
 
     plt.tight_layout()
-    plt.savefig('word2vec_hyperparameter_comparison.png', dpi=300, bbox_inches='tight')
+    plt.savefig("word2vec_hyperparameter_comparison.png", dpi=300, bbox_inches="tight")
     plt.show()
 
 
 def main():
     """Main execution function."""
-    print("="*70)
+    print("=" * 70)
     print("Word2Vec Word Embeddings")
-    print("="*70)
+    print("=" * 70)
 
     # Generate corpus
     print("\n1. Generating corpus...")
@@ -355,31 +467,33 @@ def main():
 
     # Compare CBOW and Skip-gram
     print("\n2. Comparing CBOW and Skip-gram...")
-    cbow_model, sg_model = compare_cbow_skipgram(corpus, vector_size=100, window=5, epochs=30)
+    cbow_model, sg_model = compare_cbow_skipgram(
+        corpus, vector_size=100, window=5, epochs=30
+    )
 
     # Evaluate word similarity
     print("\n3. Evaluating word similarity...")
     word_pairs = [
-        ('computer', 'software'),
-        ('algorithm', 'data'),
-        ('tree', 'forest'),
-        ('mountain', 'river'),
-        ('cook', 'recipe'),
-        ('game', 'play')
+        ("computer", "software"),
+        ("algorithm", "data"),
+        ("tree", "forest"),
+        ("mountain", "river"),
+        ("cook", "recipe"),
+        ("game", "play"),
     ]
     evaluate_word_similarity(sg_model, word_pairs)
 
     # Find similar words
     print("\n4. Finding similar words...")
-    test_words = ['computer', 'tree', 'cook', 'game']
+    test_words = ["computer", "tree", "cook", "game"]
     for word in test_words:
         if word in sg_model.wv:
             find_similar_words(sg_model, word, topn=5)
 
     # Word analogies
     print("\n5. Testing word analogies...")
-    if all(w in sg_model.wv for w in ['computer', 'software', 'tree']):
-        word_analogy(sg_model, ['computer'], ['software'], topn=3)
+    if all(w in sg_model.wv for w in ["computer", "software", "tree"]):
+        word_analogy(sg_model, ["computer"], ["software"], topn=3)
 
     # Visualize embeddings
     print("\n6. Visualizing embeddings...")
@@ -391,18 +505,20 @@ def main():
     hyperparameter_comparison(corpus)
 
     # Save model
-    sg_model.save('word2vec_model.bin')
+    sg_model.save("word2vec_model.bin")
     print("\nModel saved to 'word2vec_model.bin'")
 
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("Word2Vec Training Complete!")
-    print("="*70)
+    print("=" * 70)
     print("\nKey Features:")
     print("✓ CBOW: Fast, good for frequent words")
     print("✓ Skip-gram: Better for rare words, semantic relationships")
     print("✓ Captures semantic similarity (king - man + woman ≈ queen)")
     print("✓ Foundation for transfer learning in NLP")
-    print("\nBest for: Text classification, NER, sentiment analysis, document similarity")
+    print(
+        "\nBest for: Text classification, NER, sentiment analysis, document similarity"
+    )
 
 
 if __name__ == "__main__":

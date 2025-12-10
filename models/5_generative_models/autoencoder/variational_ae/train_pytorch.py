@@ -27,22 +27,24 @@ import time
 
 # Configuration
 CONFIG = {
-    'dataset': 'mnist',  # 'mnist' or 'fashion_mnist'
-    'image_size': 28,
-    'channels': 1,
-    'latent_dim': 20,
-    'hidden_dim': 400,
-    'batch_size': 128,
-    'epochs': 30,
-    'lr': 1e-3,
-    'device': 'cuda' if torch.cuda.is_available() else 'cpu',
-    'num_workers': 4,
-    'beta': 1.0,  # KL divergence weight
-    'output_dir': 'results/vae'
+    "dataset": "mnist",  # 'mnist' or 'fashion_mnist'
+    "image_size": 28,
+    "channels": 1,
+    "latent_dim": 20,
+    "hidden_dim": 400,
+    "batch_size": 128,
+    "epochs": 30,
+    "lr": 1e-3,
+    "device": "cuda" if torch.cuda.is_available() else "cpu",
+    "num_workers": 4,
+    "beta": 1.0,  # KL divergence weight
+    "output_dir": "results/vae",
 }
+
 
 class VAE(nn.Module):
     """Variational Autoencoder"""
+
     def __init__(self, image_size=28, channels=1, hidden_dim=400, latent_dim=20):
         super(VAE, self).__init__()
 
@@ -105,6 +107,7 @@ class VAE(nn.Module):
         samples = self.decode(z)
         return samples
 
+
 def vae_loss(x_recon, x, mu, logvar, beta=1.0):
     """
     VAE Loss = Reconstruction Loss + beta * KL Divergence
@@ -113,7 +116,7 @@ def vae_loss(x_recon, x, mu, logvar, beta=1.0):
     KL Divergence: Measure of difference from standard normal distribution
     """
     # Reconstruction loss (BCE for pixel values in [0, 1])
-    recon_loss = F.binary_cross_entropy(x_recon, x, reduction='mean')
+    recon_loss = F.binary_cross_entropy(x_recon, x, reduction="mean")
 
     # KL divergence
     # KL(N(mu, sigma) || N(0, 1)) = -0.5 * sum(1 + logvar - mu^2 - exp(logvar))
@@ -121,39 +124,31 @@ def vae_loss(x_recon, x, mu, logvar, beta=1.0):
 
     return recon_loss + beta * kl_loss, recon_loss, kl_loss
 
-def load_data(dataset_name='mnist', image_size=28):
+
+def load_data(dataset_name="mnist", image_size=28):
     """Load dataset"""
-    print("="*80)
+    print("=" * 80)
     print("LOADING DATASET")
-    print("="*80)
+    print("=" * 80)
 
-    transform = T.Compose([
-        T.Resize(image_size),
-        T.ToTensor()
-    ])
+    transform = T.Compose([T.Resize(image_size), T.ToTensor()])
 
-    if dataset_name == 'mnist':
+    if dataset_name == "mnist":
         dataset = torchvision.datasets.MNIST(
-            root='data',
-            train=True,
-            download=True,
-            transform=transform
+            root="data", train=True, download=True, transform=transform
         )
-    elif dataset_name == 'fashion_mnist':
+    elif dataset_name == "fashion_mnist":
         dataset = torchvision.datasets.FashionMNIST(
-            root='data',
-            train=True,
-            download=True,
-            transform=transform
+            root="data", train=True, download=True, transform=transform
         )
     else:
         raise ValueError(f"Unknown dataset: {dataset_name}")
 
     dataloader = DataLoader(
         dataset,
-        batch_size=CONFIG['batch_size'],
+        batch_size=CONFIG["batch_size"],
         shuffle=True,
-        num_workers=CONFIG['num_workers']
+        num_workers=CONFIG["num_workers"],
     )
 
     print(f"\nDataset: {dataset_name}")
@@ -163,11 +158,12 @@ def load_data(dataset_name='mnist', image_size=28):
 
     return dataloader
 
+
 def train_vae(model, dataloader, device):
     """Train VAE"""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("TRAINING VAE")
-    print("="*80)
+    print("=" * 80)
 
     print(f"\nConfiguration:")
     print(f"  Epochs: {CONFIG['epochs']}")
@@ -177,19 +173,19 @@ def train_vae(model, dataloader, device):
     print(f"  Beta (KL weight): {CONFIG['beta']}")
     print(f"  Device: {device}")
 
-    optimizer = optim.Adam(model.parameters(), lr=CONFIG['lr'])
+    optimizer = optim.Adam(model.parameters(), lr=CONFIG["lr"])
 
     # Create output directory
-    output_dir = Path(CONFIG['output_dir'])
+    output_dir = Path(CONFIG["output_dir"])
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # Training history
-    losses = {'total': [], 'recon': [], 'kl': []}
+    losses = {"total": [], "recon": [], "kl": []}
 
     print("\nStarting training...")
     print("=" * 80)
 
-    for epoch in range(CONFIG['epochs']):
+    for epoch in range(CONFIG["epochs"]):
         model.train()
         epoch_start = time.time()
 
@@ -204,7 +200,7 @@ def train_vae(model, dataloader, device):
             x_recon, mu, logvar, z = model(x)
 
             # Compute loss
-            loss, recon_loss, kl_loss = vae_loss(x_recon, x, mu, logvar, CONFIG['beta'])
+            loss, recon_loss, kl_loss = vae_loss(x_recon, x, mu, logvar, CONFIG["beta"])
 
             # Backward pass
             optimizer.zero_grad()
@@ -224,15 +220,17 @@ def train_vae(model, dataloader, device):
         avg_recon = total_recon / n_batches
         avg_kl = total_kl / n_batches
 
-        losses['total'].append(avg_loss)
-        losses['recon'].append(avg_recon)
-        losses['kl'].append(avg_kl)
+        losses["total"].append(avg_loss)
+        losses["recon"].append(avg_recon)
+        losses["kl"].append(avg_kl)
 
-        print(f"Epoch [{epoch+1}/{CONFIG['epochs']}] "
-              f"Loss: {avg_loss:.4f} "
-              f"Recon: {avg_recon:.4f} "
-              f"KL: {avg_kl:.4f} "
-              f"Time: {epoch_time:.2f}s")
+        print(
+            f"Epoch [{epoch+1}/{CONFIG['epochs']}] "
+            f"Loss: {avg_loss:.4f} "
+            f"Recon: {avg_recon:.4f} "
+            f"KL: {avg_kl:.4f} "
+            f"Time: {epoch_time:.2f}s"
+        )
 
         # Save samples
         if (epoch + 1) % 5 == 0:
@@ -246,55 +244,57 @@ def train_vae(model, dataloader, device):
                 # Combine original and reconstructions
                 combined = torch.cat([x_sample, x_recon], dim=0)
                 grid = make_grid(combined, nrow=8)
-                save_image(grid, output_dir / f'recon_epoch_{epoch+1:03d}.png')
+                save_image(grid, output_dir / f"recon_epoch_{epoch+1:03d}.png")
 
                 # Generated samples
                 samples = model.sample(64)
                 grid = make_grid(samples, nrow=8)
-                save_image(grid, output_dir / f'generated_epoch_{epoch+1:03d}.png')
+                save_image(grid, output_dir / f"generated_epoch_{epoch+1:03d}.png")
 
     # Plot losses
     plot_losses(losses, output_dir)
 
     return model, losses
 
+
 def plot_losses(losses, output_dir):
     """Plot training losses"""
     plt.figure(figsize=(12, 4))
 
     plt.subplot(1, 3, 1)
-    plt.plot(losses['total'])
-    plt.title('Total Loss')
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
+    plt.plot(losses["total"])
+    plt.title("Total Loss")
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
     plt.grid(True, alpha=0.3)
 
     plt.subplot(1, 3, 2)
-    plt.plot(losses['recon'])
-    plt.title('Reconstruction Loss')
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
+    plt.plot(losses["recon"])
+    plt.title("Reconstruction Loss")
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
     plt.grid(True, alpha=0.3)
 
     plt.subplot(1, 3, 3)
-    plt.plot(losses['kl'])
-    plt.title('KL Divergence')
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
+    plt.plot(losses["kl"])
+    plt.title("KL Divergence")
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
     plt.grid(True, alpha=0.3)
 
     plt.tight_layout()
-    plt.savefig(output_dir / 'losses.png', dpi=150, bbox_inches='tight')
+    plt.savefig(output_dir / "losses.png", dpi=150, bbox_inches="tight")
     print(f"\nLoss plot saved to: {output_dir}/losses.png")
     plt.close()
 
+
 def visualize_latent_space(model, dataloader, device):
     """Visualize 2D latent space"""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("VISUALIZING LATENT SPACE")
-    print("="*80)
+    print("=" * 80)
 
-    if CONFIG['latent_dim'] != 2:
+    if CONFIG["latent_dim"] != 2:
         print("Latent dimension is not 2, skipping visualization")
         return
 
@@ -314,28 +314,29 @@ def visualize_latent_space(model, dataloader, device):
     y = np.concatenate(all_y)
 
     plt.figure(figsize=(10, 8))
-    scatter = plt.scatter(z[:, 0], z[:, 1], c=y, cmap='tab10', s=5, alpha=0.5)
+    scatter = plt.scatter(z[:, 0], z[:, 1], c=y, cmap="tab10", s=5, alpha=0.5)
     plt.colorbar(scatter)
-    plt.xlabel('Latent Dimension 1')
-    plt.ylabel('Latent Dimension 2')
-    plt.title('VAE Latent Space')
+    plt.xlabel("Latent Dimension 1")
+    plt.ylabel("Latent Dimension 2")
+    plt.title("VAE Latent Space")
     plt.grid(True, alpha=0.3)
 
-    output_dir = Path(CONFIG['output_dir'])
-    plt.savefig(output_dir / 'latent_space.png', dpi=150, bbox_inches='tight')
+    output_dir = Path(CONFIG["output_dir"])
+    plt.savefig(output_dir / "latent_space.png", dpi=150, bbox_inches="tight")
     print(f"Latent space plot saved to: {output_dir}/latent_space.png")
     plt.close()
 
+
 def interpolate_latent(model, device, num_steps=10):
     """Interpolate between two points in latent space"""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("LATENT SPACE INTERPOLATION")
-    print("="*80)
+    print("=" * 80)
 
     model.eval()
 
-    z1 = torch.randn(1, CONFIG['latent_dim'], device=device)
-    z2 = torch.randn(1, CONFIG['latent_dim'], device=device)
+    z1 = torch.randn(1, CONFIG["latent_dim"], device=device)
+    z2 = torch.randn(1, CONFIG["latent_dim"], device=device)
 
     alphas = torch.linspace(0, 1, num_steps, device=device)
 
@@ -349,53 +350,54 @@ def interpolate_latent(model, device, num_steps=10):
     images = torch.cat(images, dim=0)
     grid = make_grid(images, nrow=num_steps)
 
-    output_dir = Path(CONFIG['output_dir'])
-    save_image(grid, output_dir / 'interpolation.png')
+    output_dir = Path(CONFIG["output_dir"])
+    save_image(grid, output_dir / "interpolation.png")
     print(f"Interpolation saved to: {output_dir}/interpolation.png")
 
+
 def main():
-    print("="*80)
+    print("=" * 80)
     print("VARIATIONAL AUTOENCODER (VAE)")
-    print("="*80)
+    print("=" * 80)
 
     print(f"\nDevice: {CONFIG['device']}")
 
     # Load data
-    dataloader = load_data(CONFIG['dataset'], CONFIG['image_size'])
+    dataloader = load_data(CONFIG["dataset"], CONFIG["image_size"])
 
     # Create model
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("CREATING VAE MODEL")
-    print("="*80)
+    print("=" * 80)
 
     model = VAE(
-        image_size=CONFIG['image_size'],
-        channels=CONFIG['channels'],
-        hidden_dim=CONFIG['hidden_dim'],
-        latent_dim=CONFIG['latent_dim']
-    ).to(CONFIG['device'])
+        image_size=CONFIG["image_size"],
+        channels=CONFIG["channels"],
+        hidden_dim=CONFIG["hidden_dim"],
+        latent_dim=CONFIG["latent_dim"],
+    ).to(CONFIG["device"])
 
     print(f"\nParameters: {sum(p.numel() for p in model.parameters())/1e6:.2f}M")
     print(f"\nModel architecture:")
     print(model)
 
     # Train
-    model, losses = train_vae(model, dataloader, CONFIG['device'])
+    model, losses = train_vae(model, dataloader, CONFIG["device"])
 
     # Visualizations
-    if CONFIG['latent_dim'] == 2:
-        visualize_latent_space(model, dataloader, CONFIG['device'])
+    if CONFIG["latent_dim"] == 2:
+        visualize_latent_space(model, dataloader, CONFIG["device"])
 
-    interpolate_latent(model, CONFIG['device'], num_steps=15)
+    interpolate_latent(model, CONFIG["device"], num_steps=15)
 
     # Save model
-    output_dir = Path(CONFIG['output_dir'])
-    torch.save(model.state_dict(), output_dir / 'vae.pth')
+    output_dir = Path(CONFIG["output_dir"])
+    torch.save(model.state_dict(), output_dir / "vae.pth")
     print(f"\nModel saved to: {output_dir}/vae.pth")
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("TRAINING COMPLETED")
-    print("="*80)
+    print("=" * 80)
 
     print("\nVAE Key Concepts:")
     print("✓ Probabilistic model for unsupervised learning")
@@ -423,5 +425,6 @@ def main():
     print(f"    - Beta=1: Standard VAE")
     print(f"    - Beta>1: More regularization (smoother latent space)")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

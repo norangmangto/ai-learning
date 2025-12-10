@@ -23,7 +23,7 @@ from sklearn.metrics import silhouette_score
 from matplotlib.patches import Ellipse
 
 
-def generate_sample_data(n_samples=500, dataset_type='blobs'):
+def generate_sample_data(n_samples=500, dataset_type="blobs"):
     """
     Generate sample datasets for clustering.
 
@@ -35,26 +35,31 @@ def generate_sample_data(n_samples=500, dataset_type='blobs'):
         X: Feature matrix
         y_true: True labels (for evaluation only)
     """
-    if dataset_type == 'blobs':
-        X, y_true = make_blobs(n_samples=n_samples, centers=4,
-                               cluster_std=1.0, random_state=42)
-    elif dataset_type == 'moons':
+    if dataset_type == "blobs":
+        X, y_true = make_blobs(
+            n_samples=n_samples, centers=4, cluster_std=1.0, random_state=42
+        )
+    elif dataset_type == "moons":
         X, y_true = make_moons(n_samples=n_samples, noise=0.1, random_state=42)
     else:  # elongated clusters
         # Create elongated clusters
         np.random.seed(42)
-        X1 = np.random.randn(n_samples//3, 2) @ np.array([[3, 0], [0, 0.5]])
-        X2 = np.random.randn(n_samples//3, 2) @ np.array([[0.5, 0], [0, 3]]) + [8, 8]
-        X3 = np.random.randn(n_samples//3, 2) + [8, 0]
+        X1 = np.random.randn(n_samples // 3, 2) @ np.array([[3, 0], [0, 0.5]])
+        X2 = np.random.randn(n_samples // 3, 2) @ np.array([[0.5, 0], [0, 3]]) + [8, 8]
+        X3 = np.random.randn(n_samples // 3, 2) + [8, 0]
         X = np.vstack([X1, X2, X3])
-        y_true = np.hstack([np.zeros(n_samples//3),
-                           np.ones(n_samples//3),
-                           np.ones(n_samples//3)*2])
+        y_true = np.hstack(
+            [
+                np.zeros(n_samples // 3),
+                np.ones(n_samples // 3),
+                np.ones(n_samples // 3) * 2,
+            ]
+        )
 
     return X, y_true
 
 
-def find_optimal_components(X, max_components=10, covariance_type='full'):
+def find_optimal_components(X, max_components=10, covariance_type="full"):
     """
     Find optimal number of components using BIC and AIC.
 
@@ -71,8 +76,9 @@ def find_optimal_components(X, max_components=10, covariance_type='full'):
     aic_scores = []
 
     for n in n_components_range:
-        gmm = GaussianMixture(n_components=n, covariance_type=covariance_type,
-                             random_state=42)
+        gmm = GaussianMixture(
+            n_components=n, covariance_type=covariance_type, random_state=42
+        )
         gmm.fit(X)
         bic_scores.append(gmm.bic(X))
         aic_scores.append(gmm.aic(X))
@@ -81,29 +87,31 @@ def find_optimal_components(X, max_components=10, covariance_type='full'):
     fig, axes = plt.subplots(1, 2, figsize=(14, 5))
 
     # BIC (lower is better)
-    axes[0].plot(n_components_range, bic_scores, 'bo-', linewidth=2, markersize=8)
-    axes[0].set_xlabel('Number of Components', fontsize=12)
-    axes[0].set_ylabel('BIC Score', fontsize=12)
-    axes[0].set_title('Bayesian Information Criterion (Lower is Better)', fontsize=12)
+    axes[0].plot(n_components_range, bic_scores, "bo-", linewidth=2, markersize=8)
+    axes[0].set_xlabel("Number of Components", fontsize=12)
+    axes[0].set_ylabel("BIC Score", fontsize=12)
+    axes[0].set_title("Bayesian Information Criterion (Lower is Better)", fontsize=12)
     axes[0].grid(True, alpha=0.3)
     optimal_bic = n_components_range[np.argmin(bic_scores)]
-    axes[0].axvline(x=optimal_bic, color='r', linestyle='--',
-                    label=f'Optimal: {optimal_bic}')
+    axes[0].axvline(
+        x=optimal_bic, color="r", linestyle="--", label=f"Optimal: {optimal_bic}"
+    )
     axes[0].legend()
 
     # AIC (lower is better)
-    axes[1].plot(n_components_range, aic_scores, 'go-', linewidth=2, markersize=8)
-    axes[1].set_xlabel('Number of Components', fontsize=12)
-    axes[1].set_ylabel('AIC Score', fontsize=12)
-    axes[1].set_title('Akaike Information Criterion (Lower is Better)', fontsize=12)
+    axes[1].plot(n_components_range, aic_scores, "go-", linewidth=2, markersize=8)
+    axes[1].set_xlabel("Number of Components", fontsize=12)
+    axes[1].set_ylabel("AIC Score", fontsize=12)
+    axes[1].set_title("Akaike Information Criterion (Lower is Better)", fontsize=12)
     axes[1].grid(True, alpha=0.3)
     optimal_aic = n_components_range[np.argmin(aic_scores)]
-    axes[1].axvline(x=optimal_aic, color='r', linestyle='--',
-                    label=f'Optimal: {optimal_aic}')
+    axes[1].axvline(
+        x=optimal_aic, color="r", linestyle="--", label=f"Optimal: {optimal_aic}"
+    )
     axes[1].legend()
 
     plt.tight_layout()
-    plt.savefig('gmm_model_selection.png', dpi=300, bbox_inches='tight')
+    plt.savefig("gmm_model_selection.png", dpi=300, bbox_inches="tight")
     plt.show()
 
     print(f"\nOptimal number of components:")
@@ -122,7 +130,7 @@ def compare_covariance_types(X, n_components=4):
         X: Feature matrix (scaled)
         n_components: Number of components
     """
-    covariance_types = ['full', 'tied', 'diag', 'spherical']
+    covariance_types = ["full", "tied", "diag", "spherical"]
 
     fig, axes = plt.subplots(2, 2, figsize=(14, 12))
     axes = axes.ravel()
@@ -131,8 +139,9 @@ def compare_covariance_types(X, n_components=4):
 
     for idx, cov_type in enumerate(covariance_types):
         # Fit GMM
-        gmm = GaussianMixture(n_components=n_components, covariance_type=cov_type,
-                             random_state=42)
+        gmm = GaussianMixture(
+            n_components=n_components, covariance_type=cov_type, random_state=42
+        )
         gmm.fit(X)
         labels = gmm.predict(X)
 
@@ -141,42 +150,50 @@ def compare_covariance_types(X, n_components=4):
         aic = gmm.aic(X)
         sil_score = silhouette_score(X, labels)
 
-        results.append({
-            'type': cov_type,
-            'bic': bic,
-            'aic': aic,
-            'silhouette': sil_score
-        })
+        results.append(
+            {"type": cov_type, "bic": bic, "aic": aic, "silhouette": sil_score}
+        )
 
         # Visualize
-        axes[idx].scatter(X[:, 0], X[:, 1], c=labels, cmap='viridis',
-                         alpha=0.6, edgecolors='black', linewidth=0.5)
+        axes[idx].scatter(
+            X[:, 0],
+            X[:, 1],
+            c=labels,
+            cmap="viridis",
+            alpha=0.6,
+            edgecolors="black",
+            linewidth=0.5,
+        )
 
         # Draw ellipses for each component
         draw_ellipses(gmm, axes[idx])
 
-        axes[idx].set_title(f'{cov_type.capitalize()} Covariance\n'
-                           f'BIC: {bic:.0f}, Silhouette: {sil_score:.3f}',
-                           fontsize=11)
-        axes[idx].set_xlabel('Feature 1')
-        axes[idx].set_ylabel('Feature 2')
+        axes[idx].set_title(
+            f"{cov_type.capitalize()} Covariance\n"
+            f"BIC: {bic:.0f}, Silhouette: {sil_score:.3f}",
+            fontsize=11,
+        )
+        axes[idx].set_xlabel("Feature 1")
+        axes[idx].set_ylabel("Feature 2")
 
     plt.tight_layout()
-    plt.savefig('gmm_covariance_comparison.png', dpi=300, bbox_inches='tight')
+    plt.savefig("gmm_covariance_comparison.png", dpi=300, bbox_inches="tight")
     plt.show()
 
     # Print comparison table
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("Covariance Type Comparison")
-    print("="*70)
+    print("=" * 70)
     print(f"{'Type':<15} {'BIC':<15} {'AIC':<15} {'Silhouette':<15}")
-    print("-"*70)
+    print("-" * 70)
     for result in results:
-        print(f"{result['type']:<15} "
-              f"{result['bic']:<15.2f} "
-              f"{result['aic']:<15.2f} "
-              f"{result['silhouette']:<15.4f}")
-    print("="*70)
+        print(
+            f"{result['type']:<15} "
+            f"{result['bic']:<15.2f} "
+            f"{result['aic']:<15.2f} "
+            f"{result['silhouette']:<15.4f}"
+        )
+    print("=" * 70)
     print("\nCovariance Types Explained:")
     print("- full: Each component has its own covariance matrix (most flexible)")
     print("- tied: All components share the same covariance matrix")
@@ -193,13 +210,13 @@ def draw_ellipses(gmm, ax):
         ax: Matplotlib axis
     """
     for i in range(gmm.n_components):
-        if gmm.covariance_type == 'full':
+        if gmm.covariance_type == "full":
             covariances = gmm.covariances_[i][:2, :2]
-        elif gmm.covariance_type == 'tied':
+        elif gmm.covariance_type == "tied":
             covariances = gmm.covariances_[:2, :2]
-        elif gmm.covariance_type == 'diag':
+        elif gmm.covariance_type == "diag":
             covariances = np.diag(gmm.covariances_[i][:2])
-        elif gmm.covariance_type == 'spherical':
+        elif gmm.covariance_type == "spherical":
             covariances = np.eye(2) * gmm.covariances_[i]
 
         # Calculate eigenvalues and eigenvectors
@@ -212,12 +229,20 @@ def draw_ellipses(gmm, ax):
         angle = 180.0 * angle / np.pi
 
         # Draw ellipse
-        ell = Ellipse(gmm.means_[i, :2], v[0], v[1], angle=180.0 + angle,
-                     edgecolor='red', facecolor='none', linewidth=2, alpha=0.7)
+        ell = Ellipse(
+            gmm.means_[i, :2],
+            v[0],
+            v[1],
+            angle=180.0 + angle,
+            edgecolor="red",
+            facecolor="none",
+            linewidth=2,
+            alpha=0.7,
+        )
         ax.add_patch(ell)
 
 
-def train_gmm(X, n_components=4, covariance_type='full'):
+def train_gmm(X, n_components=4, covariance_type="full"):
     """
     Train Gaussian Mixture Model.
 
@@ -232,11 +257,13 @@ def train_gmm(X, n_components=4, covariance_type='full'):
         probs: Soft cluster probabilities
     """
     # Create and fit model
-    gmm = GaussianMixture(n_components=n_components,
-                         covariance_type=covariance_type,
-                         random_state=42,
-                         max_iter=200,
-                         n_init=10)
+    gmm = GaussianMixture(
+        n_components=n_components,
+        covariance_type=covariance_type,
+        random_state=42,
+        max_iter=200,
+        n_init=10,
+    )
 
     gmm.fit(X)
 
@@ -257,7 +284,7 @@ def train_gmm(X, n_components=4, covariance_type='full'):
     return gmm, labels, probs
 
 
-def visualize_soft_clustering(X, probs, title='GMM Soft Clustering'):
+def visualize_soft_clustering(X, probs, title="GMM Soft Clustering"):
     """
     Visualize soft clustering probabilities.
 
@@ -272,25 +299,40 @@ def visualize_soft_clustering(X, probs, title='GMM Soft Clustering'):
 
     # Plot hard clustering
     hard_labels = np.argmax(probs, axis=1)
-    axes[0].scatter(X[:, 0], X[:, 1], c=hard_labels, cmap='viridis',
-                   alpha=0.6, edgecolors='black', linewidth=0.5)
-    axes[0].set_title('Hard Clustering')
-    axes[0].set_xlabel('Feature 1')
-    axes[0].set_ylabel('Feature 2')
+    axes[0].scatter(
+        X[:, 0],
+        X[:, 1],
+        c=hard_labels,
+        cmap="viridis",
+        alpha=0.6,
+        edgecolors="black",
+        linewidth=0.5,
+    )
+    axes[0].set_title("Hard Clustering")
+    axes[0].set_xlabel("Feature 1")
+    axes[0].set_ylabel("Feature 2")
 
     # Plot probability for each component
     for i in range(n_components):
-        scatter = axes[i + 1].scatter(X[:, 0], X[:, 1], c=probs[:, i],
-                                     cmap='RdYlGn', vmin=0, vmax=1,
-                                     alpha=0.7, edgecolors='black', linewidth=0.5)
-        axes[i + 1].set_title(f'Component {i} Probability')
-        axes[i + 1].set_xlabel('Feature 1')
-        axes[i + 1].set_ylabel('Feature 2')
-        plt.colorbar(scatter, ax=axes[i + 1], label='Probability')
+        scatter = axes[i + 1].scatter(
+            X[:, 0],
+            X[:, 1],
+            c=probs[:, i],
+            cmap="RdYlGn",
+            vmin=0,
+            vmax=1,
+            alpha=0.7,
+            edgecolors="black",
+            linewidth=0.5,
+        )
+        axes[i + 1].set_title(f"Component {i} Probability")
+        axes[i + 1].set_xlabel("Feature 1")
+        axes[i + 1].set_ylabel("Feature 2")
+        plt.colorbar(scatter, ax=axes[i + 1], label="Probability")
 
     plt.suptitle(title, fontsize=14, y=1.02)
     plt.tight_layout()
-    plt.savefig('gmm_soft_clustering.png', dpi=300, bbox_inches='tight')
+    plt.savefig("gmm_soft_clustering.png", dpi=300, bbox_inches="tight")
     plt.show()
 
 
@@ -320,37 +362,58 @@ def compare_with_kmeans(X, n_clusters=4):
     fig, axes = plt.subplots(1, 2, figsize=(14, 5))
 
     # GMM
-    axes[0].scatter(X[:, 0], X[:, 1], c=gmm_labels, cmap='viridis',
-                   alpha=0.6, edgecolors='black', linewidth=0.5)
+    axes[0].scatter(
+        X[:, 0],
+        X[:, 1],
+        c=gmm_labels,
+        cmap="viridis",
+        alpha=0.6,
+        edgecolors="black",
+        linewidth=0.5,
+    )
     draw_ellipses(gmm, axes[0])
-    axes[0].set_title(f'GMM (Silhouette: {gmm_sil:.3f})')
-    axes[0].set_xlabel('Feature 1')
-    axes[0].set_ylabel('Feature 2')
+    axes[0].set_title(f"GMM (Silhouette: {gmm_sil:.3f})")
+    axes[0].set_xlabel("Feature 1")
+    axes[0].set_ylabel("Feature 2")
 
     # K-Means
-    axes[1].scatter(X[:, 0], X[:, 1], c=kmeans_labels, cmap='viridis',
-                   alpha=0.6, edgecolors='black', linewidth=0.5)
-    axes[1].scatter(kmeans.cluster_centers_[:, 0], kmeans.cluster_centers_[:, 1],
-                   c='red', marker='X', s=200, edgecolors='black', linewidth=2,
-                   label='Centroids')
-    axes[1].set_title(f'K-Means (Silhouette: {kmeans_sil:.3f})')
-    axes[1].set_xlabel('Feature 1')
-    axes[1].set_ylabel('Feature 2')
+    axes[1].scatter(
+        X[:, 0],
+        X[:, 1],
+        c=kmeans_labels,
+        cmap="viridis",
+        alpha=0.6,
+        edgecolors="black",
+        linewidth=0.5,
+    )
+    axes[1].scatter(
+        kmeans.cluster_centers_[:, 0],
+        kmeans.cluster_centers_[:, 1],
+        c="red",
+        marker="X",
+        s=200,
+        edgecolors="black",
+        linewidth=2,
+        label="Centroids",
+    )
+    axes[1].set_title(f"K-Means (Silhouette: {kmeans_sil:.3f})")
+    axes[1].set_xlabel("Feature 1")
+    axes[1].set_ylabel("Feature 2")
     axes[1].legend()
 
     plt.tight_layout()
-    plt.savefig('gmm_vs_kmeans.png', dpi=300, bbox_inches='tight')
+    plt.savefig("gmm_vs_kmeans.png", dpi=300, bbox_inches="tight")
     plt.show()
 
-    print("\n" + "="*50)
+    print("\n" + "=" * 50)
     print("GMM vs K-Means Comparison")
-    print("="*50)
+    print("=" * 50)
     print(f"GMM Silhouette Score: {gmm_sil:.4f}")
     print(f"K-Means Silhouette Score: {kmeans_sil:.4f}")
     print("\nKey Differences:")
     print("- GMM: Soft clustering, probabilistic, elliptical clusters")
     print("- K-Means: Hard clustering, deterministic, spherical clusters")
-    print("="*50)
+    print("=" * 50)
 
 
 def analyze_uncertainty(probs):
@@ -369,27 +432,35 @@ def analyze_uncertainty(probs):
     fig, axes = plt.subplots(1, 2, figsize=(14, 5))
 
     # Entropy distribution
-    axes[0].hist(entropy, bins=30, edgecolor='black', color='steelblue', alpha=0.7)
-    axes[0].set_xlabel('Entropy (Uncertainty)')
-    axes[0].set_ylabel('Frequency')
-    axes[0].set_title('Distribution of Clustering Uncertainty')
-    axes[0].axvline(x=np.median(entropy), color='r', linestyle='--',
-                   label=f'Median: {np.median(entropy):.3f}')
+    axes[0].hist(entropy, bins=30, edgecolor="black", color="steelblue", alpha=0.7)
+    axes[0].set_xlabel("Entropy (Uncertainty)")
+    axes[0].set_ylabel("Frequency")
+    axes[0].set_title("Distribution of Clustering Uncertainty")
+    axes[0].axvline(
+        x=np.median(entropy),
+        color="r",
+        linestyle="--",
+        label=f"Median: {np.median(entropy):.3f}",
+    )
     axes[0].legend()
     axes[0].grid(True, alpha=0.3)
 
     # Max probability distribution
-    axes[1].hist(max_probs, bins=30, edgecolor='black', color='green', alpha=0.7)
-    axes[1].set_xlabel('Maximum Probability')
-    axes[1].set_ylabel('Frequency')
-    axes[1].set_title('Distribution of Maximum Cluster Probability')
-    axes[1].axvline(x=np.median(max_probs), color='r', linestyle='--',
-                   label=f'Median: {np.median(max_probs):.3f}')
+    axes[1].hist(max_probs, bins=30, edgecolor="black", color="green", alpha=0.7)
+    axes[1].set_xlabel("Maximum Probability")
+    axes[1].set_ylabel("Frequency")
+    axes[1].set_title("Distribution of Maximum Cluster Probability")
+    axes[1].axvline(
+        x=np.median(max_probs),
+        color="r",
+        linestyle="--",
+        label=f"Median: {np.median(max_probs):.3f}",
+    )
     axes[1].legend()
     axes[1].grid(True, alpha=0.3)
 
     plt.tight_layout()
-    plt.savefig('gmm_uncertainty_analysis.png', dpi=300, bbox_inches='tight')
+    plt.savefig("gmm_uncertainty_analysis.png", dpi=300, bbox_inches="tight")
     plt.show()
 
     # Identify uncertain samples
@@ -405,13 +476,13 @@ def analyze_uncertainty(probs):
 
 def main():
     """Main execution function."""
-    print("="*70)
+    print("=" * 70)
     print("Gaussian Mixture Models (GMM) with Scikit-learn")
-    print("="*70)
+    print("=" * 70)
 
     # 1. Generate sample data
     print("\n1. Generating sample data with elongated clusters...")
-    X, y_true = generate_sample_data(n_samples=600, dataset_type='elongated')
+    X, y_true = generate_sample_data(n_samples=600, dataset_type="elongated")
 
     # Scale features
     scaler = StandardScaler()
@@ -430,13 +501,15 @@ def main():
 
     # 4. Train GMM with optimal parameters
     print("\n4. Training GMM with optimal parameters...")
-    gmm, labels, probs = train_gmm(X_scaled, n_components=optimal_n,
-                                   covariance_type='full')
+    gmm, labels, probs = train_gmm(
+        X_scaled, n_components=optimal_n, covariance_type="full"
+    )
 
     # 5. Visualize soft clustering
     print("\n5. Visualizing soft clustering probabilities...")
-    visualize_soft_clustering(X_scaled, probs,
-                             title='GMM Soft Clustering Probabilities')
+    visualize_soft_clustering(
+        X_scaled, probs, title="GMM Soft Clustering Probabilities"
+    )
 
     # 6. Compare with K-Means
     print("\n6. Comparing GMM with K-Means...")
@@ -448,13 +521,13 @@ def main():
 
     # 8. Test on spherical data
     print("\n8. Testing on spherical data (comparing with K-Means)...")
-    X_blobs, _ = generate_sample_data(n_samples=500, dataset_type='blobs')
+    X_blobs, _ = generate_sample_data(n_samples=500, dataset_type="blobs")
     X_blobs_scaled = scaler.fit_transform(X_blobs)
     compare_with_kmeans(X_blobs_scaled, n_clusters=4)
 
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("GMM Clustering Complete!")
-    print("="*70)
+    print("=" * 70)
     print("\nKey Advantages of GMM:")
     print("✓ Soft clustering (probability of membership)")
     print("✓ Can model elliptical/elongated clusters")

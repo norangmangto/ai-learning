@@ -5,13 +5,22 @@ from sklearn.datasets import make_classification
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, f1_score
 
+
 def train():
     print("Training MLP with PyTorch (Alternative Architecture)...")
 
     # 1. Prepare Data
-    X, y = make_classification(n_samples=2000, n_features=20, n_informative=15,
-                               n_redundant=5, n_classes=2, random_state=42)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    X, y = make_classification(
+        n_samples=2000,
+        n_features=20,
+        n_informative=15,
+        n_redundant=5,
+        n_classes=2,
+        random_state=42,
+    )
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42
+    )
 
     # Normalize
     X_mean, X_std = X_train.mean(axis=0), X_train.std(axis=0)
@@ -82,7 +91,7 @@ def train():
 
     # 5. QA Validation
     print("\n=== QA Validation ===")
-    f1 = f1_score(y_test_np, predictions, average='binary')
+    f1 = f1_score(y_test_np, predictions, average="binary")
     print(f"F1-Score: {f1:.4f}")
 
     print("\n--- Sanity Checks ---")

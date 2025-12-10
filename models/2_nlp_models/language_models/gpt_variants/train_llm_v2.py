@@ -3,7 +3,9 @@ Alternative LLM Approaches - Using Open-source Models and APIs
 """
 
 import warnings
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
+
 
 def train():
     print("Exploring Alternative LLM Approaches...")
@@ -59,20 +61,20 @@ def train():
     comparison = {
         "API-based (OpenAI)": {
             "Pros": ["Best quality", "Frequent updates", "Easy integration"],
-            "Cons": ["Requires API key", "Slower inference", "Monthly costs"]
+            "Cons": ["Requires API key", "Slower inference", "Monthly costs"],
         },
         "Local Transformers": {
             "Pros": ["Free", "Private", "Fast on GPU"],
-            "Cons": ["Large memory", "Outdated models", "Limited capabilities"]
+            "Cons": ["Large memory", "Outdated models", "Limited capabilities"],
         },
         "Quantized Models": {
             "Pros": ["Fast", "CPU-friendly", "No costs"],
-            "Cons": ["Lower quality", "Limited context", "Manual setup"]
+            "Cons": ["Lower quality", "Limited context", "Manual setup"],
         },
         "Ollama": {
             "Pros": ["Simple setup", "Good balance", "Good models"],
-            "Cons": ["Limited model selection", "Requires Ollama", "Inference cost"]
-        }
+            "Cons": ["Limited model selection", "Requires Ollama", "Inference cost"],
+        },
     }
 
     for approach, details in comparison.items():
@@ -98,7 +100,7 @@ def train():
 
     return {
         "approaches": list(comparison.keys()),
-        "recommendations": "See summary above"
+        "recommendations": "See summary above",
     }
 
 
@@ -112,27 +114,24 @@ generator = pipeline("text-generation", model="distilgpt2")
 result = generator("Once upon a time")
 print(result[0]['generated_text'])
 """,
-
         "Ollama": """
 import requests
 response = requests.post('http://localhost:11434/api/generate',
     json={"model": "llama2", "prompt": "What is AI?"})
 print(response.json()['response'])
 """,
-
         "LangChain": """
 from langchain.llms import Ollama
 llm = Ollama(model="llama2")
 result = llm("What is machine learning?")
 print(result)
 """,
-
         "Quantized Models": """
 from ctransformers import AutoModelForCausalLM
 model = AutoModelForCausalLM.from_pretrained("TheBloke/Mistral-7B-Instruct-v0.1-GGUF")
 response = model("What is AI?", max_new_tokens=256)
 print(response)
-"""
+""",
     }
 
     for name, code in examples.items():

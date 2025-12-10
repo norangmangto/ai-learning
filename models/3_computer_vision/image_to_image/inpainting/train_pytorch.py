@@ -26,15 +26,16 @@ import random
 
 # Configuration
 CONFIG = {
-    'image_size': 256,
-    'batch_size': 16,
-    'epochs': 50,
-    'learning_rate': 0.0002,
-    'mask_ratio': 0.3,  # Percentage of image to mask
-    'device': 'cuda' if torch.cuda.is_available() else 'cpu',
-    'num_workers': 4,
-    'output_dir': 'results/inpainting'
+    "image_size": 256,
+    "batch_size": 16,
+    "epochs": 50,
+    "learning_rate": 0.0002,
+    "mask_ratio": 0.3,  # Percentage of image to mask
+    "device": "cuda" if torch.cuda.is_available() else "cpu",
+    "num_workers": 4,
+    "output_dir": "results/inpainting",
 }
+
 
 class PartialConv2d(nn.Module):
     """
@@ -48,15 +49,11 @@ class PartialConv2d(nn.Module):
         super().__init__()
 
         self.conv = nn.Conv2d(
-            in_channels, out_channels,
-            kernel_size, stride, padding, bias=False
+            in_channels, out_channels, kernel_size, stride, padding, bias=False
         )
 
         # Mask update conv (sum of 1s in kernel)
-        self.mask_conv = nn.Conv2d(
-            1, 1,
-            kernel_size, stride, padding, bias=False
-        )
+        self.mask_conv = nn.Conv2d(1, 1, kernel_size, stride, padding, bias=False)
 
         # Initialize mask conv weights to 1
         nn.init.constant_(self.mask_conv.weight, 1.0)
@@ -102,15 +99,16 @@ class PartialConv2d(nn.Module):
 
         return output, updated_mask
 
+
 class InpaintingUNet(nn.Module):
     """U-Net with partial convolutions for inpainting"""
 
     def __init__(self, in_channels=3, out_channels=3):
         super().__init__()
 
-        print("\n" + "="*80)
+        print("\n" + "=" * 80)
         print("BUILDING INPAINTING MODEL")
-        print("="*80)
+        print("=" * 80)
 
         # Encoder
         self.enc1 = PartialConv2d(in_channels, 64, 7, 2, 3)
@@ -126,23 +124,27 @@ class InpaintingUNet(nn.Module):
         self.dec2 = PartialConv2d(128 + 128, 64, 3, 1, 1)
         self.dec1 = nn.Conv2d(64 + 64, out_channels, 3, 1, 1)
 
-        self.bn_enc = nn.ModuleList([
-            nn.BatchNorm2d(64),
-            nn.BatchNorm2d(128),
-            nn.BatchNorm2d(256),
-            nn.BatchNorm2d(512),
-            nn.BatchNorm2d(512)
-        ])
+        self.bn_enc = nn.ModuleList(
+            [
+                nn.BatchNorm2d(64),
+                nn.BatchNorm2d(128),
+                nn.BatchNorm2d(256),
+                nn.BatchNorm2d(512),
+                nn.BatchNorm2d(512),
+            ]
+        )
 
-        self.bn_dec = nn.ModuleList([
-            nn.BatchNorm2d(512),
-            nn.BatchNorm2d(256),
-            nn.BatchNorm2d(128),
-            nn.BatchNorm2d(64)
-        ])
+        self.bn_dec = nn.ModuleList(
+            [
+                nn.BatchNorm2d(512),
+                nn.BatchNorm2d(256),
+                nn.BatchNorm2d(128),
+                nn.BatchNorm2d(64),
+            ]
+        )
 
         self.activation = nn.ReLU(inplace=True)
-        self.upsample = nn.Upsample(scale_factor=2, mode='nearest')
+        self.upsample = nn.Upsample(scale_factor=2, mode="nearest")
 
         print(f"Parameters: {sum(p.numel() for p in self.parameters())/1e6:.1f}M")
 
@@ -204,6 +206,7 @@ class InpaintingUNet(nn.Module):
 
         return x
 
+
 class InpaintingDataset(Dataset):
     """Dataset for image inpainting"""
 
@@ -231,29 +234,29 @@ class InpaintingDataset(Dataset):
             y = random.randint(0, size - hole_h)
             x = random.randint(0, size - hole_w)
 
-            mask[y:y+hole_h, x:x+hole_w] = 0
+            mask[y : y + hole_h, x : x + hole_w] = 0
 
         # Add some random strokes
         num_strokes = random.randint(5, 15)
         for _ in range(num_strokes):
-            x1 = random.randint(0, size-1)
-            y1 = random.randint(0, size-1)
-            x2 = random.randint(0, size-1)
-            y2 = random.randint(0, size-1)
+            x1 = random.randint(0, size - 1)
+            y1 = random.randint(0, size - 1)
+            x2 = random.randint(0, size - 1)
+            y2 = random.randint(0, size - 1)
 
             thickness = random.randint(2, 8)
 
             # Draw line (simplified)
-            steps = max(abs(x2-x1), abs(y2-y1))
+            steps = max(abs(x2 - x1), abs(y2 - y1))
             if steps > 0:
                 for i in range(steps):
-                    x = int(x1 + (x2-x1) * i / steps)
-                    y = int(y1 + (y2-y1) * i / steps)
+                    x = int(x1 + (x2 - x1) * i / steps)
+                    y = int(y1 + (y2 - y1) * i / steps)
 
-                    y_min = max(0, y - thickness//2)
-                    y_max = min(size, y + thickness//2)
-                    x_min = max(0, x - thickness//2)
-                    x_max = min(size, x + thickness//2)
+                    y_min = max(0, y - thickness // 2)
+                    y_max = min(size, y + thickness // 2)
+                    x_min = max(0, x - thickness // 2)
+                    x_max = min(size, x + thickness // 2)
 
                     mask[y_min:y_max, x_min:x_max] = 0
 
@@ -261,7 +264,7 @@ class InpaintingDataset(Dataset):
 
     def __getitem__(self, idx):
         # Load image
-        image = Image.open(self.image_paths[idx]).convert('RGB')
+        image = Image.open(self.image_paths[idx]).convert("RGB")
 
         if self.transform:
             image = self.transform(image)
@@ -276,20 +279,21 @@ class InpaintingDataset(Dataset):
 
         return masked_image, mask, image
 
+
 def create_sample_dataset(num_samples=500):
     """Create sample dataset"""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("CREATING SAMPLE DATASET")
-    print("="*80)
+    print("=" * 80)
 
-    sample_dir = Path('data/inpainting_samples')
+    sample_dir = Path("data/inpainting_samples")
     sample_dir.mkdir(parents=True, exist_ok=True)
 
     image_paths = []
 
     for i in range(num_samples):
         # Create colorful image with patterns
-        img = Image.new('RGB', (256, 256))
+        img = Image.new("RGB", (256, 256))
         pixels = img.load()
 
         for y in range(256):
@@ -299,18 +303,19 @@ def create_sample_dataset(num_samples=500):
                 b = int(128 + 127 * np.sin((x + y) / 10 + i))
                 pixels[x, y] = (r, g, b)
 
-        img_path = sample_dir / f'sample_{i}.jpg'
+        img_path = sample_dir / f"sample_{i}.jpg"
         img.save(img_path)
         image_paths.append(str(img_path))
 
     print(f"Created {len(image_paths)} sample images")
     return image_paths
 
+
 def train_inpainting_model(model, train_loader, val_loader, device):
     """Train inpainting model"""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("TRAINING INPAINTING MODEL")
-    print("="*80)
+    print("=" * 80)
 
     model.to(device)
 
@@ -318,12 +323,12 @@ def train_inpainting_model(model, train_loader, val_loader, device):
     l1_loss = nn.L1Loss()
 
     # Optimizer
-    optimizer = optim.Adam(model.parameters(), lr=CONFIG['learning_rate'])
+    optimizer = optim.Adam(model.parameters(), lr=CONFIG["learning_rate"])
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.5)
 
-    history = {'train_loss': [], 'val_loss': []}
+    history = {"train_loss": [], "val_loss": []}
 
-    for epoch in range(CONFIG['epochs']):
+    for epoch in range(CONFIG["epochs"]):
         # Training
         model.train()
         train_loss = 0
@@ -351,10 +356,10 @@ def train_inpainting_model(model, train_loader, val_loader, device):
             optimizer.step()
 
             train_loss += loss.item()
-            progress_bar.set_postfix({'loss': loss.item()})
+            progress_bar.set_postfix({"loss": loss.item()})
 
         avg_train_loss = train_loss / len(train_loader)
-        history['train_loss'].append(avg_train_loss)
+        history["train_loss"].append(avg_train_loss)
 
         # Validation
         model.eval()
@@ -375,13 +380,20 @@ def train_inpainting_model(model, train_loader, val_loader, device):
                 val_loss += loss.item()
 
         avg_val_loss = val_loss / len(val_loader)
-        history['val_loss'].append(avg_val_loss)
+        history["val_loss"].append(avg_val_loss)
 
-        print(f"Epoch {epoch+1}: Train Loss = {avg_train_loss:.4f}, Val Loss = {avg_val_loss:.4f}")
+        print(
+            f"Epoch {
+        epoch+
+        1}: Train Loss = {
+            avg_train_loss:.4f}, Val Loss = {
+                avg_val_loss:.4f}"
+        )
 
         scheduler.step()
 
     return model, history
+
 
 def visualize_inpainting(model, val_loader, device, num_samples=4):
     """Visualize inpainting results"""
@@ -397,41 +409,42 @@ def visualize_inpainting(model, val_loader, device, num_samples=4):
         outputs = model(masked_imgs, masks)
 
     # Plot
-    fig, axes = plt.subplots(num_samples, 3, figsize=(12, num_samples*4))
+    fig, axes = plt.subplots(num_samples, 3, figsize=(12, num_samples * 4))
 
     for i in range(num_samples):
         # Masked image
         masked = masked_imgs[i].cpu().permute(1, 2, 0).numpy()
         masked = (masked + 1) / 2  # Denormalize
         axes[i, 0].imshow(np.clip(masked, 0, 1))
-        axes[i, 0].set_title('Masked Input')
-        axes[i, 0].axis('off')
+        axes[i, 0].set_title("Masked Input")
+        axes[i, 0].axis("off")
 
         # Inpainted
         inpainted = outputs[i].cpu().permute(1, 2, 0).numpy()
         inpainted = (inpainted + 1) / 2
         axes[i, 1].imshow(np.clip(inpainted, 0, 1))
-        axes[i, 1].set_title('Inpainted')
-        axes[i, 1].axis('off')
+        axes[i, 1].set_title("Inpainted")
+        axes[i, 1].axis("off")
 
         # Ground truth
         target = targets[i].cpu().permute(1, 2, 0).numpy()
         target = (target + 1) / 2
         axes[i, 2].imshow(np.clip(target, 0, 1))
-        axes[i, 2].set_title('Ground Truth')
-        axes[i, 2].axis('off')
+        axes[i, 2].set_title("Ground Truth")
+        axes[i, 2].axis("off")
 
     plt.tight_layout()
 
-    output_dir = Path(CONFIG['output_dir'])
+    output_dir = Path(CONFIG["output_dir"])
     output_dir.mkdir(parents=True, exist_ok=True)
-    plt.savefig(output_dir / 'inpainting_results.png', dpi=150, bbox_inches='tight')
+    plt.savefig(output_dir / "inpainting_results.png", dpi=150, bbox_inches="tight")
     print(f"Saved results to {output_dir / 'inpainting_results.png'}")
 
+
 def main():
-    print("="*80)
+    print("=" * 80)
     print("IMAGE INPAINTING")
-    print("="*80)
+    print("=" * 80)
 
     # Create dataset
     image_paths = create_sample_dataset(500)
@@ -442,32 +455,46 @@ def main():
     val_paths = image_paths[split:]
 
     # Transforms
-    transform = transforms.Compose([
-        transforms.Resize((CONFIG['image_size'], CONFIG['image_size'])),
-        transforms.ToTensor(),
-        transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])
-    ])
+    transform = transforms.Compose(
+        [
+            transforms.Resize((CONFIG["image_size"], CONFIG["image_size"])),
+            transforms.ToTensor(),
+            transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),
+        ]
+    )
 
     # Datasets
-    train_dataset = InpaintingDataset(train_paths, transform, CONFIG['mask_ratio'])
-    val_dataset = InpaintingDataset(val_paths, transform, CONFIG['mask_ratio'])
+    train_dataset = InpaintingDataset(train_paths, transform, CONFIG["mask_ratio"])
+    val_dataset = InpaintingDataset(val_paths, transform, CONFIG["mask_ratio"])
 
     # Dataloaders
-    train_loader = DataLoader(train_dataset, batch_size=CONFIG['batch_size'], shuffle=True, num_workers=CONFIG['num_workers'])
-    val_loader = DataLoader(val_dataset, batch_size=CONFIG['batch_size'], shuffle=False, num_workers=CONFIG['num_workers'])
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=CONFIG["batch_size"],
+        shuffle=True,
+        num_workers=CONFIG["num_workers"],
+    )
+    val_loader = DataLoader(
+        val_dataset,
+        batch_size=CONFIG["batch_size"],
+        shuffle=False,
+        num_workers=CONFIG["num_workers"],
+    )
 
     # Model
     model = InpaintingUNet()
 
     # Train
-    model, history = train_inpainting_model(model, train_loader, val_loader, CONFIG['device'])
+    model, history = train_inpainting_model(
+        model, train_loader, val_loader, CONFIG["device"]
+    )
 
     # Visualize
-    visualize_inpainting(model, val_loader, CONFIG['device'])
+    visualize_inpainting(model, val_loader, CONFIG["device"])
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("INPAINTING COMPLETED")
-    print("="*80)
+    print("=" * 80)
 
     print("\nKey Concepts:")
     print("✓ Partial convolutions handle irregular masks")
@@ -481,5 +508,6 @@ def main():
     print("- Image editing tools")
     print("- Corrupted image recovery")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

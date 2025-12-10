@@ -12,19 +12,31 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics import accuracy_score, f1_score
 import numpy as np
 
+
 def train():
     print("Training Text Classification with LSTM...")
 
     # 1. Prepare Data
     try:
-        categories = ['alt.atheism', 'soc.religion.christian', 'comp.graphics', 'sci.med']
-        newsgroups = fetch_20newsgroups(subset='train', categories=categories,
-                                       remove=('headers', 'footers', 'quotes'))
+        categories = [
+            "alt.atheism",
+            "soc.religion.christian",
+            "comp.graphics",
+            "sci.med",
+        ]
+        newsgroups = fetch_20newsgroups(
+            subset="train",
+            categories=categories,
+            remove=("headers", "footers", "quotes"),
+        )
         train_texts = newsgroups.data[:500]
         train_labels = newsgroups.target[:500]
 
-        test_newsgroups = fetch_20newsgroups(subset='test', categories=categories,
-                                            remove=('headers', 'footers', 'quotes'))
+        test_newsgroups = fetch_20newsgroups(
+            subset="test",
+            categories=categories,
+            remove=("headers", "footers", "quotes"),
+        )
         test_texts = test_newsgroups.data[:100]
         test_labels = test_newsgroups.target[:100]
     except:
@@ -53,16 +65,24 @@ def train():
 
     # 4. Define LSTM Model
     class LSTMClassifier(nn.Module):
-        def __init__(self, vocab_size, embedding_dim=128, hidden_dim=256, num_classes=4):
+        def __init__(
+            self, vocab_size, embedding_dim=128, hidden_dim=256, num_classes=4
+        ):
             super(LSTMClassifier, self).__init__()
             self.embedding = nn.Embedding(vocab_size, embedding_dim)
-            self.lstm = nn.LSTM(embedding_dim, hidden_dim, num_layers=2,
-                               batch_first=True, dropout=0.3, bidirectional=True)
+            self.lstm = nn.LSTM(
+                embedding_dim,
+                hidden_dim,
+                num_layers=2,
+                batch_first=True,
+                dropout=0.3,
+                bidirectional=True,
+            )
             self.fc = nn.Sequential(
                 nn.Linear(hidden_dim * 2, 128),
                 nn.ReLU(),
                 nn.Dropout(0.3),
-                nn.Linear(128, num_classes)
+                nn.Linear(128, num_classes),
             )
 
         def forward(self, x):
@@ -87,9 +107,11 @@ def train():
         def __getitem__(self, idx):
             seq = self.sequences[idx]
             # Pad or truncate to max_len
-            seq = seq[:self.max_len]
-            seq = np.pad(seq, (0, self.max_len - len(seq)), 'constant')
-            return torch.tensor(seq, dtype=torch.long), torch.tensor(self.labels[idx], dtype=torch.long)
+            seq = seq[: self.max_len]
+            seq = np.pad(seq, (0, self.max_len - len(seq)), "constant")
+            return torch.tensor(seq, dtype=torch.long), torch.tensor(
+                self.labels[idx], dtype=torch.long
+            )
 
     train_dataset = TextDataset(train_sequences, train_labels, vocab_size)
     test_dataset = TextDataset(test_sequences, test_labels, vocab_size)
@@ -98,7 +120,7 @@ def train():
     test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
 
     # 6. Train Model
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = LSTMClassifier(vocab_size)
     model = model.to(device)
 
@@ -124,7 +146,9 @@ def train():
             total_loss += loss.item()
 
         if (epoch + 1) % 2 == 0:
-            print(f"Epoch [{epoch+1}/{epochs}], Loss: {total_loss/len(train_loader):.4f}")
+            print(
+                f"Epoch [{epoch+1}/{epochs}], Loss: {total_loss/len(train_loader):.4f}"
+            )
 
     # 7. Evaluate
     model.eval()
@@ -144,7 +168,7 @@ def train():
 
     # 8. QA Validation
     print("\n=== QA Validation ===")
-    f1 = f1_score(all_labels, all_predictions, average='weighted')
+    f1 = f1_score(all_labels, all_predictions, average="weighted")
     print(f"F1-Score (weighted): {f1:.4f}")
 
     print("\n--- Sanity Checks ---")

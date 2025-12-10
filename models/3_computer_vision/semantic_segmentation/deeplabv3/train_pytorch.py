@@ -26,16 +26,17 @@ import matplotlib.pyplot as plt
 
 # Configuration
 CONFIG = {
-    'num_classes': 5,
-    'image_size': 256,
-    'output_stride': 16,  # 8 or 16
-    'batch_size': 8,
-    'epochs': 50,
-    'learning_rate': 0.0001,
-    'device': 'cuda' if torch.cuda.is_available() else 'cpu',
-    'num_workers': 4,
-    'output_dir': 'results/deeplabv3_segmentation'
+    "num_classes": 5,
+    "image_size": 256,
+    "output_stride": 16,  # 8 or 16
+    "batch_size": 8,
+    "epochs": 50,
+    "learning_rate": 0.0001,
+    "device": "cuda" if torch.cuda.is_available() else "cpu",
+    "num_workers": 4,
+    "output_dir": "results/deeplabv3_segmentation",
 }
+
 
 class ASPPConv(nn.Sequential):
     """Atrous Spatial Pyramid Pooling convolution"""
@@ -43,12 +44,17 @@ class ASPPConv(nn.Sequential):
     def __init__(self, in_channels, out_channels, dilation):
         super().__init__(
             nn.Conv2d(
-                in_channels, out_channels, 3,
-                padding=dilation, dilation=dilation, bias=False
+                in_channels,
+                out_channels,
+                3,
+                padding=dilation,
+                dilation=dilation,
+                bias=False,
             ),
             nn.BatchNorm2d(out_channels),
-            nn.ReLU(inplace=True)
+            nn.ReLU(inplace=True),
         )
+
 
 class ASPPPooling(nn.Sequential):
     """Global average pooling branch"""
@@ -58,14 +64,17 @@ class ASPPPooling(nn.Sequential):
             nn.AdaptiveAvgPool2d(1),
             nn.Conv2d(in_channels, out_channels, 1, bias=False),
             nn.BatchNorm2d(out_channels),
-            nn.ReLU(inplace=True)
+            nn.ReLU(inplace=True),
         )
 
     def forward(self, x):
         size = x.shape[-2:]
         for mod in self:
             x = mod(x)
-        return nn.functional.interpolate(x, size=size, mode='bilinear', align_corners=False)
+        return nn.functional.interpolate(
+            x, size=size, mode="bilinear", align_corners=False
+        )
+
 
 class ASPP(nn.Module):
     """
@@ -82,11 +91,13 @@ class ASPP(nn.Module):
         modules = []
 
         # 1x1 convolution
-        modules.append(nn.Sequential(
-            nn.Conv2d(in_channels, out_channels, 1, bias=False),
-            nn.BatchNorm2d(out_channels),
-            nn.ReLU(inplace=True)
-        ))
+        modules.append(
+            nn.Sequential(
+                nn.Conv2d(in_channels, out_channels, 1, bias=False),
+                nn.BatchNorm2d(out_channels),
+                nn.ReLU(inplace=True),
+            )
+        )
 
         # Atrous convolutions with different rates
         for rate in atrous_rates:
@@ -102,7 +113,7 @@ class ASPP(nn.Module):
             nn.Conv2d(len(self.convs) * out_channels, out_channels, 1, bias=False),
             nn.BatchNorm2d(out_channels),
             nn.ReLU(inplace=True),
-            nn.Dropout(0.5)
+            nn.Dropout(0.5),
         )
 
     def forward(self, x):
@@ -112,6 +123,7 @@ class ASPP(nn.Module):
 
         res = torch.cat(res, dim=1)
         return self.project(res)
+
 
 class DeepLabV3(nn.Module):
     """
@@ -127,9 +139,9 @@ class DeepLabV3(nn.Module):
     def __init__(self, num_classes=21, output_stride=16, pretrained=True):
         super().__init__()
 
-        print("\n" + "="*80)
+        print("\n" + "=" * 80)
         print("BUILDING DEEPLABV3")
-        print("="*80)
+        print("=" * 80)
 
         print(f"\nNumber of classes: {num_classes}")
         print(f"Output stride: {output_stride}")
@@ -173,7 +185,7 @@ class DeepLabV3(nn.Module):
             nn.BatchNorm2d(256),
             nn.ReLU(inplace=True),
             nn.Dropout(0.5),
-            nn.Conv2d(256, num_classes, 1)
+            nn.Conv2d(256, num_classes, 1),
         )
 
         print(f"Parameters: {sum(p.numel() for p in self.parameters())/1e6:.1f}M")
@@ -213,11 +225,11 @@ class DeepLabV3(nn.Module):
 
         # Upsample to input size
         x = nn.functional.interpolate(
-            x, size=input_size,
-            mode='bilinear', align_corners=False
+            x, size=input_size, mode="bilinear", align_corners=False
         )
 
         return x
+
 
 class SegmentationDataset(Dataset):
     """Dataset for semantic segmentation"""
@@ -235,21 +247,21 @@ class SegmentationDataset(Dataset):
             shapes = []
 
             for _ in range(num_shapes):
-                shape_type = np.random.choice(['rect', 'circle', 'polygon'])
+                shape_type = np.random.choice(["rect", "circle", "polygon"])
                 cls = np.random.randint(1, num_classes)
 
-                if shape_type == 'rect':
+                if shape_type == "rect":
                     w = np.random.randint(30, 100)
                     h = np.random.randint(30, 100)
                     x = np.random.randint(0, image_size - w)
                     y = np.random.randint(0, image_size - h)
-                    shapes.append(('rect', [x, y, x+w, y+h], cls))
+                    shapes.append(("rect", [x, y, x + w, y + h], cls))
 
-                elif shape_type == 'circle':
+                elif shape_type == "circle":
                     r = np.random.randint(15, 50)
                     x = np.random.randint(r, image_size - r)
                     y = np.random.randint(r, image_size - r)
-                    shapes.append(('circle', [x-r, y-r, x+r, y+r], cls))
+                    shapes.append(("circle", [x - r, y - r, x + r, y + r], cls))
 
                 else:
                     points = []
@@ -261,7 +273,7 @@ class SegmentationDataset(Dataset):
                         px = cx + int(radius * np.cos(angle))
                         py = cy + int(radius * np.sin(angle))
                         points.append((px, py))
-                    shapes.append(('polygon', points, cls))
+                    shapes.append(("polygon", points, cls))
 
             self.samples.append(shapes)
 
@@ -272,7 +284,9 @@ class SegmentationDataset(Dataset):
         shapes = self.samples[idx]
 
         # Create image
-        img = Image.new('RGB', (self.image_size, self.image_size), color=(255, 255, 255))
+        img = Image.new(
+            "RGB", (self.image_size, self.image_size), color=(255, 255, 255)
+        )
         draw_img = ImageDraw.Draw(img)
 
         # Create mask
@@ -284,19 +298,19 @@ class SegmentationDataset(Dataset):
             shape_type, coords, cls = shape
             color = colors[(cls - 1) % len(colors)]
 
-            if shape_type == 'rect':
+            if shape_type == "rect":
                 draw_img.rectangle(coords, fill=color)
                 x1, y1, x2, y2 = coords
                 mask[y1:y2, x1:x2] = cls
 
-            elif shape_type == 'circle':
+            elif shape_type == "circle":
                 draw_img.ellipse(coords, fill=color)
                 x1, y1, x2, y2 = coords
                 cy, cx = (y1 + y2) // 2, (x1 + x2) // 2
                 r = (x2 - x1) // 2
                 for y in range(y1, y2):
                     for x in range(x1, x2):
-                        if (x - cx)**2 + (y - cy)**2 <= r**2:
+                        if (x - cx) ** 2 + (y - cy) ** 2 <= r**2:
                             mask[y, x] = cls
 
             else:
@@ -309,10 +323,13 @@ class SegmentationDataset(Dataset):
 
         # Convert to tensors
         img_tensor = transforms.ToTensor()(img)
-        img_tensor = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])(img_tensor)
+        img_tensor = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])(
+            img_tensor
+        )
         mask_tensor = torch.LongTensor(mask)
 
         return img_tensor, mask_tensor
+
 
 def compute_iou(pred, target, num_classes):
     """Compute mean IoU"""
@@ -328,28 +345,29 @@ def compute_iou(pred, target, num_classes):
         union = (pred_cls | target_cls).sum().float()
 
         if union == 0:
-            ious.append(float('nan'))
+            ious.append(float("nan"))
         else:
             ious.append((intersection / union).item())
 
     valid_ious = [iou for iou in ious if not np.isnan(iou)]
     return np.mean(valid_ious) if valid_ious else 0.0
 
+
 def train_deeplabv3(model, train_loader, val_loader, device):
     """Train DeepLabV3"""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("TRAINING DEEPLABV3")
-    print("="*80)
+    print("=" * 80)
 
     model.to(device)
 
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=CONFIG['learning_rate'])
+    optimizer = optim.Adam(model.parameters(), lr=CONFIG["learning_rate"])
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.5)
 
-    history = {'train_loss': [], 'val_loss': [], 'val_iou': []}
+    history = {"train_loss": [], "val_loss": [], "val_iou": []}
 
-    for epoch in range(CONFIG['epochs']):
+    for epoch in range(CONFIG["epochs"]):
         # Training
         model.train()
         train_loss = 0
@@ -368,10 +386,10 @@ def train_deeplabv3(model, train_loader, val_loader, device):
             optimizer.step()
 
             train_loss += loss.item()
-            progress_bar.set_postfix({'loss': loss.item()})
+            progress_bar.set_postfix({"loss": loss.item()})
 
         avg_train_loss = train_loss / len(train_loader)
-        history['train_loss'].append(avg_train_loss)
+        history["train_loss"].append(avg_train_loss)
 
         # Validation
         model.eval()
@@ -388,14 +406,14 @@ def train_deeplabv3(model, train_loader, val_loader, device):
                 val_loss += loss.item()
 
                 _, preds = torch.max(outputs, 1)
-                iou = compute_iou(preds, masks, CONFIG['num_classes'])
+                iou = compute_iou(preds, masks, CONFIG["num_classes"])
                 val_iou += iou
 
         avg_val_loss = val_loss / len(val_loader)
         avg_val_iou = val_iou / len(val_loader)
 
-        history['val_loss'].append(avg_val_loss)
-        history['val_iou'].append(avg_val_iou)
+        history["val_loss"].append(avg_val_loss)
+        history["val_iou"].append(avg_val_iou)
 
         print(f"\nEpoch {epoch+1}:")
         print(f"  Train Loss: {avg_train_loss:.4f}")
@@ -405,6 +423,7 @@ def train_deeplabv3(model, train_loader, val_loader, device):
         scheduler.step()
 
     return model, history
+
 
 def visualize_segmentation(model, val_loader, device, num_samples=4):
     """Visualize segmentation results"""
@@ -418,7 +437,7 @@ def visualize_segmentation(model, val_loader, device, num_samples=4):
         outputs = model(images)
         _, preds = torch.max(outputs, 1)
 
-    fig, axes = plt.subplots(num_samples, 3, figsize=(12, num_samples*4))
+    fig, axes = plt.subplots(num_samples, 3, figsize=(12, num_samples * 4))
 
     for i in range(num_samples):
         # Image
@@ -426,53 +445,72 @@ def visualize_segmentation(model, val_loader, device, num_samples=4):
         img = img * np.array([0.229, 0.224, 0.225]) + np.array([0.485, 0.456, 0.406])
         img = np.clip(img, 0, 1)
         axes[i, 0].imshow(img)
-        axes[i, 0].set_title('Input Image')
-        axes[i, 0].axis('off')
+        axes[i, 0].set_title("Input Image")
+        axes[i, 0].axis("off")
 
         # Ground truth
-        axes[i, 1].imshow(masks[i].numpy(), cmap='tab20', vmin=0, vmax=CONFIG['num_classes']-1)
-        axes[i, 1].set_title('Ground Truth')
-        axes[i, 1].axis('off')
+        axes[i, 1].imshow(
+            masks[i].numpy(), cmap="tab20", vmin=0, vmax=CONFIG["num_classes"] - 1
+        )
+        axes[i, 1].set_title("Ground Truth")
+        axes[i, 1].axis("off")
 
         # Prediction
-        axes[i, 2].imshow(preds[i].cpu().numpy(), cmap='tab20', vmin=0, vmax=CONFIG['num_classes']-1)
-        axes[i, 2].set_title('Prediction')
-        axes[i, 2].axis('off')
+        axes[i, 2].imshow(
+            preds[i].cpu().numpy(), cmap="tab20", vmin=0, vmax=CONFIG["num_classes"] - 1
+        )
+        axes[i, 2].set_title("Prediction")
+        axes[i, 2].axis("off")
 
     plt.tight_layout()
 
-    output_dir = Path(CONFIG['output_dir'])
+    output_dir = Path(CONFIG["output_dir"])
     output_dir.mkdir(parents=True, exist_ok=True)
-    plt.savefig(output_dir / 'deeplabv3_results.png', dpi=150, bbox_inches='tight')
+    plt.savefig(output_dir / "deeplabv3_results.png", dpi=150, bbox_inches="tight")
     print(f"\nSaved results to {output_dir / 'deeplabv3_results.png'}")
 
+
 def main():
-    print("="*80)
+    print("=" * 80)
     print("DEEPLABV3 SEMANTIC SEGMENTATION")
-    print("="*80)
+    print("=" * 80)
 
     print(f"\nDevice: {CONFIG['device']}")
 
     # Create dataset
-    train_dataset = SegmentationDataset(800, CONFIG['image_size'], CONFIG['num_classes'])
-    val_dataset = SegmentationDataset(200, CONFIG['image_size'], CONFIG['num_classes'])
+    train_dataset = SegmentationDataset(
+        800, CONFIG["image_size"], CONFIG["num_classes"]
+    )
+    val_dataset = SegmentationDataset(200, CONFIG["image_size"], CONFIG["num_classes"])
 
     # Dataloaders
-    train_loader = DataLoader(train_dataset, batch_size=CONFIG['batch_size'], shuffle=True, num_workers=CONFIG['num_workers'])
-    val_loader = DataLoader(val_dataset, batch_size=CONFIG['batch_size'], shuffle=False, num_workers=CONFIG['num_workers'])
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=CONFIG["batch_size"],
+        shuffle=True,
+        num_workers=CONFIG["num_workers"],
+    )
+    val_loader = DataLoader(
+        val_dataset,
+        batch_size=CONFIG["batch_size"],
+        shuffle=False,
+        num_workers=CONFIG["num_workers"],
+    )
 
     # Model
-    model = DeepLabV3(num_classes=CONFIG['num_classes'], output_stride=CONFIG['output_stride'])
+    model = DeepLabV3(
+        num_classes=CONFIG["num_classes"], output_stride=CONFIG["output_stride"]
+    )
 
     # Train
-    model, history = train_deeplabv3(model, train_loader, val_loader, CONFIG['device'])
+    model, history = train_deeplabv3(model, train_loader, val_loader, CONFIG["device"])
 
     # Visualize
-    visualize_segmentation(model, val_loader, CONFIG['device'])
+    visualize_segmentation(model, val_loader, CONFIG["device"])
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("DEEPLABV3 TRAINING COMPLETED")
-    print("="*80)
+    print("=" * 80)
 
     print("\nKey Concepts:")
     print("✓ Atrous (dilated) convolutions")
@@ -498,5 +536,6 @@ def main():
     print("- Scene understanding")
     print("- Robot vision")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

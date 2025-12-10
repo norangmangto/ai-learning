@@ -20,14 +20,15 @@ import json
 
 # Configuration
 CONFIG = {
-    'model_name': 'all-MiniLM-L6-v2',  # Fast and efficient
-    'dataset_name': 'ms_marco',  # Microsoft MARCO passage ranking
-    'dataset_config': 'v2.1',
-    'max_corpus_size': 10000,  # Limit corpus for demo
-    'batch_size': 32,
-    'top_k': 5,  # Number of results to retrieve
-    'device': 'cuda' if torch.cuda.is_available() else 'cpu'
+    "model_name": "all-MiniLM-L6-v2",  # Fast and efficient
+    "dataset_name": "ms_marco",  # Microsoft MARCO passage ranking
+    "dataset_config": "v2.1",
+    "max_corpus_size": 10000,  # Limit corpus for demo
+    "batch_size": 32,
+    "top_k": 5,  # Number of results to retrieve
+    "device": "cuda" if torch.cuda.is_available() else "cpu",
 }
+
 
 def load_corpus(max_size=10000):
     """Load text corpus for semantic search"""
@@ -35,7 +36,7 @@ def load_corpus(max_size=10000):
 
     try:
         # Load MS MARCO passage corpus
-        dataset = load_dataset('ms_marco', 'v2.1', split='train', streaming=True)
+        dataset = load_dataset("ms_marco", "v2.1", split="train", streaming=True)
 
         corpus = []
         corpus_ids = []
@@ -45,8 +46,8 @@ def load_corpus(max_size=10000):
                 break
 
             # Extract passage text
-            if 'passages' in item and len(item['passages']['passage_text']) > 0:
-                text = item['passages']['passage_text'][0]
+            if "passages" in item and len(item["passages"]["passage_text"]) > 0:
+                text = item["passages"]["passage_text"][0]
                 corpus.append(text)
                 corpus_ids.append(f"doc_{i}")
 
@@ -81,11 +82,12 @@ def load_corpus(max_size=10000):
             "Gradient descent is an optimization algorithm for training neural networks.",
             "Backpropagation computes gradients for updating neural network weights.",
             "Convolutional neural networks excel at image recognition tasks.",
-            "Recurrent neural networks process sequential data like text and time series."
+            "Recurrent neural networks process sequential data like text and time series.",
         ]
         corpus_ids = [f"doc_{i}" for i in range(len(corpus))]
 
         return corpus, corpus_ids
+
 
 def encode_corpus(model, corpus, batch_size=32):
     """Encode corpus into embeddings"""
@@ -94,10 +96,7 @@ def encode_corpus(model, corpus, batch_size=32):
 
     # Encode with progress
     corpus_embeddings = model.encode(
-        corpus,
-        batch_size=batch_size,
-        show_progress_bar=True,
-        convert_to_tensor=True
+        corpus, batch_size=batch_size, show_progress_bar=True, convert_to_tensor=True
     )
 
     encoding_time = time.time() - start_time
@@ -105,6 +104,7 @@ def encode_corpus(model, corpus, batch_size=32):
     print(f"Embedding shape: {corpus_embeddings.shape}")
 
     return corpus_embeddings
+
 
 def semantic_search(model, query, corpus_embeddings, corpus, corpus_ids, top_k=5):
     """Perform semantic search for a query"""
@@ -121,30 +121,29 @@ def semantic_search(model, query, corpus_embeddings, corpus, corpus_ids, top_k=5
 
     results = []
     for score, idx in zip(top_results.values, top_results.indices):
-        results.append({
-            'corpus_id': corpus_ids[idx],
-            'score': score.item(),
-            'text': corpus[idx]
-        })
+        results.append(
+            {"corpus_id": corpus_ids[idx], "score": score.item(), "text": corpus[idx]}
+        )
 
     return results, search_time
 
+
 def evaluate_retrieval(model, corpus_embeddings, corpus, corpus_ids, test_queries):
     """Evaluate semantic search on test queries"""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("EVALUATING SEMANTIC SEARCH")
-    print("="*80)
+    print("=" * 80)
 
     total_search_time = 0
 
     for i, query_info in enumerate(test_queries, 1):
-        query = query_info['query']
+        query = query_info["query"]
         print(f"\n{'='*80}")
         print(f"Query {i}: {query}")
         print(f"{'='*80}")
 
         results, search_time = semantic_search(
-            model, query, corpus_embeddings, corpus, corpus_ids, top_k=CONFIG['top_k']
+            model, query, corpus_embeddings, corpus, corpus_ids, top_k=CONFIG["top_k"]
         )
         total_search_time += search_time
 
@@ -161,13 +160,14 @@ def evaluate_retrieval(model, corpus_embeddings, corpus, corpus_ids, test_querie
     print(f"Average search time: {avg_search_time*1000:.2f} ms")
     print(f"{'='*80}")
 
+
 def demonstrate_semantic_similarity():
     """Demonstrate semantic similarity understanding"""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("SEMANTIC SIMILARITY DEMONSTRATION")
-    print("="*80)
+    print("=" * 80)
 
-    model = SentenceTransformer(CONFIG['model_name'])
+    model = SentenceTransformer(CONFIG["model_name"])
 
     # Similar meaning, different words
     sentences = [
@@ -175,7 +175,7 @@ def demonstrate_semantic_similarity():
         "A feline rests on a rug",
         "The dog runs in the park",
         "The weather is nice today",
-        "It's a beautiful day outside"
+        "It's a beautiful day outside",
     ]
 
     embeddings = model.encode(sentences, convert_to_tensor=True)
@@ -204,22 +204,24 @@ def demonstrate_semantic_similarity():
     print("- S4 & S5 have high similarity (weather-related)")
     print("- S3 is less similar to S1/S2 (different topic)")
 
-def save_results(results, output_dir='results'):
+
+def save_results(results, output_dir="results"):
     """Save search results"""
     output_path = Path(output_dir)
     output_path.mkdir(exist_ok=True)
 
-    output_file = output_path / 'semantic_search_results.json'
+    output_file = output_path / "semantic_search_results.json"
 
-    with open(output_file, 'w') as f:
+    with open(output_file, "w") as f:
         json.dump(results, f, indent=2)
 
     print(f"\nResults saved to: {output_file}")
 
+
 def main():
-    print("="*80)
+    print("=" * 80)
     print("SEMANTIC SEARCH WITH SENTENCE-TRANSFORMERS")
-    print("="*80)
+    print("=" * 80)
     print(f"\nConfiguration:")
     print(f"Model: {CONFIG['model_name']}")
     print(f"Device: {CONFIG['device']}")
@@ -227,34 +229,31 @@ def main():
 
     # Load model
     print("\nLoading sentence transformer model...")
-    model = SentenceTransformer(CONFIG['model_name'])
-    model.to(CONFIG['device'])
+    model = SentenceTransformer(CONFIG["model_name"])
+    model.to(CONFIG["device"])
     print(f"Model loaded: {model}")
 
     # Load corpus
-    corpus, corpus_ids = load_corpus(CONFIG['max_corpus_size'])
+    corpus, corpus_ids = load_corpus(CONFIG["max_corpus_size"])
 
     # Encode corpus
-    corpus_embeddings = encode_corpus(model, corpus, CONFIG['batch_size'])
+    corpus_embeddings = encode_corpus(model, corpus, CONFIG["batch_size"])
 
     # Define test queries
     test_queries = [
         {
-            'query': "How do neural networks learn?",
-            'relevant_docs': ['doc_0', 'doc_1']  # Example relevant docs
+            "query": "How do neural networks learn?",
+            "relevant_docs": ["doc_0", "doc_1"],  # Example relevant docs
         },
         {
-            'query': "What is the difference between supervised and unsupervised learning?",
-            'relevant_docs': ['doc_5', 'doc_6']
+            "query": "What is the difference between supervised and unsupervised learning?",
+            "relevant_docs": ["doc_5", "doc_6"],
         },
         {
-            'query': "Best practices for training deep learning models",
-            'relevant_docs': ['doc_10', 'doc_11', 'doc_13']
+            "query": "Best practices for training deep learning models",
+            "relevant_docs": ["doc_10", "doc_11", "doc_13"],
         },
-        {
-            'query': "Computer vision applications",
-            'relevant_docs': ['doc_3', 'doc_18']
-        }
+        {"query": "Computer vision applications", "relevant_docs": ["doc_3", "doc_18"]},
     ]
 
     # Evaluate semantic search
@@ -264,14 +263,14 @@ def main():
     demonstrate_semantic_similarity()
 
     # Interactive search (optional)
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("INTERACTIVE SEARCH (Enter 'quit' to exit)")
-    print("="*80)
+    print("=" * 80)
 
     while True:
         try:
             user_query = input("\nEnter your search query: ").strip()
-            if user_query.lower() in ['quit', 'exit', 'q']:
+            if user_query.lower() in ["quit", "exit", "q"]:
                 break
 
             if not user_query:
@@ -293,9 +292,9 @@ def main():
         except Exception as e:
             print(f"Error: {e}")
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("TRAINING COMPLETED")
-    print("="*80)
+    print("=" * 80)
 
     # Performance summary
     print("\nPerformance Summary:")
@@ -319,5 +318,6 @@ def main():
     print("- Recommendation systems")
     print("- FAQ matching")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

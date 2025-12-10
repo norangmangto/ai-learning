@@ -5,13 +5,17 @@ from sklearn.datasets import make_classification
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, f1_score
 
+
 def train():
     print("Training Logistic Regression with JAX...")
 
     # 1. Prepare Data
-    X, y = make_classification(n_samples=1000, n_features=20, n_informative=15,
-                               n_redundant=5, random_state=42)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    X, y = make_classification(
+        n_samples=1000, n_features=20, n_informative=15, n_redundant=5, random_state=42
+    )
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42
+    )
 
     # Normalize
     X_mean, X_std = X_train.mean(axis=0), X_train.std(axis=0)
@@ -60,14 +64,16 @@ def train():
             print(f"Epoch [{epoch+1}/{epochs}], Loss: {loss:.4f}")
 
     # 5. Evaluate
-    predictions = vmap(lambda xi: (predict(params, xi) > 0.5).astype(jnp.float32))(X_test)
+    predictions = vmap(lambda xi: (predict(params, xi) > 0.5).astype(jnp.float32))(
+        X_test
+    )
     accuracy = accuracy_score(y_test, predictions)
 
     print(f"JAX Logistic Regression Accuracy: {accuracy:.4f}")
 
     # 6. QA Validation
     print("\n=== QA Validation ===")
-    f1 = f1_score(y_test, predictions, average='binary')
+    f1 = f1_score(y_test, predictions, average="binary")
     print(f"F1-Score: {f1:.4f}")
 
     print("\n--- Sanity Checks ---")

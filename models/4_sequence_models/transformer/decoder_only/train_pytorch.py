@@ -28,21 +28,24 @@ import torch.nn.functional as F
 
 class PositionalEncoding(nn.Module):
     """Positional encoding for transformer."""
+
     def __init__(self, d_model, max_len=5000):
         super(PositionalEncoding, self).__init__()
 
         pe = torch.zeros(max_len, d_model)
         position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
-        div_term = torch.exp(torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model))
+        div_term = torch.exp(
+            torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model)
+        )
 
         pe[:, 0::2] = torch.sin(position * div_term)
         pe[:, 1::2] = torch.cos(position * div_term)
 
         pe = pe.unsqueeze(0)
-        self.register_buffer('pe', pe)
+        self.register_buffer("pe", pe)
 
     def forward(self, x):
-        return x + self.pe[:, :x.size(1), :]
+        return x + self.pe[:, : x.size(1), :]
 
 
 class CausalSelfAttention(nn.Module):
@@ -52,6 +55,7 @@ class CausalSelfAttention(nn.Module):
     Ensures that prediction for position i can only depend on
     positions < i (autoregressive property).
     """
+
     def __init__(self, d_model, num_heads, dropout=0.1):
         super(CausalSelfAttention, self).__init__()
 
@@ -70,7 +74,7 @@ class CausalSelfAttention(nn.Module):
         self.scale = math.sqrt(self.d_k)
 
         # Register causal mask buffer
-        self.register_buffer('causal_mask', None)
+        self.register_buffer("causal_mask", None)
 
     def _create_causal_mask(self, seq_len, device):
         """Create lower triangular causal mask."""
@@ -100,7 +104,9 @@ class CausalSelfAttention(nn.Module):
 
         # Scaled dot-product attention with causal mask
         scores = torch.matmul(Q, K.transpose(-2, -1)) / self.scale
-        scores = scores.masked_fill(self.causal_mask[:, :, :seq_len, :seq_len] == 0, -1e9)
+        scores = scores.masked_fill(
+            self.causal_mask[:, :, :seq_len, :seq_len] == 0, -1e9
+        )
 
         attention_weights = torch.softmax(scores, dim=-1)
         attention_weights = self.dropout(attention_weights)
@@ -108,7 +114,9 @@ class CausalSelfAttention(nn.Module):
         context = torch.matmul(attention_weights, V)
 
         # Concatenate heads
-        context = context.transpose(1, 2).contiguous().view(batch_size, seq_len, self.d_model)
+        context = (
+            context.transpose(1, 2).contiguous().view(batch_size, seq_len, self.d_model)
+        )
 
         output = self.W_o(context)
 
@@ -117,6 +125,7 @@ class CausalSelfAttention(nn.Module):
 
 class FeedForward(nn.Module):
     """Position-wise feedforward network."""
+
     def __init__(self, d_model, d_ff, dropout=0.1):
         super(FeedForward, self).__init__()
 
@@ -131,6 +140,7 @@ class FeedForward(nn.Module):
 
 class DecoderBlock(nn.Module):
     """Single decoder block with masked self-attention."""
+
     def __init__(self, d_model, num_heads, d_ff, dropout=0.1):
         super(DecoderBlock, self).__init__()
 
@@ -161,8 +171,17 @@ class GPTDecoder(nn.Module):
 
     Autoregressive model for sequence generation.
     """
-    def __init__(self, vocab_size, d_model=512, num_heads=8, num_layers=6,
-                 d_ff=2048, max_seq_len=512, dropout=0.1):
+
+    def __init__(
+        self,
+        vocab_size,
+        d_model=512,
+        num_heads=8,
+        num_layers=6,
+        d_ff=2048,
+        max_seq_len=512,
+        dropout=0.1,
+    ):
         super(GPTDecoder, self).__init__()
 
         self.d_model = d_model
@@ -173,10 +192,9 @@ class GPTDecoder(nn.Module):
         self.positional_encoding = PositionalEncoding(d_model, max_seq_len)
 
         # Decoder blocks
-        self.decoder_blocks = nn.ModuleList([
-            DecoderBlock(d_model, num_heads, d_ff, dropout)
-            for _ in range(num_layers)
-        ])
+        self.decoder_blocks = nn.ModuleList(
+            [DecoderBlock(d_model, num_heads, d_ff, dropout) for _ in range(num_layers)]
+        )
 
         self.dropout = nn.Dropout(dropout)
         self.norm = nn.LayerNorm(d_model)
@@ -228,8 +246,11 @@ class GPTDecoder(nn.Module):
 
             # Apply top-k filtering
             if top_k is not None:
-                indices_to_remove = next_token_logits < torch.topk(next_token_logits, top_k)[0][..., -1, None]
-                next_token_logits[indices_to_remove] = -float('Inf')
+                indices_to_remove = (
+                    next_token_logits
+                    < torch.topk(next_token_logits, top_k)[0][..., -1, None]
+                )
+                next_token_logits[indices_to_remove] = -float("Inf")
 
             # Sample from distribution
             probs = F.softmax(next_token_logits, dim=-1)
@@ -277,6 +298,7 @@ def generate_language_modeling_data(n_sequences=1000, seq_length=32, vocab_size=
 
 class LanguageModelingDataset(Dataset):
     """Dataset for language modeling (predict next token)."""
+
     def __init__(self, sequences):
         self.sequences = torch.LongTensor(sequences)
 
@@ -291,18 +313,25 @@ class LanguageModelingDataset(Dataset):
 
 def train_gpt(model, train_loader, val_loader, epochs=30, lr=0.0003):
     """Train GPT decoder."""
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"\nTraining on {device}")
 
     model = model.to(device)
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.AdamW(model.parameters(), lr=lr, betas=(0.9, 0.95), weight_decay=0.1)
+    optimizer = optim.AdamW(
+        model.parameters(), lr=lr, betas=(0.9, 0.95), weight_decay=0.1
+    )
 
     # Cosine annealing scheduler
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
 
-    history = {'train_loss': [], 'val_loss': [], 'train_perplexity': [], 'val_perplexity': []}
-    best_val_loss = float('inf')
+    history = {
+        "train_loss": [],
+        "val_loss": [],
+        "train_perplexity": [],
+        "val_perplexity": [],
+    }
+    best_val_loss = float("inf")
 
     for epoch in range(epochs):
         start_time = time.time()
@@ -351,19 +380,21 @@ def train_gpt(model, train_loader, val_loader, epochs=30, lr=0.0003):
 
         scheduler.step()
 
-        history['train_loss'].append(train_loss)
-        history['val_loss'].append(val_loss)
-        history['train_perplexity'].append(train_perplexity)
-        history['val_perplexity'].append(val_perplexity)
+        history["train_loss"].append(train_loss)
+        history["val_loss"].append(val_loss)
+        history["train_perplexity"].append(train_perplexity)
+        history["val_perplexity"].append(val_perplexity)
 
         if val_loss < best_val_loss:
             best_val_loss = val_loss
-            torch.save(model.state_dict(), 'best_gpt_decoder.pth')
+            torch.save(model.state_dict(), "best_gpt_decoder.pth")
 
         if (epoch + 1) % 5 == 0:
-            print(f"Epoch [{epoch+1}/{epochs}] ({time.time()-start_time:.2f}s) - "
-                  f"Train Loss: {train_loss:.4f}, PPL: {train_perplexity:.2f} | "
-                  f"Val Loss: {val_loss:.4f}, PPL: {val_perplexity:.2f}")
+            print(
+                f"Epoch [{epoch+1}/{epochs}] ({time.time()-start_time:.2f}s) - "
+                f"Train Loss: {train_loss:.4f}, PPL: {train_perplexity:.2f} | "
+                f"Val Loss: {val_loss:.4f}, PPL: {val_perplexity:.2f}"
+            )
 
     return history
 
@@ -381,13 +412,13 @@ def visualize_causal_attention(model, sequence):
         attn = attention_weights[0][0, 0].cpu().numpy()
 
     plt.figure(figsize=(10, 8))
-    plt.imshow(attn, cmap='viridis', aspect='auto')
-    plt.colorbar(label='Attention Weight')
-    plt.xlabel('Key Position')
-    plt.ylabel('Query Position')
-    plt.title('Causal Self-Attention (Lower Triangular)')
+    plt.imshow(attn, cmap="viridis", aspect="auto")
+    plt.colorbar(label="Attention Weight")
+    plt.xlabel("Key Position")
+    plt.ylabel("Query Position")
+    plt.title("Causal Self-Attention (Lower Triangular)")
     plt.tight_layout()
-    plt.savefig('decoder_causal_attention.png', dpi=300, bbox_inches='tight')
+    plt.savefig("decoder_causal_attention.png", dpi=300, bbox_inches="tight")
     plt.show()
 
 
@@ -395,44 +426,46 @@ def plot_training_curves(history):
     """Plot training curves."""
     fig, axes = plt.subplots(1, 2, figsize=(14, 4))
 
-    axes[0].plot(history['train_loss'], label='Train', linewidth=2)
-    axes[0].plot(history['val_loss'], label='Validation', linewidth=2)
-    axes[0].set_xlabel('Epoch')
-    axes[0].set_ylabel('Loss')
-    axes[0].set_title('Training and Validation Loss')
+    axes[0].plot(history["train_loss"], label="Train", linewidth=2)
+    axes[0].plot(history["val_loss"], label="Validation", linewidth=2)
+    axes[0].set_xlabel("Epoch")
+    axes[0].set_ylabel("Loss")
+    axes[0].set_title("Training and Validation Loss")
     axes[0].legend()
     axes[0].grid(True, alpha=0.3)
 
-    axes[1].plot(history['train_perplexity'], label='Train', linewidth=2)
-    axes[1].plot(history['val_perplexity'], label='Validation', linewidth=2)
-    axes[1].set_xlabel('Epoch')
-    axes[1].set_ylabel('Perplexity')
-    axes[1].set_title('Training and Validation Perplexity')
+    axes[1].plot(history["train_perplexity"], label="Train", linewidth=2)
+    axes[1].plot(history["val_perplexity"], label="Validation", linewidth=2)
+    axes[1].set_xlabel("Epoch")
+    axes[1].set_ylabel("Perplexity")
+    axes[1].set_title("Training and Validation Perplexity")
     axes[1].legend()
     axes[1].grid(True, alpha=0.3)
 
     plt.tight_layout()
-    plt.savefig('decoder_training_curves.png', dpi=300, bbox_inches='tight')
+    plt.savefig("decoder_training_curves.png", dpi=300, bbox_inches="tight")
     plt.show()
 
 
 def main():
     """Main execution function."""
-    print("="*70)
+    print("=" * 70)
     print("Decoder-Only Transformer (GPT-style)")
-    print("="*70)
+    print("=" * 70)
 
     # Generate data
     print("\n1. Generating language modeling data...")
-    sequences = generate_language_modeling_data(n_sequences=2000, seq_length=33, vocab_size=100)
+    sequences = generate_language_modeling_data(
+        n_sequences=2000, seq_length=33, vocab_size=100
+    )
 
     # Split data
     n_train = int(0.8 * len(sequences))
     n_val = int(0.1 * len(sequences))
 
     train_seq = sequences[:n_train]
-    val_seq = sequences[n_train:n_train+n_val]
-    test_seq = sequences[n_train+n_val:]
+    val_seq = sequences[n_train : n_train + n_val]
+    test_seq = sequences[n_train + n_val :]
 
     print(f"Train: {len(train_seq)}, Val: {len(val_seq)}, Test: {len(test_seq)}")
 
@@ -452,7 +485,7 @@ def main():
         num_layers=4,
         d_ff=1024,
         max_seq_len=64,
-        dropout=0.1
+        dropout=0.1,
     )
 
     total_params = sum(p.numel() for p in model.parameters())
@@ -468,7 +501,7 @@ def main():
 
     # Generate text
     print("\n5. Generating sequences...")
-    model.load_state_dict(torch.load('best_gpt_decoder.pth'))
+    model.load_state_dict(torch.load("best_gpt_decoder.pth"))
     device = next(model.parameters()).device
 
     # Start with a few tokens
@@ -490,9 +523,9 @@ def main():
     print("\n6. Visualizing causal attention...")
     visualize_causal_attention(model, test_seq[0][:-1])
 
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("Decoder-Only Transformer Complete!")
-    print("="*70)
+    print("=" * 70)
     print("\nKey Features:")
     print("✓ Causal (masked) self-attention for autoregressive generation")
     print("✓ Can only attend to previous positions")

@@ -32,6 +32,7 @@ class PatchEmbedding(nn.Module):
     Image shape: (batch, channels, height, width)
     Output shape: (batch, num_patches, embed_dim)
     """
+
     def __init__(self, img_size=224, patch_size=16, in_channels=3, embed_dim=768):
         super(PatchEmbedding, self).__init__()
 
@@ -41,14 +42,13 @@ class PatchEmbedding(nn.Module):
 
         # Convolutional layer to extract patches and embed them
         self.projection = nn.Conv2d(
-            in_channels, embed_dim,
-            kernel_size=patch_size,
-            stride=patch_size
+            in_channels, embed_dim, kernel_size=patch_size, stride=patch_size
         )
 
     def forward(self, x):
         # x: (batch, channels, height, width)
-        x = self.projection(x)  # (batch, embed_dim, num_patches_h, num_patches_w)
+        # (batch, embed_dim, num_patches_h, num_patches_w)
+        x = self.projection(x)
         x = x.flatten(2)  # (batch, embed_dim, num_patches)
         x = x.transpose(1, 2)  # (batch, num_patches, embed_dim)
         return x
@@ -56,6 +56,7 @@ class PatchEmbedding(nn.Module):
 
 class MultiHeadAttention(nn.Module):
     """Multi-head self-attention mechanism."""
+
     def __init__(self, embed_dim, num_heads, dropout=0.1):
         super(MultiHeadAttention, self).__init__()
 
@@ -77,7 +78,8 @@ class MultiHeadAttention(nn.Module):
         # Generate Q, K, V
         qkv = self.qkv(x)  # (batch, num_tokens, 3 * embed_dim)
         qkv = qkv.reshape(batch_size, num_tokens, 3, self.num_heads, self.head_dim)
-        qkv = qkv.permute(2, 0, 3, 1, 4)  # (3, batch, num_heads, num_tokens, head_dim)
+        # (3, batch, num_heads, num_tokens, head_dim)
+        qkv = qkv.permute(2, 0, 3, 1, 4)
 
         q, k, v = qkv[0], qkv[1], qkv[2]
 
@@ -99,6 +101,7 @@ class MultiHeadAttention(nn.Module):
 
 class FeedForward(nn.Module):
     """Position-wise feedforward network."""
+
     def __init__(self, embed_dim, hidden_dim, dropout=0.1):
         super(FeedForward, self).__init__()
 
@@ -113,6 +116,7 @@ class FeedForward(nn.Module):
 
 class TransformerBlock(nn.Module):
     """Single transformer encoder block."""
+
     def __init__(self, embed_dim, num_heads, mlp_ratio=4.0, dropout=0.1):
         super(TransformerBlock, self).__init__()
 
@@ -149,8 +153,19 @@ class VisionTransformer(nn.Module):
     5. Pass through transformer encoder
     6. Use [CLS] token for classification
     """
-    def __init__(self, img_size=224, patch_size=16, in_channels=3, num_classes=10,
-                 embed_dim=768, depth=12, num_heads=12, mlp_ratio=4.0, dropout=0.1):
+
+    def __init__(
+        self,
+        img_size=224,
+        patch_size=16,
+        in_channels=3,
+        num_classes=10,
+        embed_dim=768,
+        depth=12,
+        num_heads=12,
+        mlp_ratio=4.0,
+        dropout=0.1,
+    ):
         super(VisionTransformer, self).__init__()
 
         self.patch_embed = PatchEmbedding(img_size, patch_size, in_channels, embed_dim)
@@ -165,10 +180,12 @@ class VisionTransformer(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
         # Transformer encoder blocks
-        self.blocks = nn.ModuleList([
-            TransformerBlock(embed_dim, num_heads, mlp_ratio, dropout)
-            for _ in range(depth)
-        ])
+        self.blocks = nn.ModuleList(
+            [
+                TransformerBlock(embed_dim, num_heads, mlp_ratio, dropout)
+                for _ in range(depth)
+            ]
+        )
 
         self.norm = nn.LayerNorm(embed_dim)
 
@@ -187,7 +204,8 @@ class VisionTransformer(nn.Module):
 
         # Add [CLS] token
         cls_tokens = self.cls_token.expand(batch_size, -1, -1)
-        x = torch.cat([cls_tokens, x], dim=1)  # (batch, num_patches+1, embed_dim)
+        # (batch, num_patches+1, embed_dim)
+        x = torch.cat([cls_tokens, x], dim=1)
 
         # Add positional embeddings
         x = x + self.pos_embed
@@ -226,17 +244,17 @@ def generate_synthetic_images(n_samples=1000, img_size=64, n_classes=3):
         if label == 0:
             # Vertical stripes
             for i in range(0, img_size, 8):
-                img[:, :, i:i+4] = 1.0
+                img[:, :, i : i + 4] = 1.0
         elif label == 1:
             # Horizontal stripes
             for i in range(0, img_size, 8):
-                img[:, i:i+4, :] = 1.0
+                img[:, i : i + 4, :] = 1.0
         else:
             # Checkerboard
             for i in range(0, img_size, 8):
                 for j in range(0, img_size, 8):
                     if (i + j) % 16 == 0:
-                        img[:, i:i+8, j:j+8] = 1.0
+                        img[:, i : i + 8, j : j + 8] = 1.0
 
         # Add noise
         img += np.random.randn(3, img_size, img_size) * 0.1
@@ -250,6 +268,7 @@ def generate_synthetic_images(n_samples=1000, img_size=64, n_classes=3):
 
 class ImageDataset(Dataset):
     """Dataset for image classification."""
+
     def __init__(self, images, labels):
         self.images = torch.FloatTensor(images)
         self.labels = torch.LongTensor(labels)
@@ -263,7 +282,7 @@ class ImageDataset(Dataset):
 
 def train_vit(model, train_loader, val_loader, epochs=50, lr=0.001):
     """Train Vision Transformer."""
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"\nTraining on {device}")
 
     model = model.to(device)
@@ -271,7 +290,12 @@ def train_vit(model, train_loader, val_loader, epochs=50, lr=0.001):
     optimizer = optim.AdamW(model.parameters(), lr=lr, weight_decay=0.05)
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
 
-    history = {'train_loss': [], 'val_loss': [], 'train_accuracy': [], 'val_accuracy': []}
+    history = {
+        "train_loss": [],
+        "val_loss": [],
+        "train_accuracy": [],
+        "val_accuracy": [],
+    }
     best_val_accuracy = 0
 
     for epoch in range(epochs):
@@ -322,19 +346,21 @@ def train_vit(model, train_loader, val_loader, epochs=50, lr=0.001):
 
         scheduler.step()
 
-        history['train_loss'].append(train_loss)
-        history['val_loss'].append(val_loss)
-        history['train_accuracy'].append(train_accuracy)
-        history['val_accuracy'].append(val_accuracy)
+        history["train_loss"].append(train_loss)
+        history["val_loss"].append(val_loss)
+        history["train_accuracy"].append(train_accuracy)
+        history["val_accuracy"].append(val_accuracy)
 
         if val_accuracy > best_val_accuracy:
             best_val_accuracy = val_accuracy
-            torch.save(model.state_dict(), 'best_vit.pth')
+            torch.save(model.state_dict(), "best_vit.pth")
 
         if (epoch + 1) % 10 == 0:
-            print(f"Epoch [{epoch+1}/{epochs}] ({time.time()-start_time:.2f}s) - "
-                  f"Train Loss: {train_loss:.4f}, Acc: {train_accuracy:.4f} | "
-                  f"Val Loss: {val_loss:.4f}, Acc: {val_accuracy:.4f}")
+            print(
+                f"Epoch [{epoch+1}/{epochs}] ({time.time()-start_time:.2f}s) - "
+                f"Train Loss: {train_loss:.4f}, Acc: {train_accuracy:.4f} | "
+                f"Val Loss: {val_loss:.4f}, Acc: {val_accuracy:.4f}"
+            )
 
     return history
 
@@ -364,29 +390,30 @@ def visualize_attention_maps(model, image, label):
     # Original image
     img_display = image.transpose(1, 2, 0)
     axes[0].imshow(img_display)
-    axes[0].set_title(f'Original Image (Class {label})')
-    axes[0].axis('off')
+    axes[0].set_title(f"Original Image (Class {label})")
+    axes[0].axis("off")
 
     # Attention map
-    im = axes[1].imshow(attn_grid, cmap='viridis')
-    axes[1].set_title('[CLS] Token Attention to Patches')
-    axes[1].set_xlabel('Patch Column')
-    axes[1].set_ylabel('Patch Row')
+    im = axes[1].imshow(attn_grid, cmap="viridis")
+    axes[1].set_title("[CLS] Token Attention to Patches")
+    axes[1].set_xlabel("Patch Column")
+    axes[1].set_ylabel("Patch Row")
     plt.colorbar(im, ax=axes[1])
 
     # Overlay attention on image
     from scipy.ndimage import zoom
+
     img_size = image.shape[1]
     scale = img_size / num_patches
     attn_upsampled = zoom(attn_grid, scale, order=1)
 
     axes[2].imshow(img_display)
-    axes[2].imshow(attn_upsampled, alpha=0.6, cmap='jet')
-    axes[2].set_title('Attention Overlay')
-    axes[2].axis('off')
+    axes[2].imshow(attn_upsampled, alpha=0.6, cmap="jet")
+    axes[2].set_title("Attention Overlay")
+    axes[2].axis("off")
 
     plt.tight_layout()
-    plt.savefig('vit_attention_visualization.png', dpi=300, bbox_inches='tight')
+    plt.savefig("vit_attention_visualization.png", dpi=300, bbox_inches="tight")
     plt.show()
 
 
@@ -394,32 +421,32 @@ def plot_training_curves(history):
     """Plot training curves."""
     fig, axes = plt.subplots(1, 2, figsize=(14, 4))
 
-    axes[0].plot(history['train_loss'], label='Train', linewidth=2)
-    axes[0].plot(history['val_loss'], label='Validation', linewidth=2)
-    axes[0].set_xlabel('Epoch')
-    axes[0].set_ylabel('Loss')
-    axes[0].set_title('Training and Validation Loss')
+    axes[0].plot(history["train_loss"], label="Train", linewidth=2)
+    axes[0].plot(history["val_loss"], label="Validation", linewidth=2)
+    axes[0].set_xlabel("Epoch")
+    axes[0].set_ylabel("Loss")
+    axes[0].set_title("Training and Validation Loss")
     axes[0].legend()
     axes[0].grid(True, alpha=0.3)
 
-    axes[1].plot(history['train_accuracy'], label='Train', linewidth=2)
-    axes[1].plot(history['val_accuracy'], label='Validation', linewidth=2)
-    axes[1].set_xlabel('Epoch')
-    axes[1].set_ylabel('Accuracy')
-    axes[1].set_title('Training and Validation Accuracy')
+    axes[1].plot(history["train_accuracy"], label="Train", linewidth=2)
+    axes[1].plot(history["val_accuracy"], label="Validation", linewidth=2)
+    axes[1].set_xlabel("Epoch")
+    axes[1].set_ylabel("Accuracy")
+    axes[1].set_title("Training and Validation Accuracy")
     axes[1].legend()
     axes[1].grid(True, alpha=0.3)
 
     plt.tight_layout()
-    plt.savefig('vit_training_curves.png', dpi=300, bbox_inches='tight')
+    plt.savefig("vit_training_curves.png", dpi=300, bbox_inches="tight")
     plt.show()
 
 
 def main():
     """Main execution function."""
-    print("="*70)
+    print("=" * 70)
     print("Vision Transformer (ViT)")
-    print("="*70)
+    print("=" * 70)
 
     # Generate data
     print("\n1. Generating synthetic images...")
@@ -430,10 +457,18 @@ def main():
     n_val = int(0.15 * len(images))
 
     train_images, train_labels = images[:n_train], labels[:n_train]
-    val_images, val_labels = images[n_train:n_train+n_val], labels[n_train:n_train+n_val]
-    test_images, test_labels = images[n_train+n_val:], labels[n_train+n_val:]
+    val_images, val_labels = (
+        images[n_train : n_train + n_val],
+        labels[n_train : n_train + n_val],
+    )
+    test_images, test_labels = images[n_train + n_val :], labels[n_train + n_val :]
 
-    print(f"Train: {len(train_images)}, Val: {len(val_images)}, Test: {len(test_images)}")
+    print(
+        f"Train: {
+        len(train_images)}, Val: {
+            len(val_images)}, Test: {
+                len(test_images)}"
+    )
 
     # Create dataloaders
     train_dataset = ImageDataset(train_images, train_labels)
@@ -453,7 +488,7 @@ def main():
         depth=6,
         num_heads=8,
         mlp_ratio=4.0,
-        dropout=0.1
+        dropout=0.1,
     )
 
     total_params = sum(p.numel() for p in model.parameters())
@@ -470,12 +505,12 @@ def main():
 
     # Visualize attention
     print("\n5. Visualizing attention maps...")
-    model.load_state_dict(torch.load('best_vit.pth'))
+    model.load_state_dict(torch.load("best_vit.pth"))
     visualize_attention_maps(model, test_images[0], test_labels[0])
 
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("Vision Transformer Complete!")
-    print("="*70)
+    print("=" * 70)
     print("\nKey Features:")
     print("✓ Splits images into patches (tokens)")
     print("✓ Treats image classification as sequence modeling")

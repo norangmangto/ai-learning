@@ -27,6 +27,7 @@ import time
 
 class ImageFeatureExtractor(nn.Module):
     """CNN for extracting image features."""
+
     def __init__(self, feature_dim=512):
         super(ImageFeatureExtractor, self).__init__()
 
@@ -35,17 +36,14 @@ class ImageFeatureExtractor(nn.Module):
             nn.Conv2d(3, 64, kernel_size=3, stride=2, padding=1),
             nn.BatchNorm2d(64),
             nn.ReLU(inplace=True),
-
             # 64x32x32 -> 128x16x16
             nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1),
             nn.BatchNorm2d(128),
             nn.ReLU(inplace=True),
-
             # 128x16x16 -> 256x8x8
             nn.Conv2d(128, 256, kernel_size=3, stride=2, padding=1),
             nn.BatchNorm2d(256),
             nn.ReLU(inplace=True),
-
             # 256x8x8 -> 512x4x4
             nn.Conv2d(256, 512, kernel_size=3, stride=2, padding=1),
             nn.BatchNorm2d(512),
@@ -73,6 +71,7 @@ class ImageFeatureExtractor(nn.Module):
 
 class AttentionMechanism(nn.Module):
     """Attention over image regions."""
+
     def __init__(self, visual_dim, text_dim, hidden_dim):
         super(AttentionMechanism, self).__init__()
 
@@ -88,7 +87,8 @@ class AttentionMechanism(nn.Module):
         batch_size, num_regions, visual_dim = visual_features.size()
 
         # Project visual features
-        v = self.visual_proj(visual_features)  # (batch, num_regions, hidden_dim)
+        # (batch, num_regions, hidden_dim)
+        v = self.visual_proj(visual_features)
 
         # Project text features and expand
         t = self.text_proj(text_features).unsqueeze(1)  # (batch, 1, hidden_dim)
@@ -104,8 +104,10 @@ class AttentionMechanism(nn.Module):
         # Weighted sum of visual features
         attended_features = torch.bmm(
             attention_weights.unsqueeze(1),  # (batch, 1, num_regions)
-            visual_features  # (batch, num_regions, visual_dim)
-        ).squeeze(1)  # (batch, visual_dim)
+            visual_features,  # (batch, num_regions, visual_dim)
+        ).squeeze(
+            1
+        )  # (batch, visual_dim)
 
         return attended_features, attention_weights
 
@@ -116,6 +118,7 @@ class VQAModel(nn.Module):
 
     Given an image and a question, predict an answer.
     """
+
     def __init__(self, vocab_size, num_answers, embed_dim=256, hidden_dim=512):
         super(VQAModel, self).__init__()
 
@@ -137,7 +140,7 @@ class VQAModel(nn.Module):
             nn.Linear(hidden_dim, hidden_dim // 2),
             nn.ReLU(),
             nn.Dropout(0.5),
-            nn.Linear(hidden_dim // 2, num_answers)
+            nn.Linear(hidden_dim // 2, num_answers),
         )
 
     def forward(self, images, questions):
@@ -169,6 +172,7 @@ class ImageCaptioningModel(nn.Module):
 
     Generate a caption describing the image.
     """
+
     def __init__(self, vocab_size, embed_dim=256, hidden_dim=512, max_length=20):
         super(ImageCaptioningModel, self).__init__()
 
@@ -211,7 +215,9 @@ class ImageCaptioningModel(nn.Module):
             # Attend to image
             if hidden is None:
                 # Initial state
-                h = torch.zeros(batch_size, self.decoder_lstm.hidden_size, device=images.device)
+                h = torch.zeros(
+                    batch_size, self.decoder_lstm.hidden_size, device=images.device
+                )
             else:
                 h = hidden[0][-1]
 
@@ -243,7 +249,9 @@ class ImageCaptioningModel(nn.Module):
         visual_features = self.image_encoder(images)
 
         # Start with start token
-        input_tokens = torch.full((batch_size, 1), start_token, dtype=torch.long, device=device)
+        input_tokens = torch.full(
+            (batch_size, 1), start_token, dtype=torch.long, device=device
+        )
 
         generated = []
         hidden = None
@@ -252,7 +260,9 @@ class ImageCaptioningModel(nn.Module):
             word_embed = self.word_embedding(input_tokens[:, -1])
 
             if hidden is None:
-                h = torch.zeros(batch_size, self.decoder_lstm.hidden_size, device=device)
+                h = torch.zeros(
+                    batch_size, self.decoder_lstm.hidden_size, device=device
+                )
             else:
                 h = hidden[0][-1]
 
@@ -304,17 +314,17 @@ def generate_vqa_data(n_samples=1000, img_size=64):
         if pattern == 0:
             # Vertical stripes
             for i in range(0, img_size, 8):
-                img[:, :, i:i+4] = 1.0
+                img[:, :, i : i + 4] = 1.0
         elif pattern == 1:
             # Horizontal stripes
             for i in range(0, img_size, 8):
-                img[:, i:i+4, :] = 1.0
+                img[:, i : i + 4, :] = 1.0
         else:
             # Checkerboard
             for i in range(0, img_size, 8):
                 for j in range(0, img_size, 8):
                     if (i + j) % 16 == 0:
-                        img[:, i:i+8, j:j+8] = 1.0
+                        img[:, i : i + 8, j : j + 8] = 1.0
 
         # Add noise
         img += np.random.randn(3, img_size, img_size) * 0.1
@@ -330,9 +340,11 @@ def generate_vqa_data(n_samples=1000, img_size=64):
         questions.append(question)
         answers.append(answer)
 
-    return (np.array(images, dtype=np.float32),
-            np.array(questions, dtype=np.int64),
-            np.array(answers, dtype=np.int64))
+    return (
+        np.array(images, dtype=np.float32),
+        np.array(questions, dtype=np.int64),
+        np.array(answers, dtype=np.int64),
+    )
 
 
 def generate_captioning_data(n_samples=1000, img_size=64):
@@ -361,15 +373,15 @@ def generate_captioning_data(n_samples=1000, img_size=64):
 
         if pattern == 0:
             for i in range(0, img_size, 8):
-                img[:, :, i:i+4] = 1.0
+                img[:, :, i : i + 4] = 1.0
         elif pattern == 1:
             for i in range(0, img_size, 8):
-                img[:, i:i+4, :] = 1.0
+                img[:, i : i + 4, :] = 1.0
         else:
             for i in range(0, img_size, 8):
                 for j in range(0, img_size, 8):
                     if (i + j) % 16 == 0:
-                        img[:, i:i+8, j:j+8] = 1.0
+                        img[:, i : i + 8, j : j + 8] = 1.0
 
         img += np.random.randn(3, img_size, img_size) * 0.1
         img = np.clip(img, 0, 1)
@@ -386,6 +398,7 @@ def generate_captioning_data(n_samples=1000, img_size=64):
 
 class VQADataset(Dataset):
     """Dataset for VQA."""
+
     def __init__(self, images, questions, answers):
         self.images = torch.FloatTensor(images)
         self.questions = torch.LongTensor(questions)
@@ -400,6 +413,7 @@ class VQADataset(Dataset):
 
 class CaptioningDataset(Dataset):
     """Dataset for captioning."""
+
     def __init__(self, images, captions):
         self.images = torch.FloatTensor(images)
         self.captions = torch.LongTensor(captions)
@@ -414,7 +428,7 @@ class CaptioningDataset(Dataset):
 
 def train_vqa(model, train_loader, val_loader, epochs=40, lr=0.001):
     """Train VQA model."""
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"\nTraining VQA on {device}")
 
     model = model.to(device)
@@ -422,7 +436,12 @@ def train_vqa(model, train_loader, val_loader, epochs=40, lr=0.001):
     optimizer = optim.Adam(model.parameters(), lr=lr)
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=15, gamma=0.5)
 
-    history = {'train_loss': [], 'val_loss': [], 'train_accuracy': [], 'val_accuracy': []}
+    history = {
+        "train_loss": [],
+        "val_loss": [],
+        "train_accuracy": [],
+        "val_accuracy": [],
+    }
     best_val_accuracy = 0
 
     for epoch in range(epochs):
@@ -477,26 +496,28 @@ def train_vqa(model, train_loader, val_loader, epochs=40, lr=0.001):
 
         scheduler.step()
 
-        history['train_loss'].append(train_loss)
-        history['val_loss'].append(val_loss)
-        history['train_accuracy'].append(train_accuracy)
-        history['val_accuracy'].append(val_accuracy)
+        history["train_loss"].append(train_loss)
+        history["val_loss"].append(val_loss)
+        history["train_accuracy"].append(train_accuracy)
+        history["val_accuracy"].append(val_accuracy)
 
         if val_accuracy > best_val_accuracy:
             best_val_accuracy = val_accuracy
-            torch.save(model.state_dict(), 'best_vqa.pth')
+            torch.save(model.state_dict(), "best_vqa.pth")
 
         if (epoch + 1) % 10 == 0:
-            print(f"Epoch [{epoch+1}/{epochs}] ({time.time()-start_time:.2f}s) - "
-                  f"Train Loss: {train_loss:.4f}, Acc: {train_accuracy:.4f} | "
-                  f"Val Loss: {val_loss:.4f}, Acc: {val_accuracy:.4f}")
+            print(
+                f"Epoch [{epoch+1}/{epochs}] ({time.time()-start_time:.2f}s) - "
+                f"Train Loss: {train_loss:.4f}, Acc: {train_accuracy:.4f} | "
+                f"Val Loss: {val_loss:.4f}, Acc: {val_accuracy:.4f}"
+            )
 
     return history
 
 
 def train_captioning(model, train_loader, val_loader, epochs=40, lr=0.001):
     """Train captioning model."""
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"\nTraining Captioning on {device}")
 
     model = model.to(device)
@@ -504,8 +525,8 @@ def train_captioning(model, train_loader, val_loader, epochs=40, lr=0.001):
     optimizer = optim.Adam(model.parameters(), lr=lr)
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=15, gamma=0.5)
 
-    history = {'train_loss': [], 'val_loss': []}
-    best_val_loss = float('inf')
+    history = {"train_loss": [], "val_loss": []}
+    best_val_loss = float("inf")
 
     for epoch in range(epochs):
         start_time = time.time()
@@ -542,7 +563,9 @@ def train_captioning(model, train_loader, val_loader, epochs=40, lr=0.001):
                 caption_target = caption_target.to(device)
 
                 logits = model(images, caption_input)
-                loss = criterion(logits.view(-1, model.vocab_size), caption_target.view(-1))
+                loss = criterion(
+                    logits.view(-1, model.vocab_size), caption_target.view(-1)
+                )
 
                 val_loss += loss.item()
 
@@ -550,65 +573,71 @@ def train_captioning(model, train_loader, val_loader, epochs=40, lr=0.001):
 
         scheduler.step()
 
-        history['train_loss'].append(train_loss)
-        history['val_loss'].append(val_loss)
+        history["train_loss"].append(train_loss)
+        history["val_loss"].append(val_loss)
 
         if val_loss < best_val_loss:
             best_val_loss = val_loss
-            torch.save(model.state_dict(), 'best_captioning.pth')
+            torch.save(model.state_dict(), "best_captioning.pth")
 
         if (epoch + 1) % 10 == 0:
-            print(f"Epoch [{epoch+1}/{epochs}] ({time.time()-start_time:.2f}s) - "
-                  f"Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f}")
+            print(
+                f"Epoch [{epoch+1}/{epochs}] ({time.time()-start_time:.2f}s) - "
+                f"Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f}"
+            )
 
     return history
 
 
 def plot_training_curves(history, task_name):
     """Plot training curves."""
-    if 'train_accuracy' in history:
+    if "train_accuracy" in history:
         fig, axes = plt.subplots(1, 2, figsize=(14, 4))
 
-        axes[0].plot(history['train_loss'], label='Train', linewidth=2)
-        axes[0].plot(history['val_loss'], label='Validation', linewidth=2)
-        axes[0].set_xlabel('Epoch')
-        axes[0].set_ylabel('Loss')
-        axes[0].set_title(f'{task_name} - Training and Validation Loss')
+        axes[0].plot(history["train_loss"], label="Train", linewidth=2)
+        axes[0].plot(history["val_loss"], label="Validation", linewidth=2)
+        axes[0].set_xlabel("Epoch")
+        axes[0].set_ylabel("Loss")
+        axes[0].set_title(f"{task_name} - Training and Validation Loss")
         axes[0].legend()
         axes[0].grid(True, alpha=0.3)
 
-        axes[1].plot(history['train_accuracy'], label='Train', linewidth=2)
-        axes[1].plot(history['val_accuracy'], label='Validation', linewidth=2)
-        axes[1].set_xlabel('Epoch')
-        axes[1].set_ylabel('Accuracy')
-        axes[1].set_title(f'{task_name} - Training and Validation Accuracy')
+        axes[1].plot(history["train_accuracy"], label="Train", linewidth=2)
+        axes[1].plot(history["val_accuracy"], label="Validation", linewidth=2)
+        axes[1].set_xlabel("Epoch")
+        axes[1].set_ylabel("Accuracy")
+        axes[1].set_title(f"{task_name} - Training and Validation Accuracy")
         axes[1].legend()
         axes[1].grid(True, alpha=0.3)
     else:
         plt.figure(figsize=(8, 4))
-        plt.plot(history['train_loss'], label='Train', linewidth=2)
-        plt.plot(history['val_loss'], label='Validation', linewidth=2)
-        plt.xlabel('Epoch')
-        plt.ylabel('Loss')
-        plt.title(f'{task_name} - Training and Validation Loss')
+        plt.plot(history["train_loss"], label="Train", linewidth=2)
+        plt.plot(history["val_loss"], label="Validation", linewidth=2)
+        plt.xlabel("Epoch")
+        plt.ylabel("Loss")
+        plt.title(f"{task_name} - Training and Validation Loss")
         plt.legend()
         plt.grid(True, alpha=0.3)
 
     plt.tight_layout()
-    plt.savefig(f'{task_name.lower().replace(" ", "_")}_curves.png', dpi=300, bbox_inches='tight')
+    plt.savefig(
+        f'{task_name.lower().replace(" ", "_")}_curves.png',
+        dpi=300,
+        bbox_inches="tight",
+    )
     plt.show()
 
 
 def main():
     """Main execution function."""
-    print("="*70)
+    print("=" * 70)
     print("Vision-Language Models")
-    print("="*70)
+    print("=" * 70)
 
     # ========== Visual Question Answering ==========
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("Task 1: Visual Question Answering (VQA)")
-    print("="*70)
+    print("=" * 70)
 
     # Generate VQA data
     print("\n1. Generating VQA data...")
@@ -621,9 +650,9 @@ def main():
         vqa_images[:n_train], vqa_questions[:n_train], vqa_answers[:n_train]
     )
     vqa_val_dataset = VQADataset(
-        vqa_images[n_train:n_train+n_val],
-        vqa_questions[n_train:n_train+n_val],
-        vqa_answers[n_train:n_train+n_val]
+        vqa_images[n_train : n_train + n_val],
+        vqa_questions[n_train : n_train + n_val],
+        vqa_answers[n_train : n_train + n_val],
     )
 
     vqa_train_loader = DataLoader(vqa_train_dataset, batch_size=32, shuffle=True)
@@ -642,9 +671,9 @@ def main():
     plot_training_curves(vqa_history, "VQA")
 
     # ========== Image Captioning ==========
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("Task 2: Image Captioning")
-    print("="*70)
+    print("=" * 70)
 
     # Generate captioning data
     print("\n1. Generating captioning data...")
@@ -652,7 +681,7 @@ def main():
 
     cap_train_dataset = CaptioningDataset(cap_images[:n_train], cap_captions[:n_train])
     cap_val_dataset = CaptioningDataset(
-        cap_images[n_train:n_train+n_val], cap_captions[n_train:n_train+n_val]
+        cap_images[n_train : n_train + n_val], cap_captions[n_train : n_train + n_val]
     )
 
     cap_train_loader = DataLoader(cap_train_dataset, batch_size=32, shuffle=True)
@@ -665,26 +694,30 @@ def main():
 
     # Train captioning
     print("\n3. Training captioning model...")
-    cap_history = train_captioning(cap_model, cap_train_loader, cap_val_loader, epochs=40)
+    cap_history = train_captioning(
+        cap_model, cap_train_loader, cap_val_loader, epochs=40
+    )
 
     print("\n4. Plotting captioning curves...")
     plot_training_curves(cap_history, "Captioning")
 
     # Test caption generation
     print("\n5. Testing caption generation...")
-    cap_model.load_state_dict(torch.load('best_captioning.pth'))
+    cap_model.load_state_dict(torch.load("best_captioning.pth"))
     device = next(cap_model.parameters()).device
 
-    test_images = torch.FloatTensor(cap_images[n_train+n_val:n_train+n_val+5]).to(device)
+    test_images = torch.FloatTensor(
+        cap_images[n_train + n_val : n_train + n_val + 5]
+    ).to(device)
     generated_captions = cap_model.generate(test_images, start_token=1, end_token=2)
 
     print("\nGenerated captions (first 5 test images):")
     for i, caption in enumerate(generated_captions):
         print(f"Image {i}: {caption.cpu().numpy()}")
 
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("Vision-Language Models Complete!")
-    print("="*70)
+    print("=" * 70)
     print("\nKey Features:")
     print("✓ Visual Question Answering with cross-modal attention")
     print("✓ Image captioning with attention over spatial features")

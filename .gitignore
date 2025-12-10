@@ -25,4 +25,8 @@ ENV/
 # Jupyter Notebook
 *.ipynb_checkpoints
 
+# Virtual environment folder
 .venv/
+
+# Ruff cache
+.ruff_cache/

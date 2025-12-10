@@ -32,6 +32,7 @@ class GRUClassifier(nn.Module):
     GRU uses update and reset gates to control information flow,
     making it simpler and often faster than LSTM.
     """
+
     def __init__(self, input_size, hidden_size, num_layers, num_classes, dropout=0.2):
         super(GRUClassifier, self).__init__()
 
@@ -43,7 +44,7 @@ class GRUClassifier(nn.Module):
             hidden_size=hidden_size,
             num_layers=num_layers,
             batch_first=True,
-            dropout=dropout if num_layers > 1 else 0
+            dropout=dropout if num_layers > 1 else 0,
         )
 
         self.fc = nn.Linear(hidden_size, num_classes)
@@ -74,6 +75,7 @@ class BiGRUClassifier(nn.Module):
 
     Processes sequences in both directions for better context understanding.
     """
+
     def __init__(self, input_size, hidden_size, num_layers, num_classes, dropout=0.2):
         super(BiGRUClassifier, self).__init__()
 
@@ -86,7 +88,7 @@ class BiGRUClassifier(nn.Module):
             num_layers=num_layers,
             batch_first=True,
             dropout=dropout if num_layers > 1 else 0,
-            bidirectional=True
+            bidirectional=True,
         )
 
         # *2 because bidirectional concatenates forward and backward
@@ -114,6 +116,7 @@ class StackedGRU(nn.Module):
 
     Deep GRU with skip connections to help gradient flow.
     """
+
     def __init__(self, input_size, hidden_sizes, num_classes, dropout=0.3):
         super(StackedGRU, self).__init__()
 
@@ -121,21 +124,25 @@ class StackedGRU(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
         # First GRU layer
-        self.gru_layers.append(nn.GRU(
-            input_size=input_size,
-            hidden_size=hidden_sizes[0],
-            num_layers=1,
-            batch_first=True
-        ))
+        self.gru_layers.append(
+            nn.GRU(
+                input_size=input_size,
+                hidden_size=hidden_sizes[0],
+                num_layers=1,
+                batch_first=True,
+            )
+        )
 
         # Additional GRU layers
         for i in range(1, len(hidden_sizes)):
-            self.gru_layers.append(nn.GRU(
-                input_size=hidden_sizes[i-1],
-                hidden_size=hidden_sizes[i],
-                num_layers=1,
-                batch_first=True
-            ))
+            self.gru_layers.append(
+                nn.GRU(
+                    input_size=hidden_sizes[i - 1],
+                    hidden_size=hidden_sizes[i],
+                    num_layers=1,
+                    batch_first=True,
+                )
+            )
 
         self.fc = nn.Linear(hidden_sizes[-1], num_classes)
 
@@ -154,6 +161,7 @@ class StackedGRU(nn.Module):
 
 class LSTMClassifier(nn.Module):
     """LSTM for comparison with GRU."""
+
     def __init__(self, input_size, hidden_size, num_layers, num_classes, dropout=0.2):
         super(LSTMClassifier, self).__init__()
 
@@ -165,7 +173,7 @@ class LSTMClassifier(nn.Module):
             hidden_size=hidden_size,
             num_layers=num_layers,
             batch_first=True,
-            dropout=dropout if num_layers > 1 else 0
+            dropout=dropout if num_layers > 1 else 0,
         )
 
         self.fc = nn.Linear(hidden_size, num_classes)
@@ -183,9 +191,13 @@ class LSTMClassifier(nn.Module):
         return out
 
 
-def generate_synthetic_sequences(n_samples=1000, seq_length=50, n_features=10, n_classes=3):
+def generate_synthetic_sequences(
+    n_samples=1000, seq_length=50, n_features=10, n_classes=3
+):
     """Generate synthetic sequence data for classification."""
-    print(f"Generating {n_samples} sequences (length={seq_length}, features={n_features})...")
+    print(
+        f"Generating {n_samples} sequences (length={seq_length}, features={n_features})..."
+    )
 
     X = []
     y = []
@@ -198,19 +210,22 @@ def generate_synthetic_sequences(n_samples=1000, seq_length=50, n_features=10, n
         if label == 0:
             # Increasing trend with noise
             base = np.linspace(0, 1, seq_length)
-            sequence = np.column_stack([base + np.random.randn(seq_length) * 0.1
-                                       for _ in range(n_features)])
+            sequence = np.column_stack(
+                [base + np.random.randn(seq_length) * 0.1 for _ in range(n_features)]
+            )
         elif label == 1:
             # Decreasing trend with noise
             base = np.linspace(1, 0, seq_length)
-            sequence = np.column_stack([base + np.random.randn(seq_length) * 0.1
-                                       for _ in range(n_features)])
+            sequence = np.column_stack(
+                [base + np.random.randn(seq_length) * 0.1 for _ in range(n_features)]
+            )
         else:
             # Oscillating pattern
-            t = np.linspace(0, 4*np.pi, seq_length)
+            t = np.linspace(0, 4 * np.pi, seq_length)
             base = np.sin(t)
-            sequence = np.column_stack([base + np.random.randn(seq_length) * 0.1
-                                       for _ in range(n_features)])
+            sequence = np.column_stack(
+                [base + np.random.randn(seq_length) * 0.1 for _ in range(n_features)]
+            )
 
         X.append(sequence)
         y.append(label)
@@ -220,6 +235,7 @@ def generate_synthetic_sequences(n_samples=1000, seq_length=50, n_features=10, n
 
 class SequenceDataset(Dataset):
     """PyTorch Dataset for sequences."""
+
     def __init__(self, sequences, labels):
         self.sequences = torch.FloatTensor(sequences)
         self.labels = torch.LongTensor(labels)
@@ -233,15 +249,23 @@ class SequenceDataset(Dataset):
 
 def train_model(model, train_loader, val_loader, epochs=50, lr=0.001):
     """Train model."""
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"\nTraining on {device}")
 
     model = model.to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=lr)
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=5, factor=0.5)
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, mode="min", patience=5, factor=0.5
+    )
 
-    history = {'train_loss': [], 'val_loss': [], 'train_acc': [], 'val_acc': [], 'time': []}
+    history = {
+        "train_loss": [],
+        "val_loss": [],
+        "train_acc": [],
+        "val_acc": [],
+        "time": [],
+    }
     best_val_acc = 0
 
     for epoch in range(epochs):
@@ -269,7 +293,7 @@ def train_model(model, train_loader, val_loader, epochs=50, lr=0.001):
             train_correct += predicted.eq(labels).sum().item()
 
         train_loss /= len(train_loader)
-        train_acc = 100. * train_correct / train_total
+        train_acc = 100.0 * train_correct / train_total
 
         # Validation
         model.eval()
@@ -289,34 +313,36 @@ def train_model(model, train_loader, val_loader, epochs=50, lr=0.001):
                 val_correct += predicted.eq(labels).sum().item()
 
         val_loss /= len(val_loader)
-        val_acc = 100. * val_correct / val_total
+        val_acc = 100.0 * val_correct / val_total
 
         scheduler.step(val_loss)
 
         epoch_time = time.time() - epoch_start
-        history['train_loss'].append(train_loss)
-        history['val_loss'].append(val_loss)
-        history['train_acc'].append(train_acc)
-        history['val_acc'].append(val_acc)
-        history['time'].append(epoch_time)
+        history["train_loss"].append(train_loss)
+        history["val_loss"].append(val_loss)
+        history["train_acc"].append(train_acc)
+        history["val_acc"].append(val_acc)
+        history["time"].append(epoch_time)
 
         if val_acc > best_val_acc:
             best_val_acc = val_acc
-            torch.save(model.state_dict(), 'best_gru_model.pth')
+            torch.save(model.state_dict(), "best_gru_model.pth")
 
         if (epoch + 1) % 10 == 0:
-            print(f"Epoch [{epoch+1}/{epochs}] ({epoch_time:.2f}s) - "
-                  f"Train Loss: {train_loss:.4f}, Acc: {train_acc:.2f}% | "
-                  f"Val Loss: {val_loss:.4f}, Acc: {val_acc:.2f}%")
+            print(
+                f"Epoch [{epoch+1}/{epochs}] ({epoch_time:.2f}s) - "
+                f"Train Loss: {train_loss:.4f}, Acc: {train_acc:.2f}% | "
+                f"Val Loss: {val_loss:.4f}, Acc: {val_acc:.2f}%"
+            )
 
     return history
 
 
 def compare_gru_lstm(X_train, y_train, X_val, y_val, input_size, num_classes):
     """Compare GRU vs LSTM performance and efficiency."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("Comparing GRU vs LSTM")
-    print("="*70)
+    print("=" * 70)
 
     train_dataset = SequenceDataset(X_train, y_train)
     val_dataset = SequenceDataset(X_val, y_val)
@@ -324,9 +350,9 @@ def compare_gru_lstm(X_train, y_train, X_val, y_val, input_size, num_classes):
     val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
 
     models = {
-        'GRU-2Layer': GRUClassifier(input_size, 128, 2, num_classes, dropout=0.2),
-        'LSTM-2Layer': LSTMClassifier(input_size, 128, 2, num_classes, dropout=0.2),
-        'BiGRU': BiGRUClassifier(input_size, 64, 2, num_classes, dropout=0.2),
+        "GRU-2Layer": GRUClassifier(input_size, 128, 2, num_classes, dropout=0.2),
+        "LSTM-2Layer": LSTMClassifier(input_size, 128, 2, num_classes, dropout=0.2),
+        "BiGRU": BiGRUClassifier(input_size, 64, 2, num_classes, dropout=0.2),
     }
 
     results = {}
@@ -344,36 +370,40 @@ def compare_gru_lstm(X_train, y_train, X_val, y_val, input_size, num_classes):
 
     # Accuracy
     for name, history in results.items():
-        axes[0].plot(history['val_acc'], label=name, linewidth=2)
-    axes[0].set_xlabel('Epoch')
-    axes[0].set_ylabel('Accuracy (%)')
-    axes[0].set_title('Validation Accuracy')
+        axes[0].plot(history["val_acc"], label=name, linewidth=2)
+    axes[0].set_xlabel("Epoch")
+    axes[0].set_ylabel("Accuracy (%)")
+    axes[0].set_title("Validation Accuracy")
     axes[0].legend()
     axes[0].grid(True, alpha=0.3)
 
     # Training time
-    avg_times = {name: np.mean(history['time']) for name, history in results.items()}
-    axes[1].bar(avg_times.keys(), avg_times.values(), color=['#1f77b4', '#ff7f0e', '#2ca02c'])
-    axes[1].set_ylabel('Time per Epoch (s)')
-    axes[1].set_title('Training Speed Comparison')
-    axes[1].grid(True, alpha=0.3, axis='y')
+    avg_times = {name: np.mean(history["time"]) for name, history in results.items()}
+    axes[1].bar(
+        avg_times.keys(), avg_times.values(), color=["#1f77b4", "#ff7f0e", "#2ca02c"]
+    )
+    axes[1].set_ylabel("Time per Epoch (s)")
+    axes[1].set_title("Training Speed Comparison")
+    axes[1].grid(True, alpha=0.3, axis="y")
 
     # Parameters
-    params = {name: sum(p.numel() for p in model.parameters())
-              for name, model in models.items()}
-    axes[2].bar(params.keys(), params.values(), color=['#1f77b4', '#ff7f0e', '#2ca02c'])
-    axes[2].set_ylabel('Number of Parameters')
-    axes[2].set_title('Model Complexity')
-    axes[2].grid(True, alpha=0.3, axis='y')
+    params = {
+        name: sum(p.numel() for p in model.parameters())
+        for name, model in models.items()
+    }
+    axes[2].bar(params.keys(), params.values(), color=["#1f77b4", "#ff7f0e", "#2ca02c"])
+    axes[2].set_ylabel("Number of Parameters")
+    axes[2].set_title("Model Complexity")
+    axes[2].grid(True, alpha=0.3, axis="y")
 
     plt.tight_layout()
-    plt.savefig('gru_lstm_comparison.png', dpi=300, bbox_inches='tight')
+    plt.savefig("gru_lstm_comparison.png", dpi=300, bbox_inches="tight")
     plt.show()
 
     # Summary statistics
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("Summary Statistics")
-    print("="*70)
+    print("=" * 70)
     for name, history in results.items():
         print(f"\n{name}:")
         print(f"  Best Val Accuracy: {max(history['val_acc']):.2f}%")
@@ -399,34 +429,42 @@ def visualize_gru_internals(model, sequence, feature_idx=0):
 
     # Input sequence
     axes[0].plot(sequence[:, feature_idx], linewidth=2)
-    axes[0].set_title(f'Input Sequence (Feature {feature_idx})')
-    axes[0].set_xlabel('Time Step')
-    axes[0].set_ylabel('Value')
+    axes[0].set_title(f"Input Sequence (Feature {feature_idx})")
+    axes[0].set_xlabel("Time Step")
+    axes[0].set_ylabel("Value")
     axes[0].grid(True, alpha=0.3)
 
     # Hidden states heatmap
-    im = axes[1].imshow(hidden_states.T[:20, :], aspect='auto', cmap='RdBu_r', interpolation='nearest')
-    axes[1].set_title('GRU Hidden States (First 20 Units)')
-    axes[1].set_xlabel('Time Step')
-    axes[1].set_ylabel('Hidden Unit')
+    im = axes[1].imshow(
+        hidden_states.T[:20, :], aspect="auto", cmap="RdBu_r", interpolation="nearest"
+    )
+    axes[1].set_title("GRU Hidden States (First 20 Units)")
+    axes[1].set_xlabel("Time Step")
+    axes[1].set_ylabel("Hidden Unit")
     plt.colorbar(im, ax=axes[1])
 
     plt.tight_layout()
-    plt.savefig('gru_internals.png', dpi=300, bbox_inches='tight')
+    plt.savefig("gru_internals.png", dpi=300, bbox_inches="tight")
     plt.show()
 
 
 def main():
     """Main execution function."""
-    print("="*70)
+    print("=" * 70)
     print("GRU for Sequence Classification")
-    print("="*70)
+    print("=" * 70)
 
     # Generate data
     print("\n1. Generating synthetic sequence data...")
-    X, y = generate_synthetic_sequences(n_samples=1200, seq_length=50, n_features=10, n_classes=3)
-    X_train, X_temp, y_train, y_temp = train_test_split(X, y, test_size=0.3, random_state=42, stratify=y)
-    X_val, X_test, y_val, y_test = train_test_split(X_temp, y_temp, test_size=0.5, random_state=42, stratify=y_temp)
+    X, y = generate_synthetic_sequences(
+        n_samples=1200, seq_length=50, n_features=10, n_classes=3
+    )
+    X_train, X_temp, y_train, y_temp = train_test_split(
+        X, y, test_size=0.3, random_state=42, stratify=y
+    )
+    X_val, X_test, y_val, y_test = train_test_split(
+        X_temp, y_temp, test_size=0.5, random_state=42, stratify=y_temp
+    )
 
     print(f"Train: {len(X_train)}, Val: {len(X_val)}, Test: {len(X_test)}")
 
@@ -449,12 +487,12 @@ def main():
 
     # Visualize internals
     print("\n4. Visualizing GRU internals...")
-    model.load_state_dict(torch.load('best_gru_model.pth'))
+    model.load_state_dict(torch.load("best_gru_model.pth"))
     visualize_gru_internals(model, X_test[0], feature_idx=0)
 
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("GRU Training Complete!")
-    print("="*70)
+    print("=" * 70)
     print("\nGRU vs LSTM:")
     print("✓ Fewer parameters → faster training")
     print("✓ Simpler architecture → easier to tune")

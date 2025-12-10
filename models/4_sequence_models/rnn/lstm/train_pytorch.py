@@ -36,6 +36,7 @@ class LSTMClassifier(nn.Module):
     - LSTM layers
     - Fully connected output layer
     """
+
     def __init__(self, input_size, hidden_size, num_layers, num_classes, dropout=0.2):
         super(LSTMClassifier, self).__init__()
 
@@ -47,7 +48,7 @@ class LSTMClassifier(nn.Module):
             hidden_size=hidden_size,
             num_layers=num_layers,
             batch_first=True,
-            dropout=dropout if num_layers > 1 else 0
+            dropout=dropout if num_layers > 1 else 0,
         )
 
         self.fc = nn.Linear(hidden_size, num_classes)
@@ -80,6 +81,7 @@ class BiLSTMClassifier(nn.Module):
     Processes sequences in both forward and backward directions,
     capturing context from both past and future.
     """
+
     def __init__(self, input_size, hidden_size, num_layers, num_classes, dropout=0.2):
         super(BiLSTMClassifier, self).__init__()
 
@@ -92,7 +94,7 @@ class BiLSTMClassifier(nn.Module):
             num_layers=num_layers,
             batch_first=True,
             dropout=dropout if num_layers > 1 else 0,
-            bidirectional=True  # Bidirectional
+            bidirectional=True,  # Bidirectional
         )
 
         # *2 because bidirectional concatenates forward and backward
@@ -121,27 +123,32 @@ class StackedLSTM(nn.Module):
 
     Deeper networks can learn more complex patterns.
     """
+
     def __init__(self, input_size, hidden_sizes, num_classes, dropout=0.3):
         super(StackedLSTM, self).__init__()
 
         self.lstm_layers = nn.ModuleList()
 
         # First LSTM layer
-        self.lstm_layers.append(nn.LSTM(
-            input_size=input_size,
-            hidden_size=hidden_sizes[0],
-            num_layers=1,
-            batch_first=True
-        ))
+        self.lstm_layers.append(
+            nn.LSTM(
+                input_size=input_size,
+                hidden_size=hidden_sizes[0],
+                num_layers=1,
+                batch_first=True,
+            )
+        )
 
         # Additional LSTM layers
         for i in range(1, len(hidden_sizes)):
-            self.lstm_layers.append(nn.LSTM(
-                input_size=hidden_sizes[i-1],
-                hidden_size=hidden_sizes[i],
-                num_layers=1,
-                batch_first=True
-            ))
+            self.lstm_layers.append(
+                nn.LSTM(
+                    input_size=hidden_sizes[i - 1],
+                    hidden_size=hidden_sizes[i],
+                    num_layers=1,
+                    batch_first=True,
+                )
+            )
 
         self.dropout = nn.Dropout(dropout)
         self.fc = nn.Linear(hidden_sizes[-1], num_classes)
@@ -159,7 +166,9 @@ class StackedLSTM(nn.Module):
         return out
 
 
-def generate_synthetic_sequences(n_samples=1000, seq_length=50, n_features=10, n_classes=3):
+def generate_synthetic_sequences(
+    n_samples=1000, seq_length=50, n_features=10, n_classes=3
+):
     """
     Generate synthetic sequence data for classification.
 
@@ -168,7 +177,9 @@ def generate_synthetic_sequences(n_samples=1000, seq_length=50, n_features=10, n
     - Class 1: Decreasing trend
     - Class 2: Oscillating pattern
     """
-    print(f"Generating {n_samples} sequences (length={seq_length}, features={n_features})...")
+    print(
+        f"Generating {n_samples} sequences (length={seq_length}, features={n_features})..."
+    )
 
     X = []
     y = []
@@ -181,19 +192,22 @@ def generate_synthetic_sequences(n_samples=1000, seq_length=50, n_features=10, n
         if label == 0:
             # Increasing trend
             base = np.linspace(0, 1, seq_length)
-            sequence = np.column_stack([base + np.random.randn(seq_length) * 0.1
-                                       for _ in range(n_features)])
+            sequence = np.column_stack(
+                [base + np.random.randn(seq_length) * 0.1 for _ in range(n_features)]
+            )
         elif label == 1:
             # Decreasing trend
             base = np.linspace(1, 0, seq_length)
-            sequence = np.column_stack([base + np.random.randn(seq_length) * 0.1
-                                       for _ in range(n_features)])
+            sequence = np.column_stack(
+                [base + np.random.randn(seq_length) * 0.1 for _ in range(n_features)]
+            )
         else:
             # Oscillating
-            t = np.linspace(0, 4*np.pi, seq_length)
+            t = np.linspace(0, 4 * np.pi, seq_length)
             base = np.sin(t)
-            sequence = np.column_stack([base + np.random.randn(seq_length) * 0.1
-                                       for _ in range(n_features)])
+            sequence = np.column_stack(
+                [base + np.random.randn(seq_length) * 0.1 for _ in range(n_features)]
+            )
 
         X.append(sequence)
         y.append(label)
@@ -206,6 +220,7 @@ def generate_synthetic_sequences(n_samples=1000, seq_length=50, n_features=10, n
 
 class SequenceDataset(Dataset):
     """PyTorch Dataset for sequences."""
+
     def __init__(self, sequences, labels):
         self.sequences = torch.FloatTensor(sequences)
         self.labels = torch.LongTensor(labels)
@@ -219,15 +234,17 @@ class SequenceDataset(Dataset):
 
 def train_lstm(model, train_loader, val_loader, epochs=50, lr=0.001):
     """Train LSTM model."""
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"\nTraining on {device}")
 
     model = model.to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=lr)
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=5, factor=0.5)
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, mode="min", patience=5, factor=0.5
+    )
 
-    history = {'train_loss': [], 'val_loss': [], 'train_acc': [], 'val_acc': []}
+    history = {"train_loss": [], "val_loss": [], "train_acc": [], "val_acc": []}
     best_val_acc = 0
 
     for epoch in range(epochs):
@@ -255,7 +272,7 @@ def train_lstm(model, train_loader, val_loader, epochs=50, lr=0.001):
             train_correct += predicted.eq(labels).sum().item()
 
         train_loss /= len(train_loader)
-        train_acc = 100. * train_correct / train_total
+        train_acc = 100.0 * train_correct / train_total
 
         # Validation
         model.eval()
@@ -275,28 +292,32 @@ def train_lstm(model, train_loader, val_loader, epochs=50, lr=0.001):
                 val_correct += predicted.eq(labels).sum().item()
 
         val_loss /= len(val_loader)
-        val_acc = 100. * val_correct / val_total
+        val_acc = 100.0 * val_correct / val_total
 
         scheduler.step(val_loss)
 
-        history['train_loss'].append(train_loss)
-        history['val_loss'].append(val_loss)
-        history['train_acc'].append(train_acc)
-        history['val_acc'].append(val_acc)
+        history["train_loss"].append(train_loss)
+        history["val_loss"].append(val_loss)
+        history["train_acc"].append(train_acc)
+        history["val_acc"].append(val_acc)
 
         if val_acc > best_val_acc:
             best_val_acc = val_acc
-            torch.save(model.state_dict(), 'best_lstm_model.pth')
+            torch.save(model.state_dict(), "best_lstm_model.pth")
 
         if (epoch + 1) % 10 == 0:
-            print(f"Epoch [{epoch+1}/{epochs}] ({time.time()-start_time:.2f}s) - "
-                  f"Train Loss: {train_loss:.4f}, Acc: {train_acc:.2f}% | "
-                  f"Val Loss: {val_loss:.4f}, Acc: {val_acc:.2f}%")
+            print(
+                f"Epoch [{epoch+1}/{epochs}] ({time.time()-start_time:.2f}s) - "
+                f"Train Loss: {train_loss:.4f}, Acc: {train_acc:.2f}% | "
+                f"Val Loss: {val_loss:.4f}, Acc: {val_acc:.2f}%"
+            )
 
     return history
 
 
-def evaluate_model(model, test_loader, class_names=['Increasing', 'Decreasing', 'Oscillating']):
+def evaluate_model(
+    model, test_loader, class_names=["Increasing", "Decreasing", "Oscillating"]
+):
     """Evaluate model and show detailed metrics."""
     device = next(model.parameters()).device
     model.eval()
@@ -320,21 +341,27 @@ def evaluate_model(model, test_loader, class_names=['Increasing', 'Decreasing', 
     # Confusion matrix
     cm = confusion_matrix(all_labels, all_preds)
     plt.figure(figsize=(8, 6))
-    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
-                xticklabels=class_names, yticklabels=class_names)
-    plt.title('Confusion Matrix')
-    plt.ylabel('True Label')
-    plt.xlabel('Predicted Label')
+    sns.heatmap(
+        cm,
+        annot=True,
+        fmt="d",
+        cmap="Blues",
+        xticklabels=class_names,
+        yticklabels=class_names,
+    )
+    plt.title("Confusion Matrix")
+    plt.ylabel("True Label")
+    plt.xlabel("Predicted Label")
     plt.tight_layout()
-    plt.savefig('lstm_confusion_matrix.png', dpi=300, bbox_inches='tight')
+    plt.savefig("lstm_confusion_matrix.png", dpi=300, bbox_inches="tight")
     plt.show()
 
 
 def compare_architectures(X_train, y_train, X_val, y_val, input_size, num_classes):
     """Compare different LSTM architectures."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("Comparing LSTM Architectures")
-    print("="*70)
+    print("=" * 70)
 
     train_dataset = SequenceDataset(X_train, y_train)
     val_dataset = SequenceDataset(X_val, y_val)
@@ -342,10 +369,10 @@ def compare_architectures(X_train, y_train, X_val, y_val, input_size, num_classe
     val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
 
     architectures = {
-        'LSTM-1Layer': LSTMClassifier(input_size, 64, 1, num_classes, dropout=0.2),
-        'LSTM-2Layers': LSTMClassifier(input_size, 64, 2, num_classes, dropout=0.2),
-        'BiLSTM': BiLSTMClassifier(input_size, 64, 1, num_classes, dropout=0.2),
-        'StackedLSTM': StackedLSTM(input_size, [128, 64, 32], num_classes, dropout=0.3)
+        "LSTM-1Layer": LSTMClassifier(input_size, 64, 1, num_classes, dropout=0.2),
+        "LSTM-2Layers": LSTMClassifier(input_size, 64, 2, num_classes, dropout=0.2),
+        "BiLSTM": BiLSTMClassifier(input_size, 64, 1, num_classes, dropout=0.2),
+        "StackedLSTM": StackedLSTM(input_size, [128, 64, 32], num_classes, dropout=0.3),
     }
 
     results = {}
@@ -362,29 +389,31 @@ def compare_architectures(X_train, y_train, X_val, y_val, input_size, num_classe
     fig, axes = plt.subplots(1, 2, figsize=(14, 4))
 
     for name, history in results.items():
-        axes[0].plot(history['train_loss'], label=f'{name} Train', alpha=0.7)
-        axes[0].plot(history['val_loss'], '--', label=f'{name} Val', alpha=0.7)
-        axes[1].plot(history['val_acc'], label=name, linewidth=2)
+        axes[0].plot(history["train_loss"], label=f"{name} Train", alpha=0.7)
+        axes[0].plot(history["val_loss"], "--", label=f"{name} Val", alpha=0.7)
+        axes[1].plot(history["val_acc"], label=name, linewidth=2)
 
-    axes[0].set_xlabel('Epoch')
-    axes[0].set_ylabel('Loss')
-    axes[0].set_title('Training/Validation Loss')
+    axes[0].set_xlabel("Epoch")
+    axes[0].set_ylabel("Loss")
+    axes[0].set_title("Training/Validation Loss")
     axes[0].legend()
     axes[0].grid(True, alpha=0.3)
 
-    axes[1].set_xlabel('Epoch')
-    axes[1].set_ylabel('Accuracy (%)')
-    axes[1].set_title('Validation Accuracy Comparison')
+    axes[1].set_xlabel("Epoch")
+    axes[1].set_ylabel("Accuracy (%)")
+    axes[1].set_title("Validation Accuracy Comparison")
     axes[1].legend()
     axes[1].grid(True, alpha=0.3)
 
     plt.tight_layout()
-    plt.savefig('lstm_architectures_comparison.png', dpi=300, bbox_inches='tight')
+    plt.savefig("lstm_architectures_comparison.png", dpi=300, bbox_inches="tight")
     plt.show()
 
     # Best model summary
-    best_arch = max(results.items(), key=lambda x: max(x[1]['val_acc']))
-    print(f"\nBest Architecture: {best_arch[0]} (Val Acc: {max(best_arch[1]['val_acc']):.2f}%)")
+    best_arch = max(results.items(), key=lambda x: max(x[1]["val_acc"]))
+    print(
+        f"\nBest Architecture: {best_arch[0]} (Val Acc: {max(best_arch[1]['val_acc']):.2f}%)"
+    )
 
 
 def visualize_predictions(model, sequences, labels, class_names, n_samples=6):
@@ -397,41 +426,49 @@ def visualize_predictions(model, sequences, labels, class_names, n_samples=6):
 
     with torch.no_grad():
         for i in range(min(n_samples, len(sequences))):
-            seq_tensor = torch.FloatTensor(sequences[i:i+1]).to(device)
+            seq_tensor = torch.FloatTensor(sequences[i : i + 1]).to(device)
             output = model(seq_tensor)
             _, predicted = output.max(1)
 
             # Plot first feature of sequence
             axes[i].plot(sequences[i, :, 0], linewidth=2)
-            axes[i].set_title(f'True: {class_names[labels[i]]}\n'
-                            f'Pred: {class_names[predicted.item()]}',
-                            color='green' if predicted.item() == labels[i] else 'red')
-            axes[i].set_xlabel('Time Step')
-            axes[i].set_ylabel('Value (Feature 0)')
+            axes[i].set_title(
+                f"True: {class_names[labels[i]]}\n"
+                f"Pred: {class_names[predicted.item()]}",
+                color="green" if predicted.item() == labels[i] else "red",
+            )
+            axes[i].set_xlabel("Time Step")
+            axes[i].set_ylabel("Value (Feature 0)")
             axes[i].grid(True, alpha=0.3)
 
     plt.tight_layout()
-    plt.savefig('lstm_sequence_predictions.png', dpi=300, bbox_inches='tight')
+    plt.savefig("lstm_sequence_predictions.png", dpi=300, bbox_inches="tight")
     plt.show()
 
 
 def main():
     """Main execution function."""
-    print("="*70)
+    print("=" * 70)
     print("LSTM for Sequence Classification")
-    print("="*70)
+    print("=" * 70)
 
     # Generate data
     print("\n1. Generating synthetic sequence data...")
-    X, y = generate_synthetic_sequences(n_samples=1200, seq_length=50, n_features=10, n_classes=3)
-    X_train, X_temp, y_train, y_temp = train_test_split(X, y, test_size=0.3, random_state=42, stratify=y)
-    X_val, X_test, y_val, y_test = train_test_split(X_temp, y_temp, test_size=0.5, random_state=42, stratify=y_temp)
+    X, y = generate_synthetic_sequences(
+        n_samples=1200, seq_length=50, n_features=10, n_classes=3
+    )
+    X_train, X_temp, y_train, y_temp = train_test_split(
+        X, y, test_size=0.3, random_state=42, stratify=y
+    )
+    X_val, X_test, y_val, y_test = train_test_split(
+        X_temp, y_temp, test_size=0.5, random_state=42, stratify=y_temp
+    )
 
     print(f"Train: {len(X_train)}, Val: {len(X_val)}, Test: {len(X_test)}")
 
     input_size = X.shape[2]
     num_classes = len(np.unique(y))
-    class_names = ['Increasing', 'Decreasing', 'Oscillating']
+    class_names = ["Increasing", "Decreasing", "Oscillating"]
 
     # Compare architectures
     print("\n2. Comparing LSTM architectures...")
@@ -452,16 +489,16 @@ def main():
 
     # Evaluate
     print("\n4. Evaluating on test set...")
-    model.load_state_dict(torch.load('best_lstm_model.pth'))
+    model.load_state_dict(torch.load("best_lstm_model.pth"))
     evaluate_model(model, test_loader, class_names)
 
     # Visualize
     print("\n5. Visualizing predictions...")
     visualize_predictions(model, X_test, y_test, class_names, n_samples=6)
 
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("LSTM Training Complete!")
-    print("="*70)
+    print("=" * 70)
     print("\nKey Features:")
     print("✓ Cell state maintains long-term dependencies")
     print("✓ Gates control information flow")

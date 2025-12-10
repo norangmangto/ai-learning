@@ -9,6 +9,7 @@ from datasets import load_dataset
 import numpy as np
 from rouge_score import rouge_scorer
 
+
 def train():
     print("Training Extractive Text Summarization (SciBERT + TF-IDF)...")
 
@@ -31,9 +32,9 @@ def train():
         """
         Extract top sentences based on TF-IDF importance
         """
-        sentences = text.split('.')
+        sentences = text.split(".")
         if len(sentences) <= num_sentences:
-            return '.'.join(sentences)
+            return ".".join(sentences)
 
         # TF-IDF scoring
         vectorizer = TfidfVectorizer()
@@ -47,38 +48,40 @@ def train():
         # Select top sentences maintaining order
         top_indices = np.argsort(sentence_scores)[-num_sentences:]
         top_indices = sorted(top_indices)
-        summary = '.'.join([sentences[i] for i in top_indices])
+        summary = ".".join([sentences[i] for i in top_indices])
 
         return summary
 
     # 4. Generate Samples
     print("\n=== Generating Summaries ===")
-    scorer = rouge_scorer.RougeScorer(['rouge1', 'rougeL'], use_stemmer=True)
+    scorer = rouge_scorer.RougeScorer(["rouge1", "rougeL"], use_stemmer=True)
 
-    rouge_scores = {'rouge1': [], 'rougeL': []}
+    rouge_scores = {"rouge1": [], "rougeL": []}
 
     for i in range(min(5, len(test_dataset))):
-        article = test_dataset[i]['article']
-        reference_summary = test_dataset[i]['highlights']
+        article = test_dataset[i]["article"]
+        reference_summary = test_dataset[i]["highlights"]
 
         # Generate summary
         predicted_summary = extractive_summarize(article, num_sentences=3)
 
         # Compute ROUGE
         scores = scorer.score(reference_summary, predicted_summary)
-        rouge_scores['rouge1'].append(scores['rouge1'].fmeasure)
-        rouge_scores['rougeL'].append(scores['rougeL'].fmeasure)
+        rouge_scores["rouge1"].append(scores["rouge1"].fmeasure)
+        rouge_scores["rougeL"].append(scores["rougeL"].fmeasure)
 
         print(f"\n--- Sample {i+1} ---")
         print(f"Article (first 200 chars): {article[:200]}...")
         print(f"Reference: {reference_summary[:100]}...")
         print(f"Predicted: {predicted_summary[:100]}...")
-        print(f"ROUGE-1: {scores['rouge1'].fmeasure:.4f}, ROUGE-L: {scores['rougeL'].fmeasure:.4f}")
+        print(
+            f"ROUGE-1: {scores['rouge1'].fmeasure:.4f}, ROUGE-L: {scores['rougeL'].fmeasure:.4f}"
+        )
 
     # 5. QA Validation
     print("\n=== QA Validation ===")
-    avg_rouge1 = np.mean(rouge_scores['rouge1'])
-    avg_rougeL = np.mean(rouge_scores['rougeL'])
+    avg_rouge1 = np.mean(rouge_scores["rouge1"])
+    avg_rougeL = np.mean(rouge_scores["rougeL"])
 
     print(f"Average ROUGE-1: {avg_rouge1:.4f}")
     print(f"Average ROUGE-L: {avg_rougeL:.4f}")

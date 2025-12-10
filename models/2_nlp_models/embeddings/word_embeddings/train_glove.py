@@ -30,8 +30,16 @@ class GloVe:
     Objective: Minimize J = Σ f(X_ij) * (w_i^T * w_j + b_i + b_j - log(X_ij))^2
     where X_ij is the co-occurrence count of words i and j.
     """
-    def __init__(self, vector_size=100, window_size=5, x_max=100, alpha=0.75,
-                 learning_rate=0.05, epochs=50):
+
+    def __init__(
+        self,
+        vector_size=100,
+        window_size=5,
+        x_max=100,
+        alpha=0.75,
+        learning_rate=0.05,
+        epochs=50,
+    ):
         self.vector_size = vector_size
         self.window_size = window_size
         self.x_max = x_max
@@ -80,8 +88,10 @@ class GloVe:
                 word_id = self.word_to_id[word]
 
                 # Look at context words within window
-                for j in range(max(0, i - self.window_size),
-                             min(len(words), i + self.window_size + 1)):
+                for j in range(
+                    max(0, i - self.window_size),
+                    min(len(words), i + self.window_size + 1),
+                ):
                     if i != j:
                         context_word = words[j]
                         context_id = self.word_to_id[context_word]
@@ -103,9 +113,9 @@ class GloVe:
 
     def train(self, corpus, min_count=5):
         """Train GloVe embeddings."""
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("Training GloVe Embeddings")
-        print("="*70)
+        print("=" * 70)
 
         # Build co-occurrence matrix
         cooccurrence = self.build_cooccurrence_matrix(corpus, min_count)
@@ -114,8 +124,12 @@ class GloVe:
         # Initialize parameters
         np.random.seed(42)
         scale = 1.0 / np.sqrt(self.vector_size)
-        self.word_vectors = np.random.uniform(-scale, scale, (vocab_size, self.vector_size))
-        self.context_vectors = np.random.uniform(-scale, scale, (vocab_size, self.vector_size))
+        self.word_vectors = np.random.uniform(
+            -scale, scale, (vocab_size, self.vector_size)
+        )
+        self.context_vectors = np.random.uniform(
+            -scale, scale, (vocab_size, self.vector_size)
+        )
         self.word_biases = np.random.uniform(-scale, scale, vocab_size)
         self.context_biases = np.random.uniform(-scale, scale, vocab_size)
 
@@ -138,14 +152,18 @@ class GloVe:
 
             for i, j, x_ij in cooccurrence_list:
                 # Forward pass
-                diff = (np.dot(self.word_vectors[i], self.context_vectors[j]) +
-                       self.word_biases[i] + self.context_biases[j] - np.log(x_ij))
+                diff = (
+                    np.dot(self.word_vectors[i], self.context_vectors[j])
+                    + self.word_biases[i]
+                    + self.context_biases[j]
+                    - np.log(x_ij)
+                )
 
                 # Weight
                 weight = self.weighting_function(x_ij)
 
                 # Loss
-                loss = weight * (diff ** 2)
+                loss = weight * (diff**2)
                 total_loss += loss
 
                 # Gradients
@@ -167,8 +185,10 @@ class GloVe:
             losses.append(avg_loss)
 
             if (epoch + 1) % 10 == 0:
-                print(f"Epoch {epoch+1}/{self.epochs} ({time.time()-epoch_start:.2f}s) - "
-                      f"Loss: {avg_loss:.4f}")
+                print(
+                    f"Epoch {epoch+1}/{self.epochs} ({time.time()-epoch_start:.2f}s) - "
+                    f"Loss: {avg_loss:.4f}"
+                )
 
         # Combine word and context vectors (common practice)
         self.embeddings = self.word_vectors + self.context_vectors
@@ -203,7 +223,9 @@ class GloVe:
         for other_word, idx in self.word_to_id.items():
             if other_word != word:
                 other_vec = self.embeddings[idx]
-                sim = np.dot(vec, other_vec) / (np.linalg.norm(vec) * np.linalg.norm(other_vec))
+                sim = np.dot(vec, other_vec) / (
+                    np.linalg.norm(vec) * np.linalg.norm(other_vec)
+                )
                 similarities.append((other_word, sim))
 
         # Sort and return top n
@@ -227,7 +249,9 @@ class GloVe:
         for word, idx in self.word_to_id.items():
             if word not in [word_a, word_b, word_c]:
                 vec = self.embeddings[idx]
-                sim = np.dot(target, vec) / (np.linalg.norm(target) * np.linalg.norm(vec))
+                sim = np.dot(target, vec) / (
+                    np.linalg.norm(target) * np.linalg.norm(vec)
+                )
                 similarities.append((word, sim))
 
         similarities.sort(key=lambda x: x[1], reverse=True)
@@ -235,23 +259,26 @@ class GloVe:
 
     def save(self, filepath):
         """Save model to file."""
-        with open(filepath, 'wb') as f:
-            pickle.dump({
-                'embeddings': self.embeddings,
-                'word_to_id': self.word_to_id,
-                'id_to_word': self.id_to_word,
-                'vector_size': self.vector_size
-            }, f)
+        with open(filepath, "wb") as f:
+            pickle.dump(
+                {
+                    "embeddings": self.embeddings,
+                    "word_to_id": self.word_to_id,
+                    "id_to_word": self.id_to_word,
+                    "vector_size": self.vector_size,
+                },
+                f,
+            )
         print(f"Model saved to {filepath}")
 
     def load(self, filepath):
         """Load model from file."""
-        with open(filepath, 'rb') as f:
+        with open(filepath, "rb") as f:
             data = pickle.load(f)
-            self.embeddings = data['embeddings']
-            self.word_to_id = data['word_to_id']
-            self.id_to_word = data['id_to_word']
-            self.vector_size = data['vector_size']
+            self.embeddings = data["embeddings"]
+            self.word_to_id = data["word_to_id"]
+            self.id_to_word = data["id_to_word"]
+            self.vector_size = data["vector_size"]
         print(f"Model loaded from {filepath}")
 
 
@@ -262,18 +289,78 @@ def generate_sample_corpus(n_documents=2000):
     np.random.seed(42)
 
     topics = {
-        'technology': ['computer', 'software', 'algorithm', 'data', 'network', 'programming',
-                      'artificial', 'intelligence', 'machine', 'learning', 'neural', 'system',
-                      'digital', 'technology', 'innovation', 'developer'],
-        'nature': ['tree', 'forest', 'mountain', 'river', 'ocean', 'animal', 'bird',
-                  'flower', 'plant', 'weather', 'climate', 'environment', 'natural',
-                  'wildlife', 'ecosystem', 'habitat'],
-        'food': ['cook', 'recipe', 'ingredient', 'restaurant', 'meal', 'breakfast',
-                'dinner', 'lunch', 'delicious', 'flavor', 'taste', 'kitchen',
-                'chef', 'cuisine', 'dish', 'dessert'],
-        'sports': ['game', 'play', 'team', 'player', 'score', 'win', 'competition',
-                  'tournament', 'champion', 'athlete', 'training', 'exercise',
-                  'match', 'victory', 'sport', 'fitness'],
+        "technology": [
+            "computer",
+            "software",
+            "algorithm",
+            "data",
+            "network",
+            "programming",
+            "artificial",
+            "intelligence",
+            "machine",
+            "learning",
+            "neural",
+            "system",
+            "digital",
+            "technology",
+            "innovation",
+            "developer",
+        ],
+        "nature": [
+            "tree",
+            "forest",
+            "mountain",
+            "river",
+            "ocean",
+            "animal",
+            "bird",
+            "flower",
+            "plant",
+            "weather",
+            "climate",
+            "environment",
+            "natural",
+            "wildlife",
+            "ecosystem",
+            "habitat",
+        ],
+        "food": [
+            "cook",
+            "recipe",
+            "ingredient",
+            "restaurant",
+            "meal",
+            "breakfast",
+            "dinner",
+            "lunch",
+            "delicious",
+            "flavor",
+            "taste",
+            "kitchen",
+            "chef",
+            "cuisine",
+            "dish",
+            "dessert",
+        ],
+        "sports": [
+            "game",
+            "play",
+            "team",
+            "player",
+            "score",
+            "win",
+            "competition",
+            "tournament",
+            "champion",
+            "athlete",
+            "training",
+            "exercise",
+            "match",
+            "victory",
+            "sport",
+            "fitness",
+        ],
     }
 
     documents = []
@@ -288,8 +375,26 @@ def generate_sample_corpus(n_documents=2000):
             if np.random.rand() < 0.7:
                 doc.append(np.random.choice(topic_words))
             else:
-                common = ['the', 'a', 'is', 'are', 'and', 'or', 'but', 'in', 'on', 'at',
-                         'to', 'for', 'with', 'by', 'from', 'about', 'as', 'into']
+                common = [
+                    "the",
+                    "a",
+                    "is",
+                    "are",
+                    "and",
+                    "or",
+                    "but",
+                    "in",
+                    "on",
+                    "at",
+                    "to",
+                    "for",
+                    "with",
+                    "by",
+                    "from",
+                    "about",
+                    "as",
+                    "into",
+                ]
                 doc.append(np.random.choice(common))
 
         documents.append(doc)
@@ -328,29 +433,35 @@ def visualize_embeddings(glove_model, words=None, n_words=40):
         color_idx = hash(word[0]) % 20
 
         plt.scatter(x, y, c=[colors[color_idx]], s=100, alpha=0.6)
-        plt.annotate(word, (x, y), xytext=(5, 5), textcoords='offset points',
-                    fontsize=10, alpha=0.9)
+        plt.annotate(
+            word,
+            (x, y),
+            xytext=(5, 5),
+            textcoords="offset points",
+            fontsize=10,
+            alpha=0.9,
+        )
 
-    plt.title('GloVe Embeddings Visualization (t-SNE)', fontsize=14)
-    plt.xlabel('t-SNE Component 1')
-    plt.ylabel('t-SNE Component 2')
+    plt.title("GloVe Embeddings Visualization (t-SNE)", fontsize=14)
+    plt.xlabel("t-SNE Component 1")
+    plt.ylabel("t-SNE Component 2")
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
-    plt.savefig('glove_embeddings_tsne.png', dpi=300, bbox_inches='tight')
+    plt.savefig("glove_embeddings_tsne.png", dpi=300, bbox_inches="tight")
     plt.show()
 
 
 def compare_hyperparameters(corpus):
     """Compare different GloVe hyperparameters."""
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("Hyperparameter Comparison")
-    print("="*70)
+    print("=" * 70)
 
     configs = [
-        {'vector_size': 50, 'window_size': 5, 'x_max': 100},
-        {'vector_size': 100, 'window_size': 5, 'x_max': 100},
-        {'vector_size': 100, 'window_size': 3, 'x_max': 100},
-        {'vector_size': 100, 'window_size': 10, 'x_max': 100},
+        {"vector_size": 50, "window_size": 5, "x_max": 100},
+        {"vector_size": 100, "window_size": 5, "x_max": 100},
+        {"vector_size": 100, "window_size": 3, "x_max": 100},
+        {"vector_size": 100, "window_size": 10, "x_max": 100},
     ]
 
     results = []
@@ -358,58 +469,63 @@ def compare_hyperparameters(corpus):
     for config in configs:
         print(f"\nTesting: {config}")
         model = GloVe(
-            vector_size=config['vector_size'],
-            window_size=config['window_size'],
-            x_max=config['x_max'],
+            vector_size=config["vector_size"],
+            window_size=config["window_size"],
+            x_max=config["x_max"],
             learning_rate=0.05,
-            epochs=20
+            epochs=20,
         )
 
         start_time = time.time()
         losses = model.train(corpus, min_count=5)
         train_time = time.time() - start_time
 
-        results.append({
-            'config': config,
-            'losses': losses,
-            'time': train_time,
-            'vocab_size': len(model.word_to_id)
-        })
+        results.append(
+            {
+                "config": config,
+                "losses": losses,
+                "time": train_time,
+                "vocab_size": len(model.word_to_id),
+            }
+        )
 
     # Plot comparison
     fig, axes = plt.subplots(1, 2, figsize=(14, 5))
 
     # Training loss
     for i, result in enumerate(results):
-        config_str = f"Vec={result['config']['vector_size']}, Win={result['config']['window_size']}"
-        axes[0].plot(result['losses'], label=config_str, linewidth=2)
+        config_str = f"Vec={
+    result['config']['vector_size']}, Win={
+        result['config']['window_size']}"
+        axes[0].plot(result["losses"], label=config_str, linewidth=2)
 
-    axes[0].set_xlabel('Epoch')
-    axes[0].set_ylabel('Loss')
-    axes[0].set_title('Training Loss Curves')
+    axes[0].set_xlabel("Epoch")
+    axes[0].set_ylabel("Loss")
+    axes[0].set_title("Training Loss Curves")
     axes[0].legend()
     axes[0].grid(True, alpha=0.3)
 
     # Training time
-    config_labels = [f"V{r['config']['vector_size']}\nW{r['config']['window_size']}"
-                    for r in results]
-    times = [r['time'] for r in results]
+    config_labels = [
+        f"V{r['config']['vector_size']}\nW{r['config']['window_size']}" for r in results
+    ]
+    times = [r["time"] for r in results]
 
-    axes[1].bar(config_labels, times, color='steelblue', alpha=0.7)
-    axes[1].set_ylabel('Training Time (seconds)')
-    axes[1].set_title('Training Time Comparison')
-    axes[1].grid(True, alpha=0.3, axis='y')
+    axes[1].bar(config_labels, times, color="steelblue", alpha=0.7)
+    axes[1].set_ylabel("Training Time (seconds)")
+    axes[1].set_title("Training Time Comparison")
+    axes[1].grid(True, alpha=0.3, axis="y")
 
     plt.tight_layout()
-    plt.savefig('glove_hyperparameter_comparison.png', dpi=300, bbox_inches='tight')
+    plt.savefig("glove_hyperparameter_comparison.png", dpi=300, bbox_inches="tight")
     plt.show()
 
 
 def main():
     """Main execution function."""
-    print("="*70)
+    print("=" * 70)
     print("GloVe (Global Vectors) Word Embeddings")
-    print("="*70)
+    print("=" * 70)
 
     # Generate corpus
     print("\n1. Generating corpus...")
@@ -428,33 +544,33 @@ def main():
         x_max=100,
         alpha=0.75,
         learning_rate=0.05,
-        epochs=50
+        epochs=50,
     )
     losses = glove.train(corpus, min_count=5)
 
     # Plot training loss
     plt.figure(figsize=(10, 5))
-    plt.plot(losses, linewidth=2, color='steelblue')
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
-    plt.title('GloVe Training Loss')
+    plt.plot(losses, linewidth=2, color="steelblue")
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.title("GloVe Training Loss")
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
-    plt.savefig('glove_training_loss.png', dpi=300, bbox_inches='tight')
+    plt.savefig("glove_training_loss.png", dpi=300, bbox_inches="tight")
     plt.show()
 
     # Test word similarity
     print("\n3. Testing word similarity...")
     test_pairs = [
-        ('computer', 'software'),
-        ('algorithm', 'data'),
-        ('tree', 'forest'),
-        ('cook', 'recipe'),
-        ('game', 'play')
+        ("computer", "software"),
+        ("algorithm", "data"),
+        ("tree", "forest"),
+        ("cook", "recipe"),
+        ("game", "play"),
     ]
 
     print("\nWord Similarities:")
-    print("="*60)
+    print("=" * 60)
     for word1, word2 in test_pairs:
         sim = glove.similarity(word1, word2)
         if sim is not None:
@@ -462,7 +578,7 @@ def main():
 
     # Find similar words
     print("\n4. Finding similar words...")
-    test_words = ['computer', 'tree', 'cook', 'game']
+    test_words = ["computer", "tree", "cook", "game"]
     for word in test_words:
         if word in glove.word_to_id:
             print(f"\nMost similar to '{word}':")
@@ -472,9 +588,9 @@ def main():
 
     # Word analogies
     print("\n5. Testing word analogies...")
-    if all(w in glove.word_to_id for w in ['computer', 'software', 'tree']):
+    if all(w in glove.word_to_id for w in ["computer", "software", "tree"]):
         print("\nAnalogy: computer - software + tree")
-        results = glove.analogy('computer', 'software', 'tree', topn=3)
+        results = glove.analogy("computer", "software", "tree", topn=3)
         for word, score in results:
             print(f"  {word:20} : {score:.4f}")
 
@@ -488,11 +604,11 @@ def main():
     compare_hyperparameters(corpus)
 
     # Save model
-    glove.save('glove_model.pkl')
+    glove.save("glove_model.pkl")
 
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("GloVe Training Complete!")
-    print("="*70)
+    print("=" * 70)
     print("\nKey Features:")
     print("✓ Uses global co-occurrence statistics")
     print("✓ Combines matrix factorization and local context")

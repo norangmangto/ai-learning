@@ -27,23 +27,25 @@ from tqdm import tqdm
 
 # Configuration
 CONFIG = {
-    'dataset': 'mnist',
-    'image_size': 28,
-    'channels': 1,
-    'batch_size': 128,
-    'epochs': 100,
-    'learning_rate': 1e-4,
-    'device': 'cuda' if torch.cuda.is_available() else 'cpu',
-    'num_workers': 4,
+    "dataset": "mnist",
+    "image_size": 28,
+    "channels": 1,
+    "batch_size": 128,
+    "epochs": 100,
+    "learning_rate": 1e-4,
+    "device": "cuda" if torch.cuda.is_available() else "cpu",
+    "num_workers": 4,
     # Diffusion parameters
-    'timesteps': 1000,  # Number of diffusion steps
-    'beta_start': 0.0001,
-    'beta_end': 0.02,
-    'output_dir': 'results/ddpm'
+    "timesteps": 1000,  # Number of diffusion steps
+    "beta_start": 0.0001,
+    "beta_end": 0.02,
+    "output_dir": "results/ddpm",
 }
+
 
 class LinearSchedule:
     """Linear noise schedule"""
+
     def __init__(self, timesteps, beta_start, beta_end):
         self.timesteps = timesteps
 
@@ -54,30 +56,36 @@ class LinearSchedule:
         alphas_cumprod = torch.cumprod(alphas, dim=0)
         alphas_cumprod_prev = torch.cat([torch.ones(1), alphas_cumprod[:-1]])
 
-        self.register_buffer('betas', betas)
-        self.register_buffer('alphas', alphas)
-        self.register_buffer('alphas_cumprod', alphas_cumprod)
-        self.register_buffer('alphas_cumprod_prev', alphas_cumprod_prev)
+        self.register_buffer("betas", betas)
+        self.register_buffer("alphas", alphas)
+        self.register_buffer("alphas_cumprod", alphas_cumprod)
+        self.register_buffer("alphas_cumprod_prev", alphas_cumprod_prev)
 
         # Coefficients
-        self.register_buffer('sqrt_alphas_cumprod', torch.sqrt(alphas_cumprod))
-        self.register_buffer('sqrt_one_minus_alphas_cumprod', torch.sqrt(1.0 - alphas_cumprod))
-        self.register_buffer('sqrt_recip_alphas_cumprod', torch.sqrt(1.0 / alphas_cumprod))
-        self.register_buffer('sqrt_recip_alphas_cumprod_m_one', torch.sqrt(1.0 / alphas_cumprod - 1.0))
+        self.register_buffer("sqrt_alphas_cumprod", torch.sqrt(alphas_cumprod))
+        self.register_buffer(
+            "sqrt_one_minus_alphas_cumprod", torch.sqrt(1.0 - alphas_cumprod)
+        )
+        self.register_buffer(
+            "sqrt_recip_alphas_cumprod", torch.sqrt(1.0 / alphas_cumprod)
+        )
+        self.register_buffer(
+            "sqrt_recip_alphas_cumprod_m_one", torch.sqrt(1.0 / alphas_cumprod - 1.0)
+        )
 
     def register_buffer(self, name, tensor):
         setattr(self, name, tensor.float())
 
+
 class SimpleUNet(nn.Module):
     """Simple U-Net for noise prediction"""
+
     def __init__(self, channels=1, time_dim=128):
         super(SimpleUNet, self).__init__()
 
         # Time embedding
         self.time_mlp = nn.Sequential(
-            nn.Linear(1, time_dim),
-            nn.SiLU(),
-            nn.Linear(time_dim, time_dim)
+            nn.Linear(1, time_dim), nn.SiLU(), nn.Linear(time_dim, time_dim)
         )
 
         # Encoder
@@ -121,8 +129,10 @@ class SimpleUNet(nn.Module):
 
         return x
 
+
 class DDPM:
     """Denoising Diffusion Probabilistic Model"""
+
     def __init__(self, model, schedule, device):
         self.model = model
         self.schedule = schedule
@@ -171,14 +181,18 @@ class DDPM:
 
         # Reshape
         betas_t = betas[t].view(-1, 1, 1, 1)
-        sqrt_one_minus_alpha_cumprod_t = self.schedule.sqrt_one_minus_alphas_cumprod[t].view(-1, 1, 1, 1)
+        sqrt_one_minus_alpha_cumprod_t = self.schedule.sqrt_one_minus_alphas_cumprod[
+            t
+        ].view(-1, 1, 1, 1)
         sqrt_recip_alphas_t = torch.sqrt(1.0 / alphas[t]).view(-1, 1, 1, 1)
 
         # Predict noise
         noise_pred = self.model(x_t, t)
 
         # Mean
-        model_mean = sqrt_recip_alphas_t * (x_t - betas_t * noise_pred / sqrt_one_minus_alpha_cumprod_t)
+        model_mean = sqrt_recip_alphas_t * (
+            x_t - betas_t * noise_pred / sqrt_one_minus_alpha_cumprod_t
+        )
 
         # Variance
         posterior_variance_t = (
@@ -204,39 +218,43 @@ class DDPM:
         x = torch.randn(batch_size, *shape).to(device)
 
         # Reverse diffusion
-        for t in tqdm(reversed(range(self.schedule.timesteps)), total=self.schedule.timesteps, desc="Sampling"):
+        for t in tqdm(
+            reversed(range(self.schedule.timesteps)),
+            total=self.schedule.timesteps,
+            desc="Sampling",
+        ):
             t_batch = torch.full((batch_size,), t, dtype=torch.long).to(device)
             x = self.p_sample(x, t_batch)
 
         return x.clamp(-1, 1)
 
-def load_data(dataset_name='mnist', image_size=28):
+
+def load_data(dataset_name="mnist", image_size=28):
     """Load dataset"""
-    print("="*80)
+    print("=" * 80)
     print("LOADING DATASET")
-    print("="*80)
+    print("=" * 80)
 
-    transform = T.Compose([
-        T.Resize(image_size),
-        T.ToTensor(),
-        T.Normalize([0.5], [0.5])  # Normalize to [-1, 1]
-    ])
+    transform = T.Compose(
+        [
+            T.Resize(image_size),
+            T.ToTensor(),
+            T.Normalize([0.5], [0.5]),  # Normalize to [-1, 1]
+        ]
+    )
 
-    if dataset_name == 'mnist':
+    if dataset_name == "mnist":
         dataset = torchvision.datasets.MNIST(
-            root='data',
-            train=True,
-            download=True,
-            transform=transform
+            root="data", train=True, download=True, transform=transform
         )
     else:
         raise ValueError(f"Unknown dataset: {dataset_name}")
 
     dataloader = DataLoader(
         dataset,
-        batch_size=CONFIG['batch_size'],
+        batch_size=CONFIG["batch_size"],
         shuffle=True,
-        num_workers=CONFIG['num_workers']
+        num_workers=CONFIG["num_workers"],
     )
 
     print(f"\nDataset: {dataset_name}")
@@ -245,11 +263,12 @@ def load_data(dataset_name='mnist', image_size=28):
 
     return dataloader
 
+
 def train_ddpm(ddpm, dataloader, device):
     """Train DDPM"""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("TRAINING DDPM")
-    print("="*80)
+    print("=" * 80)
 
     print(f"\nConfiguration:")
     print(f"  Epochs: {CONFIG['epochs']}")
@@ -258,10 +277,10 @@ def train_ddpm(ddpm, dataloader, device):
     print(f"  Device: {device}")
 
     # Optimizer
-    optimizer = optim.Adam(ddpm.model.parameters(), lr=CONFIG['learning_rate'])
+    optimizer = optim.Adam(ddpm.model.parameters(), lr=CONFIG["learning_rate"])
 
     # Output directory
-    output_dir = Path(CONFIG['output_dir'])
+    output_dir = Path(CONFIG["output_dir"])
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # Training history
@@ -270,7 +289,7 @@ def train_ddpm(ddpm, dataloader, device):
     print("\nStarting training...")
     print("=" * 80)
 
-    for epoch in range(CONFIG['epochs']):
+    for epoch in range(CONFIG["epochs"]):
         epoch_start = time.time()
         total_loss = 0
 
@@ -294,53 +313,58 @@ def train_ddpm(ddpm, dataloader, device):
         avg_loss = total_loss / len(dataloader)
         losses.append(avg_loss)
 
-        print(f"Epoch [{epoch+1}/{CONFIG['epochs']}] "
-              f"Loss: {avg_loss:.4f} "
-              f"Time: {epoch_time:.2f}s")
+        print(
+            f"Epoch [{epoch+1}/{CONFIG['epochs']}] "
+            f"Loss: {avg_loss:.4f} "
+            f"Time: {epoch_time:.2f}s"
+        )
 
         # Sample periodically
         if (epoch + 1) % 10 == 0:
             ddpm.model.eval()
             with torch.no_grad():
-                samples = ddpm.sample(16, (CONFIG['channels'], CONFIG['image_size'], CONFIG['image_size']))
+                samples = ddpm.sample(
+                    16, (CONFIG["channels"], CONFIG["image_size"], CONFIG["image_size"])
+                )
 
             grid = make_grid(samples, nrow=4, normalize=True, value_range=(-1, 1))
-            save_image(grid, output_dir / f'epoch_{epoch+1:03d}.png')
+            save_image(grid, output_dir / f"epoch_{epoch+1:03d}.png")
 
             ddpm.model.train()
 
     # Plot losses
     plt.figure(figsize=(10, 5))
     plt.plot(losses)
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
-    plt.title('DDPM Training Loss')
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.title("DDPM Training Loss")
     plt.grid(True, alpha=0.3)
-    plt.savefig(output_dir / 'losses.png', dpi=150, bbox_inches='tight')
+    plt.savefig(output_dir / "losses.png", dpi=150, bbox_inches="tight")
     print(f"\nLoss plot saved to: {output_dir}/losses.png")
     plt.close()
 
     return ddpm
 
+
 def main():
-    print("="*80)
+    print("=" * 80)
     print("DENOISING DIFFUSION PROBABILISTIC MODELS (DDPM)")
-    print("="*80)
+    print("=" * 80)
 
     print(f"\nDevice: {CONFIG['device']}")
 
     # Load data
-    dataloader = load_data(CONFIG['dataset'], CONFIG['image_size'])
+    dataloader = load_data(CONFIG["dataset"], CONFIG["image_size"])
 
     # Create schedule
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("CREATING NOISE SCHEDULE")
-    print("="*80)
+    print("=" * 80)
 
     schedule = LinearSchedule(
-        timesteps=CONFIG['timesteps'],
-        beta_start=CONFIG['beta_start'],
-        beta_end=CONFIG['beta_end']
+        timesteps=CONFIG["timesteps"],
+        beta_start=CONFIG["beta_start"],
+        beta_end=CONFIG["beta_end"],
     )
 
     print(f"\nNoise schedule:")
@@ -349,41 +373,43 @@ def main():
     print(f"  Beta end: {CONFIG['beta_end']}")
 
     # Create model
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("CREATING NOISE PREDICTION NETWORK")
-    print("="*80)
+    print("=" * 80)
 
-    model = SimpleUNet(channels=CONFIG['channels']).to(CONFIG['device'])
+    model = SimpleUNet(channels=CONFIG["channels"]).to(CONFIG["device"])
 
     print(f"\nParameters: {sum(p.numel() for p in model.parameters())/1e6:.2f}M")
 
     # Create DDPM
-    ddpm = DDPM(model, schedule, CONFIG['device'])
+    ddpm = DDPM(model, schedule, CONFIG["device"])
 
     # Train
-    ddpm = train_ddpm(ddpm, dataloader, CONFIG['device'])
+    ddpm = train_ddpm(ddpm, dataloader, CONFIG["device"])
 
     # Generate final samples
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("GENERATING SAMPLES")
-    print("="*80)
+    print("=" * 80)
 
     ddpm.model.eval()
     with torch.no_grad():
-        samples = ddpm.sample(64, (CONFIG['channels'], CONFIG['image_size'], CONFIG['image_size']))
+        samples = ddpm.sample(
+            64, (CONFIG["channels"], CONFIG["image_size"], CONFIG["image_size"])
+        )
 
     grid = make_grid(samples, nrow=8, normalize=True, value_range=(-1, 1))
-    output_dir = Path(CONFIG['output_dir'])
-    save_image(grid, output_dir / 'final_samples.png')
+    output_dir = Path(CONFIG["output_dir"])
+    save_image(grid, output_dir / "final_samples.png")
     print(f"\nFinal samples saved to: {output_dir}/final_samples.png")
 
     # Save model
-    torch.save(model.state_dict(), output_dir / 'ddpm.pth')
+    torch.save(model.state_dict(), output_dir / "ddpm.pth")
     print(f"Model saved to: {output_dir}/ddpm.pth")
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("TRAINING COMPLETED")
-    print("="*80)
+    print("=" * 80)
 
     print("\nDDPM Key Concepts:")
     print("✓ Forward process: gradually add noise to data")
@@ -413,5 +439,6 @@ def main():
     print("- Latent Diffusion: Efficient in latent space")
     print("- Score-based: Alternative formulation")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

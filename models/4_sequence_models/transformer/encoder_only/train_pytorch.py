@@ -34,23 +34,26 @@ class PositionalEncoding(nn.Module):
     PE(pos, 2i) = sin(pos / 10000^(2i/d_model))
     PE(pos, 2i+1) = cos(pos / 10000^(2i/d_model))
     """
+
     def __init__(self, d_model, max_len=5000):
         super(PositionalEncoding, self).__init__()
 
         # Create positional encoding matrix
         pe = torch.zeros(max_len, d_model)
         position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
-        div_term = torch.exp(torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model))
+        div_term = torch.exp(
+            torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model)
+        )
 
         pe[:, 0::2] = torch.sin(position * div_term)
         pe[:, 1::2] = torch.cos(position * div_term)
 
         pe = pe.unsqueeze(0)  # Add batch dimension
-        self.register_buffer('pe', pe)
+        self.register_buffer("pe", pe)
 
     def forward(self, x):
         # x shape: (batch_size, seq_len, d_model)
-        return x + self.pe[:, :x.size(1), :]
+        return x + self.pe[:, : x.size(1), :]
 
 
 class MultiHeadAttention(nn.Module):
@@ -60,6 +63,7 @@ class MultiHeadAttention(nn.Module):
     Allows model to jointly attend to information from different
     representation subspaces at different positions.
     """
+
     def __init__(self, d_model, num_heads, dropout=0.1):
         super(MultiHeadAttention, self).__init__()
 
@@ -109,7 +113,9 @@ class MultiHeadAttention(nn.Module):
         context = torch.matmul(attention_weights, V)
 
         # Concatenate heads
-        context = context.transpose(1, 2).contiguous().view(batch_size, -1, self.d_model)
+        context = (
+            context.transpose(1, 2).contiguous().view(batch_size, -1, self.d_model)
+        )
 
         # Final linear projection
         output = self.W_o(context)
@@ -123,6 +129,7 @@ class PositionWiseFeedForward(nn.Module):
 
     FFN(x) = max(0, xW1 + b1)W2 + b2
     """
+
     def __init__(self, d_model, d_ff, dropout=0.1):
         super(PositionWiseFeedForward, self).__init__()
 
@@ -137,6 +144,7 @@ class PositionWiseFeedForward(nn.Module):
 
 class EncoderLayer(nn.Module):
     """Single encoder layer with self-attention and feedforward."""
+
     def __init__(self, d_model, num_heads, d_ff, dropout=0.1):
         super(EncoderLayer, self).__init__()
 
@@ -167,8 +175,18 @@ class TransformerEncoder(nn.Module):
 
     Used for sequence classification, token classification, etc.
     """
-    def __init__(self, vocab_size, d_model=512, num_heads=8, num_layers=6,
-                 d_ff=2048, max_seq_len=512, dropout=0.1, num_classes=3):
+
+    def __init__(
+        self,
+        vocab_size,
+        d_model=512,
+        num_heads=8,
+        num_layers=6,
+        d_ff=2048,
+        max_seq_len=512,
+        dropout=0.1,
+        num_classes=3,
+    ):
         super(TransformerEncoder, self).__init__()
 
         self.d_model = d_model
@@ -178,10 +196,9 @@ class TransformerEncoder(nn.Module):
         self.positional_encoding = PositionalEncoding(d_model, max_seq_len)
 
         # Encoder layers
-        self.encoder_layers = nn.ModuleList([
-            EncoderLayer(d_model, num_heads, d_ff, dropout)
-            for _ in range(num_layers)
-        ])
+        self.encoder_layers = nn.ModuleList(
+            [EncoderLayer(d_model, num_heads, d_ff, dropout) for _ in range(num_layers)]
+        )
 
         self.dropout = nn.Dropout(dropout)
 
@@ -213,9 +230,13 @@ class TransformerEncoder(nn.Module):
         return logits, attention_weights
 
 
-def generate_synthetic_sequences(n_samples=1000, seq_length=32, vocab_size=100, n_classes=3):
+def generate_synthetic_sequences(
+    n_samples=1000, seq_length=32, vocab_size=100, n_classes=3
+):
     """Generate synthetic sequence classification data."""
-    print(f"Generating {n_samples} sequences (length={seq_length}, vocab={vocab_size})...")
+    print(
+        f"Generating {n_samples} sequences (length={seq_length}, vocab={vocab_size})..."
+    )
 
     np.random.seed(42)
 
@@ -263,7 +284,7 @@ class SequenceDataset(Dataset):
 
 def train_transformer(model, train_loader, val_loader, epochs=30, lr=0.0001):
     """Train transformer encoder."""
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"\nTraining on {device}")
 
     model = model.to(device)
@@ -278,7 +299,7 @@ def train_transformer(model, train_loader, val_loader, epochs=30, lr=0.0001):
 
     scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
 
-    history = {'train_loss': [], 'val_loss': [], 'train_acc': [], 'val_acc': []}
+    history = {"train_loss": [], "val_loss": [], "train_acc": [], "val_acc": []}
     best_val_acc = 0
 
     for epoch in range(epochs):
@@ -308,7 +329,7 @@ def train_transformer(model, train_loader, val_loader, epochs=30, lr=0.0001):
             train_correct += predicted.eq(labels).sum().item()
 
         train_loss /= len(train_loader)
-        train_acc = 100. * train_correct / train_total
+        train_acc = 100.0 * train_correct / train_total
 
         # Validation
         model.eval()
@@ -328,21 +349,23 @@ def train_transformer(model, train_loader, val_loader, epochs=30, lr=0.0001):
                 val_correct += predicted.eq(labels).sum().item()
 
         val_loss /= len(val_loader)
-        val_acc = 100. * val_correct / val_total
+        val_acc = 100.0 * val_correct / val_total
 
-        history['train_loss'].append(train_loss)
-        history['val_loss'].append(val_loss)
-        history['train_acc'].append(train_acc)
-        history['val_acc'].append(val_acc)
+        history["train_loss"].append(train_loss)
+        history["val_loss"].append(val_loss)
+        history["train_acc"].append(train_acc)
+        history["val_acc"].append(val_acc)
 
         if val_acc > best_val_acc:
             best_val_acc = val_acc
-            torch.save(model.state_dict(), 'best_encoder_transformer.pth')
+            torch.save(model.state_dict(), "best_encoder_transformer.pth")
 
         if (epoch + 1) % 5 == 0:
-            print(f"Epoch [{epoch+1}/{epochs}] ({time.time()-start_time:.2f}s) - "
-                  f"Train Loss: {train_loss:.4f}, Acc: {train_acc:.2f}% | "
-                  f"Val Loss: {val_loss:.4f}, Acc: {val_acc:.2f}%")
+            print(
+                f"Epoch [{epoch+1}/{epochs}] ({time.time()-start_time:.2f}s) - "
+                f"Train Loss: {train_loss:.4f}, Acc: {train_acc:.2f}% | "
+                f"Val Loss: {val_loss:.4f}, Acc: {val_acc:.2f}%"
+            )
 
     return history
 
@@ -361,13 +384,13 @@ def visualize_attention(model, sequence, layer_idx=0, head_idx=0):
 
     # Plot
     plt.figure(figsize=(10, 8))
-    plt.imshow(attn, cmap='viridis', aspect='auto')
-    plt.colorbar(label='Attention Weight')
-    plt.xlabel('Key Position')
-    plt.ylabel('Query Position')
-    plt.title(f'Self-Attention Weights (Layer {layer_idx}, Head {head_idx})')
+    plt.imshow(attn, cmap="viridis", aspect="auto")
+    plt.colorbar(label="Attention Weight")
+    plt.xlabel("Key Position")
+    plt.ylabel("Query Position")
+    plt.title(f"Self-Attention Weights (Layer {layer_idx}, Head {head_idx})")
     plt.tight_layout()
-    plt.savefig('encoder_attention_weights.png', dpi=300, bbox_inches='tight')
+    plt.savefig("encoder_attention_weights.png", dpi=300, bbox_inches="tight")
     plt.show()
 
 
@@ -375,38 +398,44 @@ def plot_training_curves(history):
     """Plot training curves."""
     fig, axes = plt.subplots(1, 2, figsize=(14, 4))
 
-    axes[0].plot(history['train_loss'], label='Train', linewidth=2)
-    axes[0].plot(history['val_loss'], label='Validation', linewidth=2)
-    axes[0].set_xlabel('Epoch')
-    axes[0].set_ylabel('Loss')
-    axes[0].set_title('Training and Validation Loss')
+    axes[0].plot(history["train_loss"], label="Train", linewidth=2)
+    axes[0].plot(history["val_loss"], label="Validation", linewidth=2)
+    axes[0].set_xlabel("Epoch")
+    axes[0].set_ylabel("Loss")
+    axes[0].set_title("Training and Validation Loss")
     axes[0].legend()
     axes[0].grid(True, alpha=0.3)
 
-    axes[1].plot(history['train_acc'], label='Train', linewidth=2)
-    axes[1].plot(history['val_acc'], label='Validation', linewidth=2)
-    axes[1].set_xlabel('Epoch')
-    axes[1].set_ylabel('Accuracy (%)')
-    axes[1].set_title('Training and Validation Accuracy')
+    axes[1].plot(history["train_acc"], label="Train", linewidth=2)
+    axes[1].plot(history["val_acc"], label="Validation", linewidth=2)
+    axes[1].set_xlabel("Epoch")
+    axes[1].set_ylabel("Accuracy (%)")
+    axes[1].set_title("Training and Validation Accuracy")
     axes[1].legend()
     axes[1].grid(True, alpha=0.3)
 
     plt.tight_layout()
-    plt.savefig('encoder_training_curves.png', dpi=300, bbox_inches='tight')
+    plt.savefig("encoder_training_curves.png", dpi=300, bbox_inches="tight")
     plt.show()
 
 
 def main():
     """Main execution function."""
-    print("="*70)
+    print("=" * 70)
     print("Encoder-Only Transformer (BERT-style)")
-    print("="*70)
+    print("=" * 70)
 
     # Generate data
     print("\n1. Generating synthetic sequence data...")
-    X, y = generate_synthetic_sequences(n_samples=2000, seq_length=32, vocab_size=100, n_classes=3)
-    X_train, X_temp, y_train, y_temp = train_test_split(X, y, test_size=0.3, random_state=42, stratify=y)
-    X_val, X_test, y_val, y_test = train_test_split(X_temp, y_temp, test_size=0.5, random_state=42, stratify=y_temp)
+    X, y = generate_synthetic_sequences(
+        n_samples=2000, seq_length=32, vocab_size=100, n_classes=3
+    )
+    X_train, X_temp, y_train, y_temp = train_test_split(
+        X, y, test_size=0.3, random_state=42, stratify=y
+    )
+    X_val, X_test, y_val, y_test = train_test_split(
+        X_temp, y_temp, test_size=0.5, random_state=42, stratify=y_temp
+    )
 
     print(f"Train: {len(X_train)}, Val: {len(X_val)}, Test: {len(X_test)}")
 
@@ -429,7 +458,7 @@ def main():
         d_ff=1024,
         max_seq_len=64,
         dropout=0.1,
-        num_classes=3
+        num_classes=3,
     )
 
     total_params = sum(p.numel() for p in model.parameters())
@@ -445,7 +474,7 @@ def main():
 
     # Evaluate on test set
     print("\n5. Evaluating on test set...")
-    model.load_state_dict(torch.load('best_encoder_transformer.pth'))
+    model.load_state_dict(torch.load("best_encoder_transformer.pth"))
     device = next(model.parameters()).device
     model.eval()
 
@@ -466,26 +495,31 @@ def main():
             all_preds.extend(predicted.cpu().numpy())
             all_labels.extend(labels.cpu().numpy())
 
-    test_acc = 100. * test_correct / test_total
+    test_acc = 100.0 * test_correct / test_total
     print(f"Test Accuracy: {test_acc:.2f}%")
 
     print("\nClassification Report:")
-    print(classification_report(all_labels, all_preds,
-                                target_names=['Class 0', 'Class 1', 'Class 2']))
+    print(
+        classification_report(
+            all_labels, all_preds, target_names=["Class 0", "Class 1", "Class 2"]
+        )
+    )
 
     # Visualize attention
     print("\n6. Visualizing attention weights...")
     visualize_attention(model, X_test[0], layer_idx=0, head_idx=0)
 
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("Encoder-Only Transformer Complete!")
-    print("="*70)
+    print("=" * 70)
     print("\nKey Features:")
     print("✓ Bidirectional self-attention (sees full context)")
     print("✓ Multi-head attention for different representation subspaces")
     print("✓ Position-wise feedforward networks")
     print("✓ Layer normalization and residual connections")
-    print("\nBest for: Classification, NER, question answering, masked language modeling")
+    print(
+        "\nBest for: Classification, NER, question answering, masked language modeling"
+    )
 
 
 if __name__ == "__main__":

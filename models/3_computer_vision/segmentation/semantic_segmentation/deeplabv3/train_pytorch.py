@@ -32,33 +32,47 @@ class ASPPModule(nn.Module):
     Captures multi-scale information using parallel atrous convolutions
     with different dilation rates.
     """
+
     def __init__(self, in_channels, out_channels=256, atrous_rates=[6, 12, 18]):
         super(ASPPModule, self).__init__()
 
         modules = []
 
         # 1x1 convolution
-        modules.append(nn.Sequential(
-            nn.Conv2d(in_channels, out_channels, 1, bias=False),
-            nn.BatchNorm2d(out_channels),
-            nn.ReLU(inplace=True)
-        ))
+        modules.append(
+            nn.Sequential(
+                nn.Conv2d(in_channels, out_channels, 1, bias=False),
+                nn.BatchNorm2d(out_channels),
+                nn.ReLU(inplace=True),
+            )
+        )
 
         # Atrous convolutions with different rates
         for rate in atrous_rates:
-            modules.append(nn.Sequential(
-                nn.Conv2d(in_channels, out_channels, 3, padding=rate, dilation=rate, bias=False),
-                nn.BatchNorm2d(out_channels),
-                nn.ReLU(inplace=True)
-            ))
+            modules.append(
+                nn.Sequential(
+                    nn.Conv2d(
+                        in_channels,
+                        out_channels,
+                        3,
+                        padding=rate,
+                        dilation=rate,
+                        bias=False,
+                    ),
+                    nn.BatchNorm2d(out_channels),
+                    nn.ReLU(inplace=True),
+                )
+            )
 
         # Global average pooling
-        modules.append(nn.Sequential(
-            nn.AdaptiveAvgPool2d(1),
-            nn.Conv2d(in_channels, out_channels, 1, bias=False),
-            nn.BatchNorm2d(out_channels),
-            nn.ReLU(inplace=True)
-        ))
+        modules.append(
+            nn.Sequential(
+                nn.AdaptiveAvgPool2d(1),
+                nn.Conv2d(in_channels, out_channels, 1, bias=False),
+                nn.BatchNorm2d(out_channels),
+                nn.ReLU(inplace=True),
+            )
+        )
 
         self.convs = nn.ModuleList(modules)
 
@@ -67,7 +81,7 @@ class ASPPModule(nn.Module):
             nn.Conv2d(len(self.convs) * out_channels, out_channels, 1, bias=False),
             nn.BatchNorm2d(out_channels),
             nn.ReLU(inplace=True),
-            nn.Dropout(0.5)
+            nn.Dropout(0.5),
         )
 
     def forward(self, x):
@@ -76,7 +90,9 @@ class ASPPModule(nn.Module):
             res.append(conv(x))
 
         # Upsample global pooling result to match feature size
-        res[-1] = F.interpolate(res[-1], size=x.shape[2:], mode='bilinear', align_corners=False)
+        res[-1] = F.interpolate(
+            res[-1], size=x.shape[2:], mode="bilinear", align_corners=False
+        )
 
         # Concatenate all branches
         res = torch.cat(res, dim=1)
@@ -89,19 +105,22 @@ class DeepLabV3(nn.Module):
 
     Uses ResNet as backbone with atrous convolutions and ASPP module.
     """
-    def __init__(self, num_classes=1, backbone='resnet50', pretrained=True):
+
+    def __init__(self, num_classes=1, backbone="resnet50", pretrained=True):
         super(DeepLabV3, self).__init__()
 
         # Load pretrained ResNet backbone
-        if backbone == 'resnet50':
+        if backbone == "resnet50":
             resnet = models.resnet50(pretrained=pretrained)
-        elif backbone == 'resnet101':
+        elif backbone == "resnet101":
             resnet = models.resnet101(pretrained=pretrained)
         else:
             raise ValueError(f"Unsupported backbone: {backbone}")
 
         # Remove fully connected layers
-        self.layer0 = nn.Sequential(resnet.conv1, resnet.bn1, resnet.relu, resnet.maxpool)
+        self.layer0 = nn.Sequential(
+            resnet.conv1, resnet.bn1, resnet.relu, resnet.maxpool
+        )
         self.layer1 = resnet.layer1
         self.layer2 = resnet.layer2
         self.layer3 = resnet.layer3
@@ -124,7 +143,7 @@ class DeepLabV3(nn.Module):
             nn.Conv2d(256, 256, 3, padding=1, bias=False),
             nn.BatchNorm2d(256),
             nn.ReLU(inplace=True),
-            nn.Conv2d(256, num_classes, 1)
+            nn.Conv2d(256, num_classes, 1),
         )
 
     def forward(self, x):
@@ -144,7 +163,7 @@ class DeepLabV3(nn.Module):
         x = self.classifier(x)
 
         # Upsample to input size
-        x = F.interpolate(x, size=input_shape, mode='bilinear', align_corners=False)
+        x = F.interpolate(x, size=input_shape, mode="bilinear", align_corners=False)
 
         return x
 
@@ -167,41 +186,41 @@ def generate_synthetic_data(n_samples=200, img_size=256):
         n_shapes = np.random.randint(3, 6)
 
         for _ in range(n_shapes):
-            shape_type = np.random.choice(['circle', 'rectangle', 'ellipse'])
+            shape_type = np.random.choice(["circle", "rectangle", "ellipse"])
 
-            if shape_type == 'circle':
-                cx = np.random.randint(30, img_size-30)
-                cy = np.random.randint(30, img_size-30)
+            if shape_type == "circle":
+                cx = np.random.randint(30, img_size - 30)
+                cy = np.random.randint(30, img_size - 30)
                 radius = np.random.randint(15, 40)
                 color = np.random.rand(3)
 
                 y, x = np.ogrid[:img_size, :img_size]
-                circle_mask = (x - cx)**2 + (y - cy)**2 <= radius**2
+                circle_mask = (x - cx) ** 2 + (y - cy) ** 2 <= radius**2
 
                 for c in range(3):
                     img[c][circle_mask] = color[c]
                 mask[0][circle_mask] = 1.0
 
-            elif shape_type == 'rectangle':
-                x1 = np.random.randint(20, img_size-60)
-                y1 = np.random.randint(20, img_size-60)
+            elif shape_type == "rectangle":
+                x1 = np.random.randint(20, img_size - 60)
+                y1 = np.random.randint(20, img_size - 60)
                 w = np.random.randint(30, 60)
                 h = np.random.randint(30, 60)
                 color = np.random.rand(3)
 
                 for c in range(3):
-                    img[c, y1:y1+h, x1:x1+w] = color[c]
-                mask[0, y1:y1+h, x1:x1+w] = 1.0
+                    img[c, y1 : y1 + h, x1 : x1 + w] = color[c]
+                mask[0, y1 : y1 + h, x1 : x1 + w] = 1.0
 
             else:  # ellipse
-                cx = np.random.randint(40, img_size-40)
-                cy = np.random.randint(40, img_size-40)
+                cx = np.random.randint(40, img_size - 40)
+                cy = np.random.randint(40, img_size - 40)
                 a = np.random.randint(20, 50)
                 b = np.random.randint(15, 40)
                 color = np.random.rand(3)
 
                 y, x = np.ogrid[:img_size, :img_size]
-                ellipse_mask = ((x - cx)**2 / a**2 + (y - cy)**2 / b**2) <= 1
+                ellipse_mask = ((x - cx) ** 2 / a**2 + (y - cy) ** 2 / b**2) <= 1
 
                 for c in range(3):
                     img[c][ellipse_mask] = color[c]
@@ -222,6 +241,7 @@ def generate_synthetic_data(n_samples=200, img_size=256):
 
 class SegmentationDataset(Dataset):
     """PyTorch Dataset for segmentation."""
+
     def __init__(self, images, masks):
         self.images = torch.FloatTensor(images)
         self.masks = torch.FloatTensor(masks)
@@ -235,6 +255,7 @@ class SegmentationDataset(Dataset):
 
 class DiceBCELoss(nn.Module):
     """Combined Dice + BCE loss."""
+
     def __init__(self, dice_weight=0.5):
         super(DiceBCELoss, self).__init__()
         self.dice_weight = dice_weight
@@ -250,7 +271,7 @@ class DiceBCELoss(nn.Module):
         target_flat = target.view(-1)
 
         intersection = (pred_flat * target_flat).sum()
-        dice = (2. * intersection + 1) / (pred_flat.sum() + target_flat.sum() + 1)
+        dice = (2.0 * intersection + 1) / (pred_flat.sum() + target_flat.sum() + 1)
         dice_loss = 1 - dice
 
         # Combined loss
@@ -272,16 +293,18 @@ def calculate_iou(pred, target, threshold=0.5):
 
 def train_deeplabv3(model, train_loader, val_loader, epochs=30, lr=0.001):
     """Train DeepLabV3 model."""
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"\nTraining DeepLabV3 on {device}")
 
     model = model.to(device)
     criterion = DiceBCELoss(dice_weight=0.5)
     optimizer = optim.Adam(model.parameters(), lr=lr)
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=5, factor=0.5)
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, mode="min", patience=5, factor=0.5
+    )
 
-    history = {'train_loss': [], 'val_loss': [], 'train_iou': [], 'val_iou': []}
-    best_val_loss = float('inf')
+    history = {"train_loss": [], "val_loss": [], "train_iou": [], "val_iou": []}
+    best_val_loss = float("inf")
 
     for epoch in range(epochs):
         start_time = time.time()
@@ -326,19 +349,21 @@ def train_deeplabv3(model, train_loader, val_loader, epochs=30, lr=0.001):
 
         scheduler.step(val_loss)
 
-        history['train_loss'].append(train_loss)
-        history['val_loss'].append(val_loss)
-        history['train_iou'].append(train_iou)
-        history['val_iou'].append(val_iou)
+        history["train_loss"].append(train_loss)
+        history["val_loss"].append(val_loss)
+        history["train_iou"].append(train_iou)
+        history["val_iou"].append(val_iou)
 
         if val_loss < best_val_loss:
             best_val_loss = val_loss
-            torch.save(model.state_dict(), 'best_deeplabv3_model.pth')
+            torch.save(model.state_dict(), "best_deeplabv3_model.pth")
 
         if (epoch + 1) % 5 == 0:
-            print(f"Epoch [{epoch+1}/{epochs}] ({time.time()-start_time:.2f}s) - "
-                  f"Train Loss: {train_loss:.4f}, IoU: {train_iou:.4f} | "
-                  f"Val Loss: {val_loss:.4f}, IoU: {val_iou:.4f}")
+            print(
+                f"Epoch [{epoch+1}/{epochs}] ({time.time()-start_time:.2f}s) - "
+                f"Train Loss: {train_loss:.4f}, IoU: {train_iou:.4f} | "
+                f"Val Loss: {val_loss:.4f}, IoU: {val_iou:.4f}"
+            )
 
     return history
 
@@ -348,47 +373,52 @@ def visualize_predictions(model, images, masks, n_samples=4):
     device = next(model.parameters()).device
     model.eval()
 
-    fig, axes = plt.subplots(n_samples, 3, figsize=(12, 3*n_samples))
+    fig, axes = plt.subplots(n_samples, 3, figsize=(12, 3 * n_samples))
 
     with torch.no_grad():
         for i in range(n_samples):
-            img_tensor = torch.FloatTensor(images[i:i+1]).to(device)
+            img_tensor = torch.FloatTensor(images[i : i + 1]).to(device)
             pred = model(img_tensor)
             pred_mask = torch.sigmoid(pred).cpu().numpy()[0, 0]
 
             # Input
             axes[i, 0].imshow(images[i].transpose(1, 2, 0))
-            axes[i, 0].set_title('Input')
-            axes[i, 0].axis('off')
+            axes[i, 0].set_title("Input")
+            axes[i, 0].axis("off")
 
             # Ground truth
-            axes[i, 1].imshow(masks[i, 0], cmap='gray')
-            axes[i, 1].set_title('Ground Truth')
-            axes[i, 1].axis('off')
+            axes[i, 1].imshow(masks[i, 0], cmap="gray")
+            axes[i, 1].set_title("Ground Truth")
+            axes[i, 1].axis("off")
 
             # Prediction
-            axes[i, 2].imshow(pred_mask, cmap='gray')
-            iou = calculate_iou(torch.FloatTensor(pred_mask[None, None, :, :]),
-                               torch.FloatTensor(masks[i:i+1]))
-            axes[i, 2].set_title(f'Prediction (IoU: {iou:.3f})')
-            axes[i, 2].axis('off')
+            axes[i, 2].imshow(pred_mask, cmap="gray")
+            iou = calculate_iou(
+                torch.FloatTensor(pred_mask[None, None, :, :]),
+                torch.FloatTensor(masks[i : i + 1]),
+            )
+            axes[i, 2].set_title(f"Prediction (IoU: {iou:.3f})")
+            axes[i, 2].axis("off")
 
     plt.tight_layout()
-    plt.savefig('deeplabv3_predictions.png', dpi=300, bbox_inches='tight')
+    plt.savefig("deeplabv3_predictions.png", dpi=300, bbox_inches="tight")
     plt.show()
 
 
 def main():
     """Main execution function."""
-    print("="*70)
+    print("=" * 70)
     print("DeepLabV3 for Semantic Segmentation")
-    print("="*70)
+    print("=" * 70)
 
     # Generate data
     print("\n1. Generating synthetic data...")
     from sklearn.model_selection import train_test_split
+
     images, masks = generate_synthetic_data(n_samples=150, img_size=256)
-    X_train, X_val, y_train, y_val = train_test_split(images, masks, test_size=0.2, random_state=42)
+    X_train, X_val, y_train, y_val = train_test_split(
+        images, masks, test_size=0.2, random_state=42
+    )
 
     # Create dataloaders
     train_dataset = SegmentationDataset(X_train, y_train)
@@ -398,7 +428,7 @@ def main():
 
     # Create model
     print("\n2. Creating DeepLabV3 model...")
-    model = DeepLabV3(num_classes=1, backbone='resnet50', pretrained=False)
+    model = DeepLabV3(num_classes=1, backbone="resnet50", pretrained=False)
     total_params = sum(p.numel() for p in model.parameters())
     print(f"Total parameters: {total_params:,}")
 
@@ -408,12 +438,12 @@ def main():
 
     # Visualize
     print("\n4. Visualizing predictions...")
-    model.load_state_dict(torch.load('best_deeplabv3_model.pth'))
+    model.load_state_dict(torch.load("best_deeplabv3_model.pth"))
     visualize_predictions(model, X_val, y_val, n_samples=4)
 
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("DeepLabV3 Training Complete!")
-    print("="*70)
+    print("=" * 70)
     print("\nKey Features:")
     print("✓ Atrous convolutions capture multi-scale context")
     print("✓ ASPP module for parallel multi-rate processing")

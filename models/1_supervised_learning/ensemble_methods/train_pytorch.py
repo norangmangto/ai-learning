@@ -5,13 +5,22 @@ from sklearn.datasets import make_classification
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, f1_score
 
+
 def train():
     print("Training XGBoost with PyTorch (Gradient Boosting Approximation)...")
 
     # 1. Prepare Data
-    X, y = make_classification(n_samples=3000, n_features=30, n_informative=20,
-                               n_redundant=5, n_classes=2, random_state=42)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    X, y = make_classification(
+        n_samples=3000,
+        n_features=30,
+        n_informative=20,
+        n_redundant=5,
+        n_classes=2,
+        random_state=42,
+    )
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42
+    )
 
     # Normalize
     X_mean, X_std = X_train.mean(axis=0), X_train.std(axis=0)
@@ -27,17 +36,20 @@ def train():
     class BoostNet(nn.Module):
         def __init__(self, input_size):
             super(BoostNet, self).__init__()
-            self.boosters = nn.ModuleList([
-                nn.Sequential(
-                    nn.Linear(input_size, 256),
-                    nn.ReLU(),
-                    nn.Dropout(0.2),
-                    nn.Linear(256, 128),
-                    nn.ReLU(),
-                    nn.Dropout(0.2),
-                    nn.Linear(128, 2)
-                ) for _ in range(3)
-            ])
+            self.boosters = nn.ModuleList(
+                [
+                    nn.Sequential(
+                        nn.Linear(input_size, 256),
+                        nn.ReLU(),
+                        nn.Dropout(0.2),
+                        nn.Linear(256, 128),
+                        nn.ReLU(),
+                        nn.Dropout(0.2),
+                        nn.Linear(128, 2),
+                    )
+                    for _ in range(3)
+                ]
+            )
             self.final = nn.Linear(2 * 3, 2)
 
         def forward(self, x):
@@ -59,8 +71,8 @@ def train():
     for epoch in range(epochs):
         total_loss = 0
         for i in range(0, len(X_train), batch_size):
-            X_batch = X_train[i:i+batch_size]
-            y_batch = y_train[i:i+batch_size]
+            X_batch = X_train[i : i + batch_size]
+            y_batch = y_train[i : i + batch_size]
 
             optimizer.zero_grad()
             outputs = model(X_batch)
@@ -84,7 +96,7 @@ def train():
 
     # 5. QA Validation
     print("\n=== QA Validation ===")
-    f1 = f1_score(y_test_np, predictions, average='binary')
+    f1 = f1_score(y_test_np, predictions, average="binary")
     print(f"F1-Score: {f1:.4f}")
 
     print("\n--- Sanity Checks ---")

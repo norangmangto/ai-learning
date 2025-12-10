@@ -13,12 +13,7 @@ Models: SBERT, SimCSE-style contrastive learning
 
 import torch
 from torch.utils.data import DataLoader
-from sentence_transformers import (
-    SentenceTransformer,
-    InputExample,
-    losses,
-    models
-)
+from sentence_transformers import SentenceTransformer, InputExample, losses, models
 from datasets import load_dataset
 from pathlib import Path
 import time
@@ -27,18 +22,19 @@ import matplotlib.pyplot as plt
 
 # Configuration
 CONFIG = {
-    'base_model': 'distilbert-base-uncased',  # Base transformer
-    'max_seq_length': 128,
-    'embedding_dim': 768,
-    'batch_size': 16,
-    'epochs': 1,  # Use more for production
-    'learning_rate': 2e-5,
-    'warmup_steps': 100,
-    'evaluation_steps': 500,
-    'output_dir': 'models/sentence_bert',
-    'device': 'cuda' if torch.cuda.is_available() else 'cpu',
-    'max_samples': 10000,  # Limit for demo
+    "base_model": "distilbert-base-uncased",  # Base transformer
+    "max_seq_length": 128,
+    "embedding_dim": 768,
+    "batch_size": 16,
+    "epochs": 1,  # Use more for production
+    "learning_rate": 2e-5,
+    "warmup_steps": 100,
+    "evaluation_steps": 500,
+    "output_dir": "models/sentence_bert",
+    "device": "cuda" if torch.cuda.is_available() else "cpu",
+    "max_samples": 10000,  # Limit for demo
 }
+
 
 def load_training_data(max_samples=10000):
     """Load NLI dataset for sentence embedding training"""
@@ -46,7 +42,7 @@ def load_training_data(max_samples=10000):
 
     try:
         # Load SNLI (Stanford Natural Language Inference)
-        dataset = load_dataset('snli', split='train', streaming=True)
+        dataset = load_dataset("snli", split="train", streaming=True)
 
         train_examples = []
 
@@ -55,24 +51,23 @@ def load_training_data(max_samples=10000):
                 break
 
             # Skip examples with no label
-            if item['label'] == -1:
+            if item["label"] == -1:
                 continue
 
             # Create sentence pairs with labels
             # 0: entailment (similar), 1: neutral, 2: contradiction
-            premise = item['premise']
-            hypothesis = item['hypothesis']
-            label = item['label']
+            premise = item["premise"]
+            hypothesis = item["hypothesis"]
+            label = item["label"]
 
             # Convert to similarity score (0-1)
             # entailment -> 1.0, neutral -> 0.5, contradiction -> 0.0
             score_map = {0: 1.0, 1: 0.5, 2: 0.0}
             score = score_map.get(label, 0.5)
 
-            train_examples.append(InputExample(
-                texts=[premise, hypothesis],
-                label=score
-            ))
+            train_examples.append(
+                InputExample(texts=[premise, hypothesis], label=score)
+            )
 
             if (i + 1) % 1000 == 0:
                 print(f"Loaded {len(train_examples)} examples...")
@@ -86,16 +81,37 @@ def load_training_data(max_samples=10000):
 
         # Fallback to sample data
         sample_examples = [
-            InputExample(texts=['The cat sits on the mat', 'A cat is sitting on a rug'], label=0.9),
-            InputExample(texts=['A man is playing guitar', 'A person is making music'], label=0.8),
-            InputExample(texts=['The weather is nice', 'It is raining heavily'], label=0.2),
-            InputExample(texts=['She loves reading books', 'She enjoys literature'], label=0.85),
-            InputExample(texts=['The car is fast', 'The vehicle has high speed'], label=0.9),
-            InputExample(texts=['I am learning Python', 'I study programming'], label=0.7),
-            InputExample(texts=['The movie was boring', 'The film was exciting'], label=0.1),
-            InputExample(texts=['He runs every morning', 'He exercises daily'], label=0.75),
-            InputExample(texts=['The food tastes good', 'The meal is delicious'], label=0.85),
-            InputExample(texts=['She is a doctor', 'She works at a restaurant'], label=0.2),
+            InputExample(
+                texts=["The cat sits on the mat", "A cat is sitting on a rug"],
+                label=0.9,
+            ),
+            InputExample(
+                texts=["A man is playing guitar", "A person is making music"], label=0.8
+            ),
+            InputExample(
+                texts=["The weather is nice", "It is raining heavily"], label=0.2
+            ),
+            InputExample(
+                texts=["She loves reading books", "She enjoys literature"], label=0.85
+            ),
+            InputExample(
+                texts=["The car is fast", "The vehicle has high speed"], label=0.9
+            ),
+            InputExample(
+                texts=["I am learning Python", "I study programming"], label=0.7
+            ),
+            InputExample(
+                texts=["The movie was boring", "The film was exciting"], label=0.1
+            ),
+            InputExample(
+                texts=["He runs every morning", "He exercises daily"], label=0.75
+            ),
+            InputExample(
+                texts=["The food tastes good", "The meal is delicious"], label=0.85
+            ),
+            InputExample(
+                texts=["She is a doctor", "She works at a restaurant"], label=0.2
+            ),
         ]
 
         # Duplicate for more training data
@@ -103,18 +119,18 @@ def load_training_data(max_samples=10000):
 
         return train_examples
 
+
 def create_sentence_transformer():
     """Create sentence transformer model from scratch"""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("CREATING SENTENCE TRANSFORMER MODEL")
-    print("="*80)
+    print("=" * 80)
 
     print(f"\nBase model: {CONFIG['base_model']}")
 
     # Define model architecture
     word_embedding_model = models.Transformer(
-        CONFIG['base_model'],
-        max_seq_length=CONFIG['max_seq_length']
+        CONFIG["base_model"], max_seq_length=CONFIG["max_seq_length"]
     )
 
     # Apply mean pooling to get sentence embeddings
@@ -122,21 +138,25 @@ def create_sentence_transformer():
         word_embedding_model.get_word_embedding_dimension(),
         pooling_mode_mean_tokens=True,
         pooling_mode_cls_token=False,
-        pooling_mode_max_tokens=False
+        pooling_mode_max_tokens=False,
     )
 
     # Create the sentence transformer
     model = SentenceTransformer(modules=[word_embedding_model, pooling_model])
 
-    print(f"Model created with embedding dimension: {model.get_sentence_embedding_dimension()}")
+    print(
+        f"Model created with embedding dimension: {
+        model.get_sentence_embedding_dimension()}"
+    )
 
     return model
 
+
 def train_sentence_embeddings(model, train_examples):
     """Fine-tune sentence embeddings"""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("TRAINING SENTENCE EMBEDDINGS")
-    print("="*80)
+    print("=" * 80)
 
     print(f"\nConfiguration:")
     print(f"  Training examples: {len(train_examples)}")
@@ -147,9 +167,7 @@ def train_sentence_embeddings(model, train_examples):
 
     # Create data loader
     train_dataloader = DataLoader(
-        train_examples,
-        shuffle=True,
-        batch_size=CONFIG['batch_size']
+        train_examples, shuffle=True, batch_size=CONFIG["batch_size"]
     )
 
     # Define loss function
@@ -163,9 +181,9 @@ def train_sentence_embeddings(model, train_examples):
 
     model.fit(
         train_objectives=[(train_dataloader, train_loss)],
-        epochs=CONFIG['epochs'],
-        warmup_steps=CONFIG['warmup_steps'],
-        output_path=CONFIG['output_dir'],
+        epochs=CONFIG["epochs"],
+        warmup_steps=CONFIG["warmup_steps"],
+        output_path=CONFIG["output_dir"],
         show_progress_bar=True,
     )
 
@@ -176,33 +194,30 @@ def train_sentence_embeddings(model, train_examples):
 
     return model
 
+
 def evaluate_embeddings(model):
     """Evaluate sentence embeddings"""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("EVALUATING SENTENCE EMBEDDINGS")
-    print("="*80)
+    print("=" * 80)
 
     # Test sentences
     test_sentences = [
         # Similar pairs
         "The cat is sitting on the mat",
         "A cat sits on a rug",
-
         # Different meaning
         "The weather is nice today",
         "I love programming in Python",
-
         # Paraphrases
         "She enjoys reading books",
         "She loves to read literature",
-
         # Technical vs casual
         "Neural networks learn from data",
         "AI systems improve with experience",
-
         # Unrelated
         "The car is red",
-        "Mathematics is difficult"
+        "Mathematics is difficult",
     ]
 
     # Encode sentences
@@ -216,9 +231,9 @@ def evaluate_embeddings(model):
     similarities = cosine_similarity(embeddings.cpu().numpy())
 
     # Display results
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("SIMILARITY MATRIX")
-    print("="*80)
+    print("=" * 80)
 
     for i, sent1 in enumerate(test_sentences):
         print(f"\nS{i+1}: {sent1[:50]}...")
@@ -228,9 +243,9 @@ def evaluate_embeddings(model):
                 print(f"  S{i+1} <-> S{j+1}: {sim:.4f}")
 
     # Highlight interesting pairs
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("KEY OBSERVATIONS")
-    print("="*80)
+    print("=" * 80)
 
     print("\nHigh similarity (paraphrases):")
     print(f"  S1 <-> S2: {similarities[0][1]:.4f} (cat on mat)")
@@ -245,13 +260,14 @@ def evaluate_embeddings(model):
 
     return embeddings, similarities
 
+
 def visualize_similarity_matrix(similarities, sentences):
     """Visualize sentence similarity matrix"""
     plt.figure(figsize=(12, 10))
 
     # Create heatmap
-    plt.imshow(similarities, cmap='YlOrRd', aspect='auto', vmin=0, vmax=1)
-    plt.colorbar(label='Cosine Similarity')
+    plt.imshow(similarities, cmap="YlOrRd", aspect="auto", vmin=0, vmax=1)
+    plt.colorbar(label="Cosine Similarity")
 
     # Add labels
     labels = [f"S{i+1}" for i in range(len(sentences))]
@@ -261,28 +277,36 @@ def visualize_similarity_matrix(similarities, sentences):
     # Add text annotations
     for i in range(len(sentences)):
         for j in range(len(sentences)):
-            plt.text(j, i, f'{similarities[i, j]:.2f}',
-                    ha="center", va="center", color="black", fontsize=8)
+            plt.text(
+                j,
+                i,
+                f"{similarities[i, j]:.2f}",
+                ha="center",
+                va="center",
+                color="black",
+                fontsize=8,
+            )
 
-    plt.title('Sentence Similarity Matrix', fontsize=14, fontweight='bold')
-    plt.xlabel('Sentence Index')
-    plt.ylabel('Sentence Index')
+    plt.title("Sentence Similarity Matrix", fontsize=14, fontweight="bold")
+    plt.xlabel("Sentence Index")
+    plt.ylabel("Sentence Index")
     plt.tight_layout()
 
     # Save
-    output_dir = Path('results')
+    output_dir = Path("results")
     output_dir.mkdir(exist_ok=True)
-    output_file = output_dir / 'sentence_similarity_matrix.png'
-    plt.savefig(output_file, dpi=300, bbox_inches='tight')
+    output_file = output_dir / "sentence_similarity_matrix.png"
+    plt.savefig(output_file, dpi=300, bbox_inches="tight")
     print(f"\nSimilarity matrix saved to: {output_file}")
 
     plt.close()
 
+
 def demonstrate_use_cases(model):
     """Demonstrate practical use cases"""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("PRACTICAL USE CASES")
-    print("="*80)
+    print("=" * 80)
 
     # Use Case 1: Semantic Search
     print("\n1. SEMANTIC SEARCH")
@@ -293,7 +317,7 @@ def demonstrate_use_cases(model):
         "Machine learning models learn patterns from data",
         "Neural networks are inspired by biological neurons",
         "The weather forecast predicts rain tomorrow",
-        "Natural language processing helps computers understand text"
+        "Natural language processing helps computers understand text",
     ]
 
     query = "How do computers learn from data?"
@@ -328,7 +352,7 @@ def demonstrate_use_cases(model):
         "What is the best way to study Python?",
         "Python programming tutorial",
         "Machine learning basics",
-        "Introduction to machine learning"
+        "Introduction to machine learning",
     ]
 
     print("Finding duplicates (threshold: 0.7)...")
@@ -367,7 +391,7 @@ def demonstrate_use_cases(model):
         "Cooking recipes for beginners",
         "How to bake a cake",
         "Travel guide to Europe",
-        "Best places to visit in Asia"
+        "Best places to visit in Asia",
     ]
 
     print(f"Clustering {len(texts)} sentences...")
@@ -387,21 +411,25 @@ def demonstrate_use_cases(model):
         for text in cluster_texts:
             print(f"  - {text}")
 
+
 def main():
-    print("="*80)
+    print("=" * 80)
     print("SENTENCE EMBEDDINGS WITH SENTENCE-TRANSFORMERS")
-    print("="*80)
+    print("=" * 80)
 
     print(f"\nDevice: {CONFIG['device']}")
 
     # Option 1: Use pre-trained model
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("OPTION 1: PRE-TRAINED MODEL (No Training)")
-    print("="*80)
+    print("=" * 80)
 
-    pretrained_model = SentenceTransformer('all-MiniLM-L6-v2')
+    pretrained_model = SentenceTransformer("all-MiniLM-L6-v2")
     print(f"Loaded pre-trained model: all-MiniLM-L6-v2")
-    print(f"Embedding dimension: {pretrained_model.get_sentence_embedding_dimension()}")
+    print(
+        f"Embedding dimension: {
+        pretrained_model.get_sentence_embedding_dimension()}"
+    )
 
     # Evaluate pre-trained model
     evaluate_embeddings(pretrained_model)
@@ -410,18 +438,18 @@ def main():
     demonstrate_use_cases(pretrained_model)
 
     # Option 2: Fine-tune on custom data
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("OPTION 2: FINE-TUNED MODEL (With Training)")
-    print("="*80)
+    print("=" * 80)
 
     print("\nNote: Fine-tuning requires more time and data.")
     print("For production, use larger datasets and more epochs.")
 
     response = input("\nDo you want to fine-tune a model? (y/n): ").strip().lower()
 
-    if response == 'y':
+    if response == "y":
         # Load training data
-        train_examples = load_training_data(CONFIG['max_samples'])
+        train_examples = load_training_data(CONFIG["max_samples"])
 
         # Create model
         model = create_sentence_transformer()
@@ -432,9 +460,9 @@ def main():
         # Evaluate
         evaluate_embeddings(model)
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("COMPLETED")
-    print("="*80)
+    print("=" * 80)
 
     print("\nSentence Embeddings Summary:")
     print("✓ Convert sentences to fixed-size vectors")
@@ -457,5 +485,6 @@ def main():
     print("- paraphrase-multilingual: 50+ languages")
     print("- msmarco-distilbert: Information retrieval")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

@@ -1,8 +1,14 @@
 import torch
-from transformers import BertTokenizer, BertForSequenceClassification, Trainer, TrainingArguments
+from transformers import (
+    BertTokenizer,
+    BertForSequenceClassification,
+    Trainer,
+    TrainingArguments,
+)
 from datasets import load_dataset, Dataset
 from sklearn.metrics import accuracy_score, f1_score
 import numpy as np
+
 
 def train():
     print("Training Text Theme Classification with PyTorch (BERT)...")
@@ -18,7 +24,7 @@ def train():
         print("Using sample data for demonstration...")
         # Sample data with themes: business, sports, politics, technology
         sample_data = {
-            'text': [
+            "text": [
                 "Apple reports record quarterly profits driven by iPhone sales",
                 "The stock market reached new highs today amid positive economic indicators",
                 "The football team won the championship after an exciting final match",
@@ -26,15 +32,15 @@ def train():
                 "Congress passes new legislation on healthcare reform",
                 "Election results show a tight race between the two main candidates",
                 "New AI technology promises to revolutionize medical diagnostics",
-                "Scientists develop breakthrough in quantum computing research"
+                "Scientists develop breakthrough in quantum computing research",
             ],
-            'label': [0, 0, 1, 1, 2, 2, 3, 3]  # 0: business, 1: sports, 2: politics, 3: technology
+            # 0: business, 1: sports, 2: politics, 3: technology
+            "label": [0, 0, 1, 1, 2, 2, 3, 3],
         }
         dataset = Dataset.from_dict(sample_data)
-        test_dataset = Dataset.from_dict({
-            'text': sample_data['text'][:4],
-            'label': sample_data['label'][:4]
-        })
+        test_dataset = Dataset.from_dict(
+            {"text": sample_data["text"][:4], "label": sample_data["label"][:4]}
+        )
 
     # 2. Load Pre-trained Model
     print("Loading BERT model...")
@@ -42,15 +48,19 @@ def train():
     tokenizer = BertTokenizer.from_pretrained(model_name)
 
     # Determine number of classes
-    num_labels = len(set(dataset['label']))
-    model = BertForSequenceClassification.from_pretrained(model_name, num_labels=num_labels)
+    num_labels = len(set(dataset["label"]))
+    model = BertForSequenceClassification.from_pretrained(
+        model_name, num_labels=num_labels
+    )
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
 
     # 3. Tokenize Data
     def tokenize_function(examples):
-        return tokenizer(examples["text"], padding="max_length", truncation=True, max_length=128)
+        return tokenizer(
+            examples["text"], padding="max_length", truncation=True, max_length=128
+        )
 
     tokenized_train = dataset.map(tokenize_function, batched=True)
     tokenized_test = test_dataset.map(tokenize_function, batched=True)
@@ -64,7 +74,7 @@ def train():
         per_device_eval_batch_size=8,
         warmup_steps=100,
         weight_decay=0.01,
-        logging_dir='./logs',
+        logging_dir="./logs",
         logging_steps=50,
         evaluation_strategy="epoch",
         save_strategy="epoch",
@@ -75,8 +85,8 @@ def train():
         predictions, labels = eval_pred
         predictions = np.argmax(predictions, axis=1)
         return {
-            'accuracy': accuracy_score(labels, predictions),
-            'f1': f1_score(labels, predictions, average='weighted')
+            "accuracy": accuracy_score(labels, predictions),
+            "f1": f1_score(labels, predictions, average="weighted"),
         }
 
     trainer = Trainer(
@@ -102,10 +112,12 @@ def train():
     theme_names = {0: "Business", 1: "Sports", 2: "Politics", 3: "Technology"}
 
     for i in range(min(5, len(test_dataset))):
-        text = test_dataset[i]['text']
-        true_label = test_dataset[i]['label']
+        text = test_dataset[i]["text"]
+        true_label = test_dataset[i]["label"]
 
-        inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True, max_length=128)
+        inputs = tokenizer(
+            text, return_tensors="pt", padding=True, truncation=True, max_length=128
+        )
         inputs = {k: v.to(device) for k, v in inputs.items()}
 
         with torch.no_grad():
@@ -115,13 +127,19 @@ def train():
 
         print(f"\nText: {text[:100]}...")
         print(f"True Theme: {theme_names.get(true_label, true_label)}")
-        print(f"Predicted Theme: {theme_names.get(predicted_label, predicted_label)}")
+        print(
+            f"Predicted Theme: {
+        theme_names.get(
+            predicted_label,
+             predicted_label)}"
+        )
 
     # 6. QA Validation
     print("\n=== QA Validation ===")
     print(f"✓ Model trained successfully on {len(dataset)} samples")
     print(f"✓ Test accuracy: {results['eval_accuracy']:.2%}")
     print("✓ Theme classification model can categorize text into multiple topics")
+
 
 if __name__ == "__main__":
     train()

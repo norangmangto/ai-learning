@@ -9,6 +9,7 @@ from sklearn.linear_model import LogisticRegression
 from datasets import load_dataset
 from sklearn.metrics import accuracy_score, f1_score, confusion_matrix
 
+
 def train():
     print("Training Sentiment Analysis with TF-IDF + Logistic Regression...")
 
@@ -22,14 +23,16 @@ def train():
         test_dataset = create_synthetic_dataset(500)
 
     # 2. Extract texts and labels
-    texts = [item['text'] for item in dataset]
-    labels = np.array([item['label'] for item in dataset])
+    texts = [item["text"] for item in dataset]
+    labels = np.array([item["label"] for item in dataset])
 
-    test_texts = [item['text'] for item in test_dataset]
-    test_labels = np.array([item['label'] for item in test_dataset])
+    test_texts = [item["text"] for item in test_dataset]
+    test_labels = np.array([item["label"] for item in test_dataset])
 
     # 3. TF-IDF Vectorization
-    vectorizer = TfidfVectorizer(max_features=5000, ngram_range=(1, 2), max_df=0.8, min_df=2)
+    vectorizer = TfidfVectorizer(
+        max_features=5000, ngram_range=(1, 2), max_df=0.8, min_df=2
+    )
     X_train = vectorizer.fit_transform(texts)
     X_test = vectorizer.transform(test_texts)
 
@@ -73,7 +76,7 @@ def train():
     sample_texts = [
         "This movie is absolutely fantastic and amazing!",
         "Terrible waste of time, very boring movie.",
-        "Not bad, could be better but decent enough."
+        "Not bad, could be better but decent enough.",
     ]
 
     sample_X = vectorizer.transform(sample_texts)

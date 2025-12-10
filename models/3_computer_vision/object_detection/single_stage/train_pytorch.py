@@ -4,11 +4,13 @@ from torchvision.transforms import functional as F
 from PIL import Image
 import cv2
 
+
 class ObjectDetector:
     """
     Object detection using pre-trained models (Faster R-CNN, RetinaNet, YOLO)
     """
-    def __init__(self, model_type='fasterrcnn', num_classes=91):
+
+    def __init__(self, model_type="fasterrcnn", num_classes=91):
         """
         Initialize object detector
         model_type: 'fasterrcnn', 'retinanet', or 'yolo'
@@ -17,35 +19,116 @@ class ObjectDetector:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model_type = model_type
 
-        if model_type == 'fasterrcnn':
+        if model_type == "fasterrcnn":
             # Load pre-trained Faster R-CNN
             self.model = fasterrcnn_resnet50_fpn(pretrained=True)
 
-        elif model_type == 'retinanet':
+        elif model_type == "retinanet":
             # Load pre-trained RetinaNet
             self.model = retinanet_resnet50_fpn(pretrained=True)
 
-        elif model_type == 'yolo':
+        elif model_type == "yolo":
             # Load YOLOv5 from torch hub
-            self.model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
+            self.model = torch.hub.load(
+                "ultralytics/yolov5", "yolov5s", pretrained=True
+            )
 
         self.model.to(self.device)
         self.model.eval()
 
         # COCO class names
         self.coco_names = [
-            '__background__', 'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus',
-            'train', 'truck', 'boat', 'traffic light', 'fire hydrant', 'N/A', 'stop sign',
-            'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow',
-            'elephant', 'bear', 'zebra', 'giraffe', 'N/A', 'backpack', 'umbrella', 'N/A', 'N/A',
-            'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball',
-            'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard', 'tennis racket',
-            'bottle', 'N/A', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl',
-            'banana', 'apple', 'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza',
-            'donut', 'cake', 'chair', 'couch', 'potted plant', 'bed', 'N/A', 'dining table',
-            'N/A', 'N/A', 'toilet', 'N/A', 'tv', 'laptop', 'mouse', 'remote', 'keyboard',
-            'cell phone', 'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'N/A', 'book',
-            'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush'
+            "__background__",
+            "person",
+            "bicycle",
+            "car",
+            "motorcycle",
+            "airplane",
+            "bus",
+            "train",
+            "truck",
+            "boat",
+            "traffic light",
+            "fire hydrant",
+            "N/A",
+            "stop sign",
+            "parking meter",
+            "bench",
+            "bird",
+            "cat",
+            "dog",
+            "horse",
+            "sheep",
+            "cow",
+            "elephant",
+            "bear",
+            "zebra",
+            "giraffe",
+            "N/A",
+            "backpack",
+            "umbrella",
+            "N/A",
+            "N/A",
+            "handbag",
+            "tie",
+            "suitcase",
+            "frisbee",
+            "skis",
+            "snowboard",
+            "sports ball",
+            "kite",
+            "baseball bat",
+            "baseball glove",
+            "skateboard",
+            "surfboard",
+            "tennis racket",
+            "bottle",
+            "N/A",
+            "wine glass",
+            "cup",
+            "fork",
+            "knife",
+            "spoon",
+            "bowl",
+            "banana",
+            "apple",
+            "sandwich",
+            "orange",
+            "broccoli",
+            "carrot",
+            "hot dog",
+            "pizza",
+            "donut",
+            "cake",
+            "chair",
+            "couch",
+            "potted plant",
+            "bed",
+            "N/A",
+            "dining table",
+            "N/A",
+            "N/A",
+            "toilet",
+            "N/A",
+            "tv",
+            "laptop",
+            "mouse",
+            "remote",
+            "keyboard",
+            "cell phone",
+            "microwave",
+            "oven",
+            "toaster",
+            "sink",
+            "refrigerator",
+            "N/A",
+            "book",
+            "clock",
+            "vase",
+            "scissors",
+            "teddy bear",
+            "hair drier",
+            "toothbrush",
         ]
 
     def detect(self, image_path, confidence_threshold=0.5):
@@ -53,18 +136,20 @@ class ObjectDetector:
         Detect objects in image
         Returns: list of detections (label, confidence, bbox)
         """
-        if self.model_type == 'yolo':
+        if self.model_type == "yolo":
             # YOLOv5 has different interface
             results = self.model(image_path)
             detections = []
 
             for *box, conf, cls in results.xyxy[0].cpu().numpy():
                 if conf >= confidence_threshold:
-                    detections.append({
-                        'label': results.names[int(cls)],
-                        'confidence': float(conf),
-                        'bbox': [int(x) for x in box]
-                    })
+                    detections.append(
+                        {
+                            "label": results.names[int(cls)],
+                            "confidence": float(conf),
+                            "bbox": [int(x) for x in box],
+                        }
+                    )
 
             return detections
 
@@ -79,17 +164,19 @@ class ObjectDetector:
             pred = predictions[0]
             detections = []
 
-            for i in range(len(pred['boxes'])):
-                score = pred['scores'][i].item()
+            for i in range(len(pred["boxes"])):
+                score = pred["scores"][i].item()
                 if score >= confidence_threshold:
-                    label_idx = pred['labels'][i].item()
-                    bbox = pred['boxes'][i].cpu().numpy()
+                    label_idx = pred["labels"][i].item()
+                    bbox = pred["boxes"][i].cpu().numpy()
 
-                    detections.append({
-                        'label': self.coco_names[label_idx],
-                        'confidence': score,
-                        'bbox': [int(x) for x in bbox]
-                    })
+                    detections.append(
+                        {
+                            "label": self.coco_names[label_idx],
+                            "confidence": score,
+                            "bbox": [int(x) for x in bbox],
+                        }
+                    )
 
             return detections
 
@@ -99,20 +186,28 @@ class ObjectDetector:
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
         for det in detections:
-            x1, y1, x2, y2 = det['bbox']
+            x1, y1, x2, y2 = det["bbox"]
             label = f"{det['label']}: {det['confidence']:.2f}"
 
             # Draw box
             cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
 
             # Draw label
-            cv2.putText(image, label, (x1, y1 - 10),
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+            cv2.putText(
+                image,
+                label,
+                (x1, y1 - 10),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                (0, 255, 0),
+                2,
+            )
 
         if output_path:
             cv2.imwrite(output_path, cv2.cvtColor(image, cv2.COLOR_RGB2BGR))
 
         return image
+
 
 def train():
     print("Training Object Detection with PyTorch...")
@@ -137,18 +232,97 @@ def train():
 
     # 3. COCO Dataset Classes
     coco_names = [
-        '__background__', 'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus',
-        'train', 'truck', 'boat', 'traffic light', 'fire hydrant', 'N/A', 'stop sign',
-        'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow',
-        'elephant', 'bear', 'zebra', 'giraffe', 'N/A', 'backpack', 'umbrella', 'N/A', 'N/A',
-        'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball',
-        'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard', 'tennis racket',
-        'bottle', 'N/A', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl',
-        'banana', 'apple', 'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza',
-        'donut', 'cake', 'chair', 'couch', 'potted plant', 'bed', 'N/A', 'dining table',
-        'N/A', 'N/A', 'toilet', 'N/A', 'tv', 'laptop', 'mouse', 'remote', 'keyboard',
-        'cell phone', 'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'N/A', 'book',
-        'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush'
+        "__background__",
+        "person",
+        "bicycle",
+        "car",
+        "motorcycle",
+        "airplane",
+        "bus",
+        "train",
+        "truck",
+        "boat",
+        "traffic light",
+        "fire hydrant",
+        "N/A",
+        "stop sign",
+        "parking meter",
+        "bench",
+        "bird",
+        "cat",
+        "dog",
+        "horse",
+        "sheep",
+        "cow",
+        "elephant",
+        "bear",
+        "zebra",
+        "giraffe",
+        "N/A",
+        "backpack",
+        "umbrella",
+        "N/A",
+        "N/A",
+        "handbag",
+        "tie",
+        "suitcase",
+        "frisbee",
+        "skis",
+        "snowboard",
+        "sports ball",
+        "kite",
+        "baseball bat",
+        "baseball glove",
+        "skateboard",
+        "surfboard",
+        "tennis racket",
+        "bottle",
+        "N/A",
+        "wine glass",
+        "cup",
+        "fork",
+        "knife",
+        "spoon",
+        "bowl",
+        "banana",
+        "apple",
+        "sandwich",
+        "orange",
+        "broccoli",
+        "carrot",
+        "hot dog",
+        "pizza",
+        "donut",
+        "cake",
+        "chair",
+        "couch",
+        "potted plant",
+        "bed",
+        "N/A",
+        "dining table",
+        "N/A",
+        "N/A",
+        "toilet",
+        "N/A",
+        "tv",
+        "laptop",
+        "mouse",
+        "remote",
+        "keyboard",
+        "cell phone",
+        "microwave",
+        "oven",
+        "toaster",
+        "sink",
+        "refrigerator",
+        "N/A",
+        "book",
+        "clock",
+        "vase",
+        "scissors",
+        "teddy bear",
+        "hair drier",
+        "toothbrush",
     ]
 
     print(f"\nModel can detect {len(coco_names) - 1} object classes")
@@ -171,7 +345,8 @@ def train():
     # 5. Fine-tuning Example
     print("\n=== Fine-tuning for Custom Dataset ===")
     print("To fine-tune on your own dataset:")
-    print("""
+    print(
+        """
     1. Prepare dataset in COCO or Pascal VOC format
     2. Define custom dataset class
     3. Replace classifier head:
@@ -195,7 +370,8 @@ def train():
                optimizer.zero_grad()
                losses.backward()
                optimizer.step()
-    """)
+    """
+    )
 
     # 6. Comparison of Detection Models
     print("\n=== Model Comparison ===")
@@ -224,7 +400,8 @@ def train():
 
     # 9. Example Usage
     print("\n=== Example Usage ===")
-    print("""
+    print(
+        """
     # Initialize detector
     detector = ObjectDetector(model_type='fasterrcnn')
 
@@ -237,7 +414,9 @@ def train():
 
     # Draw and save results
     detector.draw_detections('image.jpg', detections, 'output.jpg')
-    """)
+    """
+    )
+
 
 if __name__ == "__main__":
     train()

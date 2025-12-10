@@ -1,43 +1,57 @@
 import tensorflow as tf
 from transformers import (
-    TFBartForConditionalGeneration, BartTokenizer,
-    TFT5ForConditionalGeneration, T5Tokenizer,
-    TFPegasusForConditionalGeneration, PegasusTokenizer
+    TFBartForConditionalGeneration,
+    BartTokenizer,
+    TFT5ForConditionalGeneration,
+    T5Tokenizer,
+    TFPegasusForConditionalGeneration,
+    PegasusTokenizer,
 )
 from datasets import load_dataset
 from rouge_score import rouge_scorer
 
-def create_tf_dataset(data, tokenizer, batch_size=2, max_input_length=1024, max_target_length=128, task_prefix=""):
+
+def create_tf_dataset(
+    data,
+    tokenizer,
+    batch_size=2,
+    max_input_length=1024,
+    max_target_length=128,
+    task_prefix="",
+):
     """Create TensorFlow dataset from raw data"""
-    articles = [task_prefix + item['article'] for item in data]
-    summaries = [item['highlights'] for item in data]
+    articles = [task_prefix + item["article"] for item in data]
+    summaries = [item["highlights"] for item in data]
 
     model_inputs = tokenizer(
         articles,
         max_length=max_input_length,
-        padding='max_length',
+        padding="max_length",
         truncation=True,
-        return_tensors='tf'
+        return_tensors="tf",
     )
 
     with tokenizer.as_target_tokenizer():
         labels = tokenizer(
             summaries,
             max_length=max_target_length,
-            padding='max_length',
+            padding="max_length",
             truncation=True,
-            return_tensors='tf'
+            return_tensors="tf",
         )
 
-    dataset = tf.data.Dataset.from_tensor_slices((
-        {
-            'input_ids': model_inputs['input_ids'],
-            'attention_mask': model_inputs['attention_mask'],
-            'labels': labels['input_ids']
-        }
-    ))
+    dataset = tf.data.Dataset.from_tensor_slices(
+        (
+            {
+                "input_ids": model_inputs["input_ids"],
+                "attention_mask": model_inputs["attention_mask"],
+                "labels": labels["input_ids"],
+            }
+        )
+    )
 
     return dataset.batch(batch_size)
+
 
 def create_synthetic_dataset():
     """Create synthetic summarization data"""
@@ -47,31 +61,30 @@ def create_synthetic_dataset():
         more extreme. Scientists warn that without immediate action to reduce greenhouse gas emissions,
         the consequences could be catastrophic for future generations. Governments worldwide are being
         urged to implement stronger environmental policies and transition to renewable energy sources.""",
-
         """Artificial intelligence is revolutionizing multiple industries. From healthcare to finance,
         AI systems are becoming increasingly sophisticated and capable of performing complex tasks.
         Machine learning algorithms can now diagnose diseases, predict market trends, and even create
         original content. However, experts emphasize the importance of developing AI ethically and
         ensuring these powerful technologies benefit all of humanity.""",
-
         """The global economy is showing signs of recovery after recent challenges. Stock markets have
         reached new highs, unemployment rates are declining, and consumer confidence is improving.
         Economists attribute this positive trend to effective policy measures, technological innovation,
         and increased international trade cooperation. However, concerns remain about inflation and
-        potential future disruptions."""
+        potential future disruptions.""",
     ]
 
     sample_summaries = [
         "Climate change poses serious threats through rising temperatures and extreme weather. Urgent action needed to reduce emissions and adopt renewable energy.",
         "AI is transforming industries with sophisticated capabilities in healthcare, finance, and content creation. Ethical development is crucial.",
-        "Global economy recovering with strong markets and declining unemployment. Policy measures and innovation driving growth despite inflation concerns."
+        "Global economy recovering with strong markets and declining unemployment. Policy measures and innovation driving growth despite inflation concerns.",
     ]
 
     synthetic_data = []
     for article, summary in zip(sample_articles * 334, sample_summaries * 334):
-        synthetic_data.append({'article': article, 'highlights': summary})
+        synthetic_data.append({"article": article, "highlights": summary})
 
     return synthetic_data
+
 
 def train_bart():
     """Train BART model for summarization"""
@@ -79,7 +92,7 @@ def train_bart():
     print("Training BART Model with TensorFlow")
     print("=" * 70)
 
-    gpus = tf.config.list_physical_devices('GPU')
+    gpus = tf.config.list_physical_devices("GPU")
     if gpus:
         print(f"GPU detected: {gpus}")
         for gpu in gpus:
@@ -120,10 +133,10 @@ def train_bart():
         for batch_idx, batch in enumerate(train_tf_dataset):
             with tf.GradientTape() as tape:
                 outputs = model(
-                    input_ids=batch['input_ids'],
-                    attention_mask=batch['attention_mask'],
-                    labels=batch['labels'],
-                    training=True
+                    input_ids=batch["input_ids"],
+                    attention_mask=batch["attention_mask"],
+                    labels=batch["labels"],
+                    training=True,
                 )
                 loss = outputs.loss
 
@@ -144,13 +157,15 @@ def train_bart():
     print("=" * 70)
 
     for i in range(min(3, len(test_dataset))):
-        article = test_dataset[i]['article']
-        reference = test_dataset[i]['highlights']
+        article = test_dataset[i]["article"]
+        reference = test_dataset[i]["highlights"]
 
         print(f"\nSample {i + 1}:")
         print(f"Article (first 200 chars): {article[:200]}...")
 
-        inputs = tokenizer([article], max_length=1024, return_tensors="tf", truncation=True)
+        inputs = tokenizer(
+            [article], max_length=1024, return_tensors="tf", truncation=True
+        )
 
         summary_ids = model.generate(
             inputs["input_ids"],
@@ -158,7 +173,7 @@ def train_bart():
             min_length=40,
             length_penalty=2.0,
             num_beams=4,
-            early_stopping=True
+            early_stopping=True,
         )
 
         generated_summary = tokenizer.decode(summary_ids[0], skip_special_tokens=True)
@@ -166,11 +181,12 @@ def train_bart():
         print(f"Generated: {generated_summary}")
         print(f"Reference: {reference}")
 
-        scorer = rouge_scorer.RougeScorer(['rougeL'], use_stemmer=True)
+        scorer = rouge_scorer.RougeScorer(["rougeL"], use_stemmer=True)
         score = scorer.score(reference, generated_summary)
         print(f"ROUGE-L: {score['rougeL'].fmeasure:.4f}")
 
     return model, tokenizer
+
 
 def train_t5():
     """Train T5 model for summarization"""
@@ -178,7 +194,7 @@ def train_t5():
     print("Training T5 Model with TensorFlow")
     print("=" * 70)
 
-    gpus = tf.config.list_physical_devices('GPU')
+    gpus = tf.config.list_physical_devices("GPU")
     if gpus:
         print(f"GPU detected: {gpus}")
 
@@ -202,8 +218,12 @@ def train_t5():
     print(f"Model: {model_name}")
     print("Note: T5 uses 'summarize:' prefix for task specification")
 
-    train_tf_dataset = create_tf_dataset(train_dataset, tokenizer, max_input_length=512, task_prefix="summarize: ")
-    create_tf_dataset(val_dataset, tokenizer, max_input_length=512, task_prefix="summarize: ")
+    train_tf_dataset = create_tf_dataset(
+        train_dataset, tokenizer, max_input_length=512, task_prefix="summarize: "
+    )
+    create_tf_dataset(
+        val_dataset, tokenizer, max_input_length=512, task_prefix="summarize: "
+    )
 
     optimizer = tf.keras.optimizers.Adam(learning_rate=3e-4)
     print("\nTraining T5...")
@@ -217,10 +237,10 @@ def train_t5():
         for batch_idx, batch in enumerate(train_tf_dataset):
             with tf.GradientTape() as tape:
                 outputs = model(
-                    input_ids=batch['input_ids'],
-                    attention_mask=batch['attention_mask'],
-                    labels=batch['labels'],
-                    training=True
+                    input_ids=batch["input_ids"],
+                    attention_mask=batch["attention_mask"],
+                    labels=batch["labels"],
+                    training=True,
                 )
                 loss = outputs.loss
 
@@ -241,14 +261,16 @@ def train_t5():
     print("=" * 70)
 
     for i in range(min(3, len(test_dataset))):
-        article = test_dataset[i]['article']
-        reference = test_dataset[i]['highlights']
+        article = test_dataset[i]["article"]
+        reference = test_dataset[i]["highlights"]
 
         print(f"\nSample {i + 1}:")
         print(f"Article (first 200 chars): {article[:200]}...")
 
         input_text = "summarize: " + article
-        inputs = tokenizer([input_text], max_length=512, return_tensors="tf", truncation=True)
+        inputs = tokenizer(
+            [input_text], max_length=512, return_tensors="tf", truncation=True
+        )
 
         summary_ids = model.generate(
             inputs["input_ids"],
@@ -256,7 +278,7 @@ def train_t5():
             min_length=40,
             length_penalty=2.0,
             num_beams=4,
-            early_stopping=True
+            early_stopping=True,
         )
 
         generated_summary = tokenizer.decode(summary_ids[0], skip_special_tokens=True)
@@ -264,11 +286,12 @@ def train_t5():
         print(f"Generated: {generated_summary}")
         print(f"Reference: {reference}")
 
-        scorer = rouge_scorer.RougeScorer(['rougeL'], use_stemmer=True)
+        scorer = rouge_scorer.RougeScorer(["rougeL"], use_stemmer=True)
         score = scorer.score(reference, generated_summary)
         print(f"ROUGE-L: {score['rougeL'].fmeasure:.4f}")
 
     return model, tokenizer
+
 
 def train_pegasus():
     """Train PEGASUS model for summarization"""
@@ -277,7 +300,7 @@ def train_pegasus():
     print("=" * 70)
     print("Note: PEGASUS is pre-trained specifically for abstractive summarization")
 
-    gpus = tf.config.list_physical_devices('GPU')
+    gpus = tf.config.list_physical_devices("GPU")
     if gpus:
         print(f"GPU detected: {gpus}")
 
@@ -316,10 +339,10 @@ def train_pegasus():
         for batch_idx, batch in enumerate(train_tf_dataset):
             with tf.GradientTape() as tape:
                 outputs = model(
-                    input_ids=batch['input_ids'],
-                    attention_mask=batch['attention_mask'],
-                    labels=batch['labels'],
-                    training=True
+                    input_ids=batch["input_ids"],
+                    attention_mask=batch["attention_mask"],
+                    labels=batch["labels"],
+                    training=True,
                 )
                 loss = outputs.loss
 
@@ -340,13 +363,15 @@ def train_pegasus():
     print("=" * 70)
 
     for i in range(min(3, len(test_dataset))):
-        article = test_dataset[i]['article']
-        reference = test_dataset[i]['highlights']
+        article = test_dataset[i]["article"]
+        reference = test_dataset[i]["highlights"]
 
         print(f"\nSample {i + 1}:")
         print(f"Article (first 200 chars): {article[:200]}...")
 
-        inputs = tokenizer([article], max_length=1024, return_tensors="tf", truncation=True)
+        inputs = tokenizer(
+            [article], max_length=1024, return_tensors="tf", truncation=True
+        )
 
         summary_ids = model.generate(
             inputs["input_ids"],
@@ -354,7 +379,7 @@ def train_pegasus():
             min_length=40,
             length_penalty=2.0,
             num_beams=4,
-            early_stopping=True
+            early_stopping=True,
         )
 
         generated_summary = tokenizer.decode(summary_ids[0], skip_special_tokens=True)
@@ -362,11 +387,12 @@ def train_pegasus():
         print(f"Generated: {generated_summary}")
         print(f"Reference: {reference}")
 
-        scorer = rouge_scorer.RougeScorer(['rougeL'], use_stemmer=True)
+        scorer = rouge_scorer.RougeScorer(["rougeL"], use_stemmer=True)
         score = scorer.score(reference, generated_summary)
         print(f"ROUGE-L: {score['rougeL'].fmeasure:.4f}")
 
     return model, tokenizer
+
 
 def train():
     """Train all summarization models"""
@@ -374,7 +400,8 @@ def train():
     print("TEXT SUMMARIZATION MODELS - COMPREHENSIVE TRAINING (TensorFlow)")
     print("=" * 80)
 
-    print("""
+    print(
+        """
     This script trains three different architectures for text summarization:
 
     1. BART (Bidirectional and Auto-Regressive Transformers)
@@ -391,7 +418,8 @@ def train():
        - Specifically pre-trained for abstractive summarization
        - Larger model than BART
        - Best performance on summarization benchmarks
-    """)
+    """
+    )
 
     # Train BART
     try:
@@ -418,7 +446,8 @@ def train():
     print("\n" + "=" * 80)
     print("MODEL COMPARISON SUMMARY")
     print("=" * 80)
-    print("""
+    print(
+        """
     ┌─────────────────────────────────────────────────────────────────────────┐
     │ Model   │ Size    │ Speed │ Quality │ Best For                           │
     ├─────────────────────────────────────────────────────────────────────────┤
@@ -426,7 +455,8 @@ def train():
     │ T5      │ Large   │ Slow  │ Better  │ Multi-task, maximum flexibility    │
     │ PEGASUS │ Large   │ Slow  │ Best    │ Best quality summaries             │
     └─────────────────────────────────────────────────────────────────────────┘
-    """)
+    """
+    )
 
     print("\n=== QA Validation ===")
     print("✓ BART model: Fine-tuned for abstractive summarization")
@@ -435,6 +465,7 @@ def train():
     print("✓ All models can generate fluent, coherent summaries")
     print("✓ All models evaluate with ROUGE scores")
     print("✓ Models saved for inference and deployment")
+
 
 if __name__ == "__main__":
     train()

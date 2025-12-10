@@ -27,26 +27,28 @@ import matplotlib.patches as patches
 
 # Configuration
 CONFIG = {
-    'num_classes': 3,  # Number of object categories
-    'image_size': 512,
-    'output_stride': 4,  # Downsampling factor
-    'heatmap_size': 128,  # 512 / 4
-    'batch_size': 8,
-    'epochs': 50,
-    'learning_rate': 0.0001,
-    'device': 'cuda' if torch.cuda.is_available() else 'cpu',
-    'num_workers': 4,
-    'output_dir': 'results/anchor_free_detection'
+    "num_classes": 3,  # Number of object categories
+    "image_size": 512,
+    "output_stride": 4,  # Downsampling factor
+    "heatmap_size": 128,  # 512 / 4
+    "batch_size": 8,
+    "epochs": 50,
+    "learning_rate": 0.0001,
+    "device": "cuda" if torch.cuda.is_available() else "cpu",
+    "num_workers": 4,
+    "output_dir": "results/anchor_free_detection",
 }
+
 
 def gaussian_2d(shape, sigma=1):
     """Generate 2D gaussian kernel"""
-    m, n = [(ss - 1.) / 2. for ss in shape]
-    y, x = np.ogrid[-m:m+1, -n:n+1]
+    m, n = [(ss - 1.0) / 2.0 for ss in shape]
+    y, x = np.ogrid[-m : m + 1, -n : n + 1]
 
     h = np.exp(-(x * x + y * y) / (2 * sigma * sigma))
     h[h < np.finfo(h.dtype).eps * h.max()] = 0
     return h
+
 
 def draw_gaussian(heatmap, center, radius, k=1):
     """
@@ -68,13 +70,16 @@ def draw_gaussian(heatmap, center, radius, k=1):
     left, right = min(x, radius), min(width - x, radius + 1)
     top, bottom = min(y, radius), min(height - y, radius + 1)
 
-    masked_heatmap = heatmap[y - top:y + bottom, x - left:x + right]
-    masked_gaussian = gaussian[radius - top:radius + bottom, radius - left:radius + right]
+    masked_heatmap = heatmap[y - top : y + bottom, x - left : x + right]
+    masked_gaussian = gaussian[
+        radius - top : radius + bottom, radius - left : radius + right
+    ]
 
     if min(masked_gaussian.shape) > 0 and min(masked_heatmap.shape) > 0:
         np.maximum(masked_heatmap, masked_gaussian * k, out=masked_heatmap)
 
     return heatmap
+
 
 class CenterNetBackbone(nn.Module):
     """ResNet-based backbone for CenterNet"""
@@ -109,6 +114,7 @@ class CenterNetBackbone(nn.Module):
 
         return x
 
+
 class CenterNet(nn.Module):
     """
     CenterNet for anchor-free object detection
@@ -122,9 +128,9 @@ class CenterNet(nn.Module):
     def __init__(self, num_classes=3, pretrained=True):
         super().__init__()
 
-        print("\n" + "="*80)
+        print("\n" + "=" * 80)
         print("BUILDING CENTERNET MODEL")
-        print("="*80)
+        print("=" * 80)
 
         print(f"\nNumber of classes: {num_classes}")
 
@@ -135,19 +141,19 @@ class CenterNet(nn.Module):
         self.deconv1 = nn.Sequential(
             nn.ConvTranspose2d(512, 256, 4, stride=2, padding=1),
             nn.BatchNorm2d(256),
-            nn.ReLU(inplace=True)
+            nn.ReLU(inplace=True),
         )
 
         self.deconv2 = nn.Sequential(
             nn.ConvTranspose2d(256, 128, 4, stride=2, padding=1),
             nn.BatchNorm2d(128),
-            nn.ReLU(inplace=True)
+            nn.ReLU(inplace=True),
         )
 
         self.deconv3 = nn.Sequential(
             nn.ConvTranspose2d(128, 64, 4, stride=2, padding=1),
             nn.BatchNorm2d(64),
-            nn.ReLU(inplace=True)
+            nn.ReLU(inplace=True),
         )
 
         # Prediction heads
@@ -156,21 +162,17 @@ class CenterNet(nn.Module):
             nn.Conv2d(64, 64, 3, padding=1),
             nn.ReLU(inplace=True),
             nn.Conv2d(64, num_classes, 1),
-            nn.Sigmoid()
+            nn.Sigmoid(),
         )
 
         # Size: width and height of bounding box
         self.size_head = nn.Sequential(
-            nn.Conv2d(64, 64, 3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(64, 2, 1)
+            nn.Conv2d(64, 64, 3, padding=1), nn.ReLU(inplace=True), nn.Conv2d(64, 2, 1)
         )
 
         # Offset: sub-pixel offset for precise localization
         self.offset_head = nn.Sequential(
-            nn.Conv2d(64, 64, 3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(64, 2, 1)
+            nn.Conv2d(64, 64, 3, padding=1), nn.ReLU(inplace=True), nn.Conv2d(64, 2, 1)
         )
 
         print(f"Parameters: {sum(p.numel() for p in self.parameters())/1e6:.1f}M")
@@ -190,6 +192,7 @@ class CenterNet(nn.Module):
         offset = self.offset_head(x)
 
         return heatmap, size, offset
+
 
 class FocalLoss(nn.Module):
     """
@@ -218,7 +221,9 @@ class FocalLoss(nn.Module):
         loss = 0
 
         pos_loss = torch.log(pred) * torch.pow(1 - pred, self.alpha) * pos_inds
-        neg_loss = torch.log(1 - pred) * torch.pow(pred, self.alpha) * neg_weights * neg_inds
+        neg_loss = (
+            torch.log(1 - pred) * torch.pow(pred, self.alpha) * neg_weights * neg_inds
+        )
 
         num_pos = pos_inds.float().sum()
         pos_loss = pos_loss.sum()
@@ -231,6 +236,7 @@ class FocalLoss(nn.Module):
 
         return loss
 
+
 class AnchorFreeDataset(Dataset):
     """Dataset for anchor-free detection"""
 
@@ -238,7 +244,7 @@ class AnchorFreeDataset(Dataset):
         self.num_samples = num_samples
         self.image_size = image_size
         self.num_classes = num_classes
-        self.heatmap_size = image_size // CONFIG['output_stride']
+        self.heatmap_size = image_size // CONFIG["output_stride"]
 
         # Generate samples
         self.samples = []
@@ -257,10 +263,7 @@ class AnchorFreeDataset(Dataset):
                 # Random class
                 cls = np.random.randint(0, num_classes)
 
-                objects.append({
-                    'bbox': [x, y, w, h],
-                    'class': cls
-                })
+                objects.append({"bbox": [x, y, w, h], "class": cls})
 
             self.samples.append(objects)
 
@@ -270,17 +273,19 @@ class AnchorFreeDataset(Dataset):
     def create_targets(self, objects):
         """Create heatmap, size, and offset targets"""
         # Initialize targets
-        heatmap = np.zeros((self.num_classes, self.heatmap_size, self.heatmap_size), dtype=np.float32)
+        heatmap = np.zeros(
+            (self.num_classes, self.heatmap_size, self.heatmap_size), dtype=np.float32
+        )
         size = np.zeros((2, self.heatmap_size, self.heatmap_size), dtype=np.float32)
         offset = np.zeros((2, self.heatmap_size, self.heatmap_size), dtype=np.float32)
 
         for obj in objects:
-            x, y, w, h = obj['bbox']
-            cls = obj['class']
+            x, y, w, h = obj["bbox"]
+            cls = obj["class"]
 
             # Center point
-            cx = (x + w / 2) / CONFIG['output_stride']
-            cy = (y + h / 2) / CONFIG['output_stride']
+            cx = (x + w / 2) / CONFIG["output_stride"]
+            cy = (y + h / 2) / CONFIG["output_stride"]
 
             # Integer center
             cx_int = int(cx)
@@ -288,15 +293,15 @@ class AnchorFreeDataset(Dataset):
 
             if 0 <= cx_int < self.heatmap_size and 0 <= cy_int < self.heatmap_size:
                 # Gaussian radius based on IoU
-                radius = max(0, int(min(w, h) / CONFIG['output_stride'] / 4))
+                radius = max(0, int(min(w, h) / CONFIG["output_stride"] / 4))
                 radius = max(2, radius)
 
                 # Draw gaussian on heatmap
                 draw_gaussian(heatmap[cls], (cx_int, cy_int), radius)
 
                 # Size target (normalized by output stride)
-                size[0, cy_int, cx_int] = w / CONFIG['output_stride']
-                size[1, cy_int, cx_int] = h / CONFIG['output_stride']
+                size[0, cy_int, cx_int] = w / CONFIG["output_stride"]
+                size[1, cy_int, cx_int] = h / CONFIG["output_stride"]
 
                 # Offset target (sub-pixel offset)
                 offset[0, cy_int, cx_int] = cx - cx_int
@@ -308,32 +313,42 @@ class AnchorFreeDataset(Dataset):
         objects = self.samples[idx]
 
         # Create image with colored rectangles
-        img = Image.new('RGB', (self.image_size, self.image_size), color=(240, 240, 240))
+        img = Image.new(
+            "RGB", (self.image_size, self.image_size), color=(240, 240, 240)
+        )
         draw = ImageDraw.Draw(img)
 
         colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255)]
 
         for obj in objects:
-            x, y, w, h = obj['bbox']
-            cls = obj['class']
+            x, y, w, h = obj["bbox"]
+            cls = obj["class"]
             color = colors[cls]
 
             draw.rectangle([x, y, x + w, y + h], fill=color, outline=(0, 0, 0), width=2)
 
         # Convert to tensor
         img_tensor = transforms.ToTensor()(img)
-        img_tensor = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])(img_tensor)
+        img_tensor = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])(
+            img_tensor
+        )
 
         # Create targets
         heatmap, size, offset = self.create_targets(objects)
 
-        return img_tensor, torch.FloatTensor(heatmap), torch.FloatTensor(size), torch.FloatTensor(offset)
+        return (
+            img_tensor,
+            torch.FloatTensor(heatmap),
+            torch.FloatTensor(size),
+            torch.FloatTensor(offset),
+        )
+
 
 def train_centernet(model, train_loader, val_loader, device):
     """Train CenterNet"""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("TRAINING CENTERNET")
-    print("="*80)
+    print("=" * 80)
 
     model.to(device)
 
@@ -343,12 +358,12 @@ def train_centernet(model, train_loader, val_loader, device):
     offset_loss_fn = nn.L1Loss()
 
     # Optimizer
-    optimizer = optim.Adam(model.parameters(), lr=CONFIG['learning_rate'])
+    optimizer = optim.Adam(model.parameters(), lr=CONFIG["learning_rate"])
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.5)
 
-    history = {'train_loss': [], 'val_loss': []}
+    history = {"train_loss": [], "val_loss": []}
 
-    for epoch in range(CONFIG['epochs']):
+    for epoch in range(CONFIG["epochs"]):
         # Training
         model.train()
         train_loss = 0
@@ -378,10 +393,10 @@ def train_centernet(model, train_loader, val_loader, device):
             optimizer.step()
 
             train_loss += loss.item()
-            progress_bar.set_postfix({'loss': loss.item()})
+            progress_bar.set_postfix({"loss": loss.item()})
 
         avg_train_loss = train_loss / len(train_loader)
-        history['train_loss'].append(avg_train_loss)
+        history["train_loss"].append(avg_train_loss)
 
         # Validation
         model.eval()
@@ -405,13 +420,20 @@ def train_centernet(model, train_loader, val_loader, device):
                 val_loss += loss.item()
 
         avg_val_loss = val_loss / len(val_loader)
-        history['val_loss'].append(avg_val_loss)
+        history["val_loss"].append(avg_val_loss)
 
-        print(f"\nEpoch {epoch+1}: Train Loss = {avg_train_loss:.4f}, Val Loss = {avg_val_loss:.4f}")
+        print(
+            f"\nEpoch {
+        epoch+
+        1}: Train Loss = {
+            avg_train_loss:.4f}, Val Loss = {
+                avg_val_loss:.4f}"
+        )
 
         scheduler.step()
 
     return model, history
+
 
 def decode_predictions(heatmap, size, offset, threshold=0.3, top_k=100):
     """Decode predictions to bounding boxes"""
@@ -455,14 +477,14 @@ def decode_predictions(heatmap, size, offset, threshold=0.3, top_k=100):
                 y, x = int(ys[i]), int(xs[i])
 
                 # Get size and offset
-                w = size[b, 0, y, x] * CONFIG['output_stride']
-                h = size[b, 1, y, x] * CONFIG['output_stride']
+                w = size[b, 0, y, x] * CONFIG["output_stride"]
+                h = size[b, 1, y, x] * CONFIG["output_stride"]
                 offset_x = offset[b, 0, y, x]
                 offset_y = offset[b, 1, y, x]
 
                 # Adjust center
-                cx = (x + offset_x) * CONFIG['output_stride']
-                cy = (y + offset_y) * CONFIG['output_stride']
+                cx = (x + offset_x) * CONFIG["output_stride"]
+                cy = (y + offset_y) * CONFIG["output_stride"]
 
                 # Bounding box
                 x1 = cx - w / 2
@@ -470,15 +492,18 @@ def decode_predictions(heatmap, size, offset, threshold=0.3, top_k=100):
                 x2 = cx + w / 2
                 y2 = cy + h / 2
 
-                batch_dets.append({
-                    'bbox': [float(x1), float(y1), float(x2), float(y2)],
-                    'score': float(scores[i]),
-                    'class': c
-                })
+                batch_dets.append(
+                    {
+                        "bbox": [float(x1), float(y1), float(x2), float(y2)],
+                        "score": float(scores[i]),
+                        "class": c,
+                    }
+                )
 
         detections.append(batch_dets)
 
     return detections
+
 
 def visualize_detections(model, val_loader, device, num_samples=4):
     """Visualize detection results"""
@@ -493,9 +518,9 @@ def visualize_detections(model, val_loader, device, num_samples=4):
     detections = decode_predictions(heatmaps, sizes, offsets, threshold=0.5)
 
     # Plot
-    fig, axes = plt.subplots(1, num_samples, figsize=(num_samples*4, 4))
+    fig, axes = plt.subplots(1, num_samples, figsize=(num_samples * 4, 4))
 
-    colors = ['red', 'green', 'blue']
+    colors = ["red", "green", "blue"]
 
     for i in range(num_samples):
         # Denormalize image
@@ -507,54 +532,71 @@ def visualize_detections(model, val_loader, device, num_samples=4):
 
         # Draw detections
         for det in detections[i]:
-            x1, y1, x2, y2 = det['bbox']
-            cls = det['class']
-            score = det['score']
+            x1, y1, x2, y2 = det["bbox"]
+            cls = det["class"]
+            score = det["score"]
 
             rect = patches.Rectangle(
-                (x1, y1), x2 - x1, y2 - y1,
-                linewidth=2, edgecolor=colors[cls], facecolor='none'
+                (x1, y1),
+                x2 - x1,
+                y2 - y1,
+                linewidth=2,
+                edgecolor=colors[cls],
+                facecolor="none",
             )
             axes[i].add_patch(rect)
-            axes[i].text(x1, y1, f'{score:.2f}', color=colors[cls], fontsize=10, weight='bold')
+            axes[i].text(
+                x1, y1, f"{score:.2f}", color=colors[cls], fontsize=10, weight="bold"
+            )
 
-        axes[i].set_title(f'Sample {i+1}')
-        axes[i].axis('off')
+        axes[i].set_title(f"Sample {i+1}")
+        axes[i].axis("off")
 
     plt.tight_layout()
 
-    output_dir = Path(CONFIG['output_dir'])
+    output_dir = Path(CONFIG["output_dir"])
     output_dir.mkdir(parents=True, exist_ok=True)
-    plt.savefig(output_dir / 'detections.png', dpi=150, bbox_inches='tight')
+    plt.savefig(output_dir / "detections.png", dpi=150, bbox_inches="tight")
     print(f"\nSaved detections to {output_dir / 'detections.png'}")
 
+
 def main():
-    print("="*80)
+    print("=" * 80)
     print("ANCHOR-FREE OBJECT DETECTION (CENTERNET)")
-    print("="*80)
+    print("=" * 80)
 
     print(f"\nDevice: {CONFIG['device']}")
 
     # Create dataset
-    train_dataset = AnchorFreeDataset(800, CONFIG['image_size'], CONFIG['num_classes'])
-    val_dataset = AnchorFreeDataset(200, CONFIG['image_size'], CONFIG['num_classes'])
+    train_dataset = AnchorFreeDataset(800, CONFIG["image_size"], CONFIG["num_classes"])
+    val_dataset = AnchorFreeDataset(200, CONFIG["image_size"], CONFIG["num_classes"])
 
     # Dataloaders
-    train_loader = DataLoader(train_dataset, batch_size=CONFIG['batch_size'], shuffle=True, num_workers=CONFIG['num_workers'])
-    val_loader = DataLoader(val_dataset, batch_size=CONFIG['batch_size'], shuffle=False, num_workers=CONFIG['num_workers'])
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=CONFIG["batch_size"],
+        shuffle=True,
+        num_workers=CONFIG["num_workers"],
+    )
+    val_loader = DataLoader(
+        val_dataset,
+        batch_size=CONFIG["batch_size"],
+        shuffle=False,
+        num_workers=CONFIG["num_workers"],
+    )
 
     # Model
-    model = CenterNet(num_classes=CONFIG['num_classes'])
+    model = CenterNet(num_classes=CONFIG["num_classes"])
 
     # Train
-    model, history = train_centernet(model, train_loader, val_loader, CONFIG['device'])
+    model, history = train_centernet(model, train_loader, val_loader, CONFIG["device"])
 
     # Visualize
-    visualize_detections(model, val_loader, CONFIG['device'])
+    visualize_detections(model, val_loader, CONFIG["device"])
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("ANCHOR-FREE DETECTION COMPLETED")
-    print("="*80)
+    print("=" * 80)
 
     print("\nKey Concepts:")
     print("✓ Objects as keypoints (center points)")
@@ -574,5 +616,6 @@ def main():
     print("- Autonomous driving")
     print("- Surveillance systems")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

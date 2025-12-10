@@ -4,11 +4,13 @@ import numpy as np
 import cv2
 from PIL import Image
 
+
 class ObjectDetector:
     """
     Object detection using TensorFlow Hub models or TensorFlow Object Detection API
     """
-    def __init__(self, model_type='efficientdet'):
+
+    def __init__(self, model_type="efficientdet"):
         """
         Initialize object detector
         model_type: 'efficientdet', 'ssd', or 'fasterrcnn'
@@ -16,15 +18,17 @@ class ObjectDetector:
         self.model_type = model_type
 
         # Load model from TensorFlow Hub
-        if model_type == 'efficientdet':
+        if model_type == "efficientdet":
             # EfficientDet D0
             model_url = "https://tfhub.dev/tensorflow/efficientdet/d0/1"
-        elif model_type == 'ssd':
+        elif model_type == "ssd":
             # SSD MobileNet V2
             model_url = "https://tfhub.dev/tensorflow/ssd_mobilenet_v2/2"
-        elif model_type == 'fasterrcnn':
+        elif model_type == "fasterrcnn":
             # Faster R-CNN Inception ResNet V2
-            model_url = "https://tfhub.dev/tensorflow/faster_rcnn/inception_resnet_v2_640x640/1"
+            model_url = (
+                "https://tfhub.dev/tensorflow/faster_rcnn/inception_resnet_v2_640x640/1"
+            )
         else:
             model_url = "https://tfhub.dev/tensorflow/efficientdet/d0/1"
 
@@ -33,18 +37,86 @@ class ObjectDetector:
 
         # COCO class names (same as PyTorch)
         self.coco_names = [
-            'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus',
-            'train', 'truck', 'boat', 'traffic light', 'fire hydrant', 'stop sign',
-            'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow',
-            'elephant', 'bear', 'zebra', 'giraffe', 'backpack', 'umbrella',
-            'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball',
-            'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard', 'tennis racket',
-            'bottle', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl',
-            'banana', 'apple', 'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza',
-            'donut', 'cake', 'chair', 'couch', 'potted plant', 'bed', 'dining table',
-            'toilet', 'tv', 'laptop', 'mouse', 'remote', 'keyboard',
-            'cell phone', 'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'book',
-            'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush'
+            "person",
+            "bicycle",
+            "car",
+            "motorcycle",
+            "airplane",
+            "bus",
+            "train",
+            "truck",
+            "boat",
+            "traffic light",
+            "fire hydrant",
+            "stop sign",
+            "parking meter",
+            "bench",
+            "bird",
+            "cat",
+            "dog",
+            "horse",
+            "sheep",
+            "cow",
+            "elephant",
+            "bear",
+            "zebra",
+            "giraffe",
+            "backpack",
+            "umbrella",
+            "handbag",
+            "tie",
+            "suitcase",
+            "frisbee",
+            "skis",
+            "snowboard",
+            "sports ball",
+            "kite",
+            "baseball bat",
+            "baseball glove",
+            "skateboard",
+            "surfboard",
+            "tennis racket",
+            "bottle",
+            "wine glass",
+            "cup",
+            "fork",
+            "knife",
+            "spoon",
+            "bowl",
+            "banana",
+            "apple",
+            "sandwich",
+            "orange",
+            "broccoli",
+            "carrot",
+            "hot dog",
+            "pizza",
+            "donut",
+            "cake",
+            "chair",
+            "couch",
+            "potted plant",
+            "bed",
+            "dining table",
+            "toilet",
+            "tv",
+            "laptop",
+            "mouse",
+            "remote",
+            "keyboard",
+            "cell phone",
+            "microwave",
+            "oven",
+            "toaster",
+            "sink",
+            "refrigerator",
+            "book",
+            "clock",
+            "vase",
+            "scissors",
+            "teddy bear",
+            "hair drier",
+            "toothbrush",
         ]
 
     def detect(self, image_path, confidence_threshold=0.5):
@@ -64,21 +136,24 @@ class ObjectDetector:
         detections = self.model(input_tensor)
 
         # Extract results
-        num_detections = int(detections.pop('num_detections'))
-        detections = {key: value[0, :num_detections].numpy()
-                     for key, value in detections.items()}
-        detections['num_detections'] = num_detections
-        detections['detection_classes'] = detections['detection_classes'].astype(np.int64)
+        num_detections = int(detections.pop("num_detections"))
+        detections = {
+            key: value[0, :num_detections].numpy() for key, value in detections.items()
+        }
+        detections["num_detections"] = num_detections
+        detections["detection_classes"] = detections["detection_classes"].astype(
+            np.int64
+        )
 
         # Filter by confidence
         results = []
         height, width = image_np.shape[:2]
 
         for i in range(num_detections):
-            score = detections['detection_scores'][i]
+            score = detections["detection_scores"][i]
             if score >= confidence_threshold:
-                class_id = detections['detection_classes'][i]
-                bbox = detections['detection_boxes'][i]
+                class_id = detections["detection_classes"][i]
+                bbox = detections["detection_boxes"][i]
 
                 # Convert normalized coordinates to pixel coordinates
                 ymin, xmin, ymax, xmax = bbox
@@ -86,13 +161,19 @@ class ObjectDetector:
                 x2, y2 = int(xmax * width), int(ymax * height)
 
                 # Get label name
-                label = self.coco_names[class_id - 1] if class_id <= len(self.coco_names) else f"class_{class_id}"
+                label = (
+                    self.coco_names[class_id - 1]
+                    if class_id <= len(self.coco_names)
+                    else f"class_{class_id}"
+                )
 
-                results.append({
-                    'label': label,
-                    'confidence': float(score),
-                    'bbox': [x1, y1, x2, y2]
-                })
+                results.append(
+                    {
+                        "label": label,
+                        "confidence": float(score),
+                        "bbox": [x1, y1, x2, y2],
+                    }
+                )
 
         return results
 
@@ -102,20 +183,28 @@ class ObjectDetector:
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
         for det in detections:
-            x1, y1, x2, y2 = det['bbox']
+            x1, y1, x2, y2 = det["bbox"]
             label = f"{det['label']}: {det['confidence']:.2f}"
 
             # Draw box
             cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
 
             # Draw label
-            cv2.putText(image, label, (x1, y1 - 10),
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+            cv2.putText(
+                image,
+                label,
+                (x1, y1 - 10),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                (0, 255, 0),
+                2,
+            )
 
         if output_path:
             cv2.imwrite(output_path, cv2.cvtColor(image, cv2.COLOR_RGB2BGR))
 
         return image
+
 
 def train():
     print("Training Object Detection with TensorFlow...")
@@ -145,19 +234,22 @@ def train():
 
     # For demo, we'll show the structure without actual loading
     print("Model structure:")
-    print("""
+    print(
+        """
     Input: Image tensor [batch, height, width, 3]
     Output: Dictionary with:
         - detection_boxes: [N, 4] (ymin, xmin, ymax, xmax)
         - detection_classes: [N] class indices
         - detection_scores: [N] confidence scores
         - num_detections: number of detections
-    """)
+    """
+    )
 
     # 4. Training Custom Model
     print("\n=== Training Custom Object Detector ===")
     print("To train on custom dataset using TensorFlow Object Detection API:")
-    print("""
+    print(
+        """
     1. Install TensorFlow Object Detection API:
        git clone https://github.com/tensorflow/models.git
        cd models/research
@@ -185,11 +277,13 @@ def train():
            --pipeline_config_path configs/my_config.config \\
            --trained_checkpoint_dir models/my_model \\
            --output_directory exported_models/my_model
-    """)
+    """
+    )
 
     # 5. Transfer Learning Example
     print("\n=== Transfer Learning Approach ===")
-    print("""
+    print(
+        """
     # Fine-tune pre-trained model on custom data
 
     # 1. Load pre-trained model
@@ -201,7 +295,8 @@ def train():
 
     # 3. Fine-tune (using TF Object Detection API recommended)
     #    Or use the model directly for inference
-    """)
+    """
+    )
 
     # 6. Inference Optimization
     print("\n=== Inference Optimization ===")
@@ -229,7 +324,8 @@ def train():
 
     # 9. Example Usage
     print("\n=== Example Usage ===")
-    print("""
+    print(
+        """
     # Initialize detector
     detector = ObjectDetector(model_type='efficientdet')
 
@@ -246,7 +342,8 @@ def train():
     # Advanced: Batch processing
     image_tensor = tf.convert_to_tensor(images)  # [batch, height, width, 3]
     detections = detector.model(image_tensor)
-    """)
+    """
+    )
 
     # 10. Evaluation Metrics
     print("\n=== Evaluation Metrics ===")
@@ -255,6 +352,7 @@ def train():
     print("• Precision: Ratio of correct detections")
     print("• Recall: Ratio of objects detected")
     print("• FPS (Frames Per Second): Inference speed")
+
 
 if __name__ == "__main__":
     train()

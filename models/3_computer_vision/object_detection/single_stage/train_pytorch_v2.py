@@ -6,14 +6,16 @@ Alternative to standard detection approaches
 import torch
 import numpy as np
 import warnings
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
+
 
 def train():
     print("Training Object Detection with YOLOv5...")
 
     try:
         # Load YOLOv5
-        model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
+        model = torch.hub.load("ultralytics/yolov5", "yolov5s", pretrained=True)
         print("✓ Loaded YOLOv5 model successfully")
     except Exception as e:
         print(f"Note: YOLOv5 requires: pip install -U ultralytics")
@@ -42,19 +44,27 @@ def train():
         # In real scenario: results = model(image_path)
 
         print(f"\n--- Sample {i+1} ---")
-        print(f"Detected objects: {['person', 'car', 'dog'][i % 3]} ({np.random.randint(1, 5)} instances)")
-        print(f"Confidence scores: {[f'{np.random.uniform(0.7, 0.99):.2f}' for _ in range(np.random.randint(1, 3))]}")
+        print(
+            f"Detected objects: {['person', 'car', 'dog'][i %
+     3]} ({np.random.randint(1, 5)} instances)"
+        )
+        print(
+            f"Confidence scores: {[f'{np.random.uniform(0.7, 0.99):.2f}' for _ in range(
+            np.random.randint(1, 3))]}"
+        )
 
-        sample_results.append({
-            'image': f'sample_{i+1}.jpg',
-            'detections': np.random.randint(1, 5),
-            'avg_confidence': np.random.uniform(0.75, 0.95)
-        })
+        sample_results.append(
+            {
+                "image": f"sample_{i+1}.jpg",
+                "detections": np.random.randint(1, 5),
+                "avg_confidence": np.random.uniform(0.75, 0.95),
+            }
+        )
 
     # 3. QA Validation
     print("\n=== QA Validation ===")
-    avg_confidence = np.mean([r['avg_confidence'] for r in sample_results])
-    total_detections = sum([r['detections'] for r in sample_results])
+    avg_confidence = np.mean([r["avg_confidence"] for r in sample_results])
+    total_detections = sum([r["detections"] for r in sample_results])
 
     print(f"Average Confidence: {avg_confidence:.4f}")
     print(f"Total Detections: {total_detections}")
@@ -95,9 +105,9 @@ def train_fallback_detection():
         def predict(self, image):
             # Simulate detection
             return {
-                'boxes': np.random.rand(5, 4),
-                'scores': np.random.uniform(0.6, 0.99, 5),
-                'classes': np.random.randint(0, 80, 5)
+                "boxes": np.random.rand(5, 4),
+                "scores": np.random.uniform(0.6, 0.99, 5),
+                "classes": np.random.randint(0, 80, 5),
             }
 
     model = SimpleDetector()
