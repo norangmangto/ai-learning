@@ -243,7 +243,7 @@ After implementing this module, you understand:
 
 ## 🔗 Related Models
 
-**Vision Models:** [CNN](../../3_computer_vision/image_classification)
+**Vision Models:** [CNN](../../3_computer_vision/classification/single_label)
 
 **Language Models:** [Word Embeddings](../../2_nlp_models/embeddings/word_embeddings)
 

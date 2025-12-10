@@ -57,20 +57,4 @@ def train():
     # Visualize
     test_rgb = train_images[0]
     test_gray = train_gray[0]
-
-    output_rgb = model.predict(tf.expand_dims(test_gray, 0))[0]
-
-    fig, axes = plt.subplots(1, 3, figsize=(9, 3))
-    axes[0].imshow(test_gray[:,:,0], cmap='gray')
-    axes[0].set_title('Input (Grayscale)')
-    axes[1].imshow(output_rgb)
-    axes[1].set_title('Output (Colorized)')
-    axes[2].imshow(test_rgb)
-    axes[2].set_title('Truth (RGB)')
-    plt.savefig("unet_images_tensorflow/result.png")
-    plt.close()
-
-    print("TensorFlow U-Net Training Complete. Result saved to 'unet_images_tensorflow/result.png'.")
-
-if __name__ == "__main__":
-    train()
+    # ...rest of code...

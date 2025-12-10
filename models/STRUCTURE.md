@@ -133,12 +133,12 @@ Consolidates all image and video models from `advanced/` directory with clear ta
 ### Subcategories:
 
 - **classification/** - Image classification models
-  - `image_classification/` - Single-label classification
+  - `single_label/` - Single-label classification
     - ResNet (PyTorch, TensorFlow)
     - EfficientNet
     - Vision Transformer (ViT)
     - Inception, VGG variants
-  - `multi_label_classification/` - Multi-label classification
+  - `multi_label/` - Multi-label classification
     - Multi-label BERT
     - Multi-head architectures
 
@@ -183,7 +183,8 @@ Consolidates all image and video models from `advanced/` directory with clear ta
     - Tracking-by-detection
 
 ### Key Files:
-- `3_computer_vision/classification/image_classification/train_*.py` - Image classification
+- `3_computer_vision/classification/single_label/train_*.py` - Image classification
+- `3_computer_vision/classification/multi_label/train_*.py` - Multi-label classification
 - `3_computer_vision/object_detection/*/train_*.py` - Object detection
 - `3_computer_vision/semantic_segmentation/*/train_*.py` - Segmentation
 - `3_computer_vision/image_to_image/*/train_*.py` - Image transformation
@@ -429,7 +430,7 @@ ls -R models/1_supervised_learning/
 ls -R models/2_nlp_models/
 
 # View image classification specifically
-ls -R models/3_computer_vision/classification/image_classification/
+ls -R models/3_computer_vision/classification/single_label/
 
 # View all transformer implementations
 ls -R models/4_sequence_models/transformer/
@@ -451,7 +452,7 @@ Example:
 python models/2_nlp_models/sentiment_analysis/train_pytorch.py
 
 # Run image classification with TensorFlow
-python models/3_computer_vision/classification/image_classification/train_tensorflow.py
+python models/3_computer_vision/classification/single_label/train_tensorflow.py
 
 # Generate with stable diffusion
 python models/5_generative_models/diffusion_models/stable_diffusion/generate.py

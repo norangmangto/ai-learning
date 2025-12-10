@@ -65,7 +65,7 @@ This is a quick reference guide to locate any model in the repository.
 **Directory:** `models/3_computer_vision/`
 
 ### Image Classification
-- **ResNet/EfficientNet**: `classification/image_classification/train_pytorch.py`, `train_pytorch_v2.py`, `train_tensorflow.py`
+- **ResNet/EfficientNet**: `classification/single_label/train_pytorch.py`, `train_pytorch_v2.py`, `train_tensorflow.py`
 - **Vision Transformer**: Included in classification training
 
 ### Object Detection
@@ -201,7 +201,8 @@ grep -r "train_jax.py" models/
 
 | Task | Location |
 |------|----------|
-| Image Classification | `3_computer_vision/classification/image_classification/` |
+| Image Classification (Single-Label) | `3_computer_vision/classification/single_label/` |
+| Image Classification (Multi-Label) | `3_computer_vision/classification/multi_label/` |
 | Object Detection | `3_computer_vision/object_detection/` |
 | Image Segmentation | `3_computer_vision/semantic_segmentation/` |
 | Sentiment Analysis | `2_nlp_models/sentiment_analysis/` |

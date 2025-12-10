@@ -232,7 +232,7 @@ After implementing this module, you understand:
 
 ## 🔗 Related Models
 
-**Vision-Only:** [CNN Models](../../3_computer_vision/image_classification)
+**Vision-Only:** [CNN Models](../../3_computer_vision/classification/single_label)
 
 **Language-Only:** [Language Models](../../2_nlp_models/language_models)
 
