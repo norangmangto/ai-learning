@@ -1,0 +1,32 @@
+# Image-to-Video Generation Dependencies
+
+# Core deep learning frameworks
+torch>=2.0.0
+torchvision>=0.15.0
+torchaudio>=2.0.0
+
+# Diffusion models and transformers
+diffusers>=0.25.0
+transformers>=4.35.0
+accelerate>=0.25.0
+safetensors>=0.4.0
+
+# Computer vision
+opencv-python>=4.8.0
+pillow>=10.0.0
+imageio>=2.31.0
+imageio-ffmpeg>=0.4.9
+
+# Utilities
+numpy>=1.24.0
+tqdm>=4.65.0
+
+# Optional: for better performance
+# xformers provides memory-efficient attention, but often fails to build on macOS (arm64)
+# and Python 3.12+/3.13 due to OpenMP and compiler constraints. It's safe to skip.
+# If you have a compatible environment, install separately:
+#   pip install --only-binary=:all: xformers==0.0.33.post2
+#xformers>=0.0.22  # Memory efficient attention
+
+# Optional: for video processing
+moviepy>=1.0.3
